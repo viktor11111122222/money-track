@@ -12,12 +12,12 @@
 </head>
 <body>
     <header>
-        </nav>
+        <nav class="sidebar">
             <div class="top-title-wrap">
-                <img src="/public/Minimalist wallet icon design-2.png" alt="">
+                <img src="/public/Ikona novčanika u jednostavnom dizajnu.png" alt="logo">
                 <h2>Expense Tracker</h2>
             </div>
-            
+
             <hr>
 
             <div class="side-card">
@@ -36,6 +36,80 @@
             </div>
         </nav>
     </header>
+
+    <main>
+        <div class="main-container">
+            <div class="main-left">
+                <div class="top-row">
+                    <h1>Monthly Overview</h1>
+                    <div class="summary-cards">
+                        <div class="card">
+                            <h4>Total Spent</h4>
+                            <p class="amount">10,234 RSD</p>
+                        </div>
+                        <div class="card">
+                            <h4>Income</h4>
+                            <p class="amount">15,000 RSD</p>
+                        </div>
+                        <div class="card">
+                            <h4>Savings</h4>
+                            <p class="amount">4,766 RSD</p>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="chart-card"> <!-- chart placeholder -->
+                    <h3>Spending this month</h3>
+                    <div class="chart-placeholder">Chart</div>
+                </div>
+
+                <section class="transactions">
+                    <h3>Recent Transactions</h3>
+                    <ul>
+                        <li><span class="tx-name">Grocery</span><span class="tx-amount">-2,450 RSD</span></li>
+                        <li><span class="tx-name">Salary</span><span class="tx-amount income">+50,000 RSD</span></li>
+                        <li><span class="tx-name">Transport</span><span class="tx-amount">-320 RSD</span></li>
+                    </ul>
+                </section>
+            </div>
+
+            <aside class="main-right">
+                <section class="add-expense">
+                    <h2>Add Expense</h2>
+                    
+
+                    <div class="dropdown">
+                        <!-- <div class="drop-btn-container"> -->
+
+                        <div class="form-row">
+                            <input type="number" placeholder="Amount">
+                        </div>
+
+                        <button class="dropdown-btn" id="dropdownBtn">
+                            <span id="selectedCategory">Category</span>
+                            <span class="arrow" id="arrow">▼</span>
+                        </button>
+
+                        <div class="dropdown-menu" id="dropdownMenu">
+                            <div class="option">Food</div>
+                            <div class="option">Transport</div>
+                            <div class="option">Rent</div>
+                            <div class="option">Entertainment</div>
+                            <div class="option add-option" data-add="true">+ Add category</div>
+                        </div>
+
+                        </div>
+
+                        
+                    <!-- </div> -->
+
+                    <button class="primary">Add Expense</button>
+                </section>
+            </aside>
+        </div>
+    </main>
     <div class="duzina"></div>
+
+    <script src="script.js"></script>
 </body>
 </html>
