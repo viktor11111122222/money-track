@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Expenses - Money Tracker</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Bebas+Neue&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <header>
+        <nav class="sidebar">
+            <div class="top-title-wrap">
+                <img src="/public/Ikona novčanika u jednostavnom dizajnu.png" alt="logo">
+                <h2>Expense Tracker</h2>
+            </div>
+
+            <hr>
+
+            <div class="side-card" onclick="window.location.href='../dashboard/index.html'">
+                <i class="fa-solid fa-house"></i>
+                <h3>Dashboard</h3>
+            </div>
+
+            <div class="side-card active" onclick="window.location.href='../expenses/index.html'">
+                <i class="fa-solid fa-money-check-dollar"></i>
+                <h3>Expenses</h3>
+            </div>
+
+            <div class="sidebar-spacer"></div>
+
+            <div class="sidebar-footer">
+                <div class="quick-stats">
+                    <h4>This Month</h4>
+                    <div class="stat-item">
+                        <span class="stat-label">Spent</span>
+                        <span class="stat-value" id="sidebarSpent">0 RSD</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Remaining</span>
+                        <span class="stat-value remaining" id="sidebarRemaining">0 RSD</span>
+                    </div>
+                </div>
+                <div class="sidebar-info">
+                    <p>Version 1.0.0</p>
+                </div>
+
+            </div>
+            <div class="settings-wrap">
+                <div class="settings-card">
+                    <i class="fa-solid fa-gear"></i>
+                    <h3>Settings</h3>
+                </div>
+                <div class="account-chip" id="accountChip">
+                    <img src="/public/avatar-default.svg" alt="Account">
+                </div>
+            </div>
+            
+        </nav>
+    </header>
+
+    <main>
+        <div class="main-container">
+            <div class="expenses-header">
+                <h1>Expenses Management</h1>
+                <button class="btn-add-expense" id="btnAddExpense">
+                    <i class="fa-solid fa-plus"></i> Add New Expense
+                </button>
+            </div>
+
+            <!-- Quick Shortcuts (below title) -->
+            <div class="quick-shortcuts" id="quickShortcuts" aria-label="Quick shortcuts"></div>
+
+            <div class="expenses-content">
+                <!-- Sticky scope: filters + list -->
+                <div class="expenses-main">
+                    <div class="filters-section">
+                    <div class="filter-group">
+                        <label>Filter by Category:</label>
+                        <select id="categoryFilter">
+                            <option value="all">All Categories</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Sort by:</label>
+                        <select id="sortBy">
+                            <option value="date-desc">Date (Newest First)</option>
+                            <option value="date-asc">Date (Oldest First)</option>
+                            <option value="amount-desc">Amount (High to Low)</option>
+                            <option value="amount-asc">Amount (Low to High)</option>
+                        </select>
+                    </div>
+                    <div class="filter-group">
+                        <label>Search:</label>
+                        <input type="text" id="searchExpenses" placeholder="Search expenses...">
+                    </div>
+                    </div>
+
+                    <div class="expenses-list" id="expensesList">
+                        <!-- Expenses will be populated by JavaScript -->
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- KPI Summary Box: title + content in the same container -->
+        <section class="kpi-bar" id="kpiBar" aria-label="Monthly Summary">
+            <h2 class="kpi-title" id="kpiTitle">
+                <span class="kpi-title-icon"><i class="fa-solid fa-gauge-high"></i></span>
+                KPI Summary
+            </h2>
+            
+            <!-- Budget Progress -->
+            <div class="kpi-budget-progress">
+                <div class="budget-header">
+                    <h3><i class="fa-solid fa-chart-simple"></i> Monthly Budget</h3>
+                    <span class="budget-amount" id="budgetAmount">0 / 100,000 RSD</span>
+                </div>
+                <div class="progress-bar-wrapper">
+                    <div class="progress-bar" id="progressBar">
+                        <div class="progress-fill" id="progressFill"></div>
+                    </div>
+                </div>
+                <div class="budget-status" id="budgetStatus"></div>
+            </div>
+
+            <!-- Analytics Grid -->
+            <div class="kpi-analytics-grid">
+                <!-- Pie Chart -->
+                <div class="kpi-chart-card">
+                    <h3><i class="fa-solid fa-chart-pie"></i> Spending by Category</h3>
+                    <div class="chart-container">
+                        <canvas id="categoryChart"></canvas>
+                    </div>
+                </div>
+
+                <!-- Insights -->
+                <div class="kpi-insights-card">
+                    <h3><i class="fa-solid fa-lightbulb"></i> Smart Insights</h3>
+                    <div class="insights-list" id="insightsList">
+                        <!-- Populated by JS -->
+                    </div>
+                </div>
+            </div>
+
+            <!-- KPI Metrics Cards (populated by JS) -->
+            <div class="kpi-metrics" id="kpiMetrics"></div>
+        </section>
+
+        <!-- Export/Import Section -->
+        <div class="data-actions">
+            <button class="btn-export" id="btnExportCSV">
+                <i class="fa-solid fa-download"></i> Export CSV
+            </button>
+            <button class="btn-import" id="btnImportCSV">
+                <i class="fa-solid fa-upload"></i> Import CSV
+            </button>
+            <input type="file" id="fileInput" accept=".csv" style="display: none;">
+        </div>
+        
+        <!-- Add/Edit Expense Modal -->
+        <div class="modal" id="expenseModal">
+            <div class="modal-content">
+                <span class="close">&times;</span>
+                <h2 id="modalTitle">Add New Expense</h2>
+                <form id="expenseForm">
+                    <div class="form-group">
+                        <label for="expenseAmount">Amount (RSD):</label>
+                        <input type="number" id="expenseAmount" required min="0" step="0.01">
+                    </div>
+                    <div class="form-group">
+                        <label for="expenseCategory">Category:</label>
+                        <select id="expenseCategory" required>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="expenseDescription">Description:</label>
+                        <input type="text" id="expenseDescription" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="expenseDate">Date:</label>
+                        <input type="date" id="expenseDate" required>
+                    </div>
+                    <div class="form-group">
+                        <label for="expenseTags">Tags (optional, comma-separated):</label>
+                        <input type="text" id="expenseTags" placeholder="e.g. urgent, work">
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn-submit">Save Expense</button>
+                        <button type="button" class="btn-cancel" id="btnCancel">Cancel</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer class="dashboard-footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>Money Tracker</h4>
+                <p>Smart expense tracking for better financial management</p>
+            </div>
+            <div class="footer-section">
+                <h4>Features</h4>
+                <ul>
+                    <li><a href="#mainChartSection" class="footer-link">📊 Budget Tracking</a></li>
+                    <li><a href="#tagsCard" class="footer-link">🏷️ Tag Management</a></li>
+                    <li><a href="#recurringCard" class="footer-link">🔄 Recurring Expenses</a></li>
+                    <li><a href="#smartSuggestions" class="footer-link">🤖 Smart Suggestions</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Info</h4>
+                <p>Version 1.0.0</p>
+                <p style="font-size: 12px; color: #94a3b8; margin-top: 8px;">
+                    © 2026 Money Tracker. All rights reserved.
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/public/auth-guard.js"></script>
+    <script src="/public/account-avatar.js"></script>
+    <script src="script.js"></script>
+    <script src="analytics.js"></script>
+</body>
+</html>

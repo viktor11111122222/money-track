@@ -9,6 +9,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
 </head>
 <body>
     <header>
@@ -20,24 +21,59 @@
 
             <hr>
 
-            <div class="side-card">
+            <div class="side-card active">
                 <i class="fa-solid fa-house"></i>
                 <h3>Dashboard</h3>
             </div>
 
-            <div class="side-card">
+            <div class="side-card" onclick="window.location.href='../expenses/index.html'">
                 <i class="fa-solid fa-money-check-dollar"></i>
                 <h3>Expenses</h3>
             </div>
 
-            <div class="side-card">
-                <i class="fa-solid fa-gear"></i>
-                <h3>Settings</h3>
+            <div class="side-card" id="spendingsBtn">
+                <i class="fa-solid fa-chart-line"></i>
+                <h3>Spendings</h3>
             </div>
+
+            <div class="side-card" id="familyBudgetBtn" onclick="window.location.href='../shared/index.html'">
+                <i class="fa-solid fa-people-group"></i>
+                <h3>Family Buget</h3>
+            </div>
+
+            <div class="sidebar-spacer"></div>
+
+            <div class="sidebar-footer">
+                <div class="quick-stats">
+                    <h4>This Month</h4>
+                    <div class="stat-item">
+                        <span class="stat-label">Spent</span>
+                        <span class="stat-value" id="sidebarSpent">0 RSD</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Remaining</span>
+                        <span class="stat-value remaining" id="sidebarRemaining">0 RSD</span>
+                    </div>
+                </div>
+                <div class="sidebar-info">
+                    <p>Version 1.0.0</p>
+                </div>
+
+            </div>
+            <div class="settings-wrap">
+                <div class="settings-card">
+                    <i class="fa-solid fa-gear"></i>
+                    <h3>Settings</h3>
+                </div>
+                <div class="account-chip" id="accountChip">
+                    <img src="/public/avatar-default.svg" alt="Account">
+                </div>
+            </div>
+            
         </nav>
     </header>
 
-    <main>
+    <main>  
         <div class="main-container">
             <div class="main-left">
                 <div class="top-row">
@@ -52,16 +88,33 @@
                             <p class="amount">15,000 RSD</p>
                         </div>
                         <div class="card">
-                            <h4>Savings</h4>
+                            <h4>Balance</h4>
                             <p class="amount">4,766 RSD</p>
                         </div>
                     </div>
                 </div>
 
-                <div class="chart-card"> <!-- chart placeholder -->
+                <div class="chart-card" id="mainChartSection">
                     <h3>Spending this month</h3>
-                    <div class="chart-placeholder">Chart</div>
+                    <div class="chart-container">
+                        <canvas id="spendingChart"></canvas>
+                    </div>
+                    <div class="chart-warning" id="chartWarning" aria-live="polite"></div>
                 </div>
+
+                <section class="insights-card">
+                    <h3>Insights</h3>
+                    <ul id="insightsList" class="insights-list"></ul>
+                </section>
+
+                <section class="tags-card" id="tagsCard">
+                    <h3>🏷️ Transaction Tags</h3>
+                    <div class="tags-filter">
+                        <button class="tag-filter-btn active" data-tag="all">📋 All</button>
+                        <div id="popularTags"></div>
+                    </div>
+                    <div id="tagInsight" class="tag-insight"></div>
+                </section>
 
                 <section class="transactions">
                     <h3>Recent Transactions</h3>
@@ -70,6 +123,27 @@
                         <li><span class="tx-name">Salary</span><span class="tx-amount income">+50,000 RSD</span></li>
                         <li><span class="tx-name">Transport</span><span class="tx-amount">-320 RSD</span></li>
                     </ul>
+                </section>
+
+                <section class="category-limits-compact">
+                    <h3>Category Limits</h3>
+                    <div class="limits-list">
+                         Dinamički će se popuniti sa JS
+                    </div>
+                </section>
+
+                <section class="chart-card">
+                    <h3>Daily Spending (This Month)</h3>
+                    <div class="chart-container">
+                        <canvas id="dailyChart"></canvas>
+                    </div>
+                </section>
+
+                <section class="chart-fix chart-card">
+                    <h3>Comparison: This vs Last Month</h3>
+                    <div class="chart-container">
+                        <canvas id="comparisonChart"></canvas>
+                    </div>
                 </section>
             </div>
 
@@ -81,14 +155,14 @@
                     <div class="dropdown">
                         <!-- <div class="drop-btn-container"> -->
 
-                        <div class="form-row">
-                            <input type="number" placeholder="Amount">
-                        </div>
-
-                        <button class="dropdown-btn" id="dropdownBtn">
-                            <span id="selectedCategory">Category</span>
-                            <span class="arrow" id="arrow">▼</span>
-                        </button>
+                            <!-- Amount i Category u istom redu -->
+                            <div class="form-row">
+                                <input type="number" placeholder="Amount" style="flex: 1;">
+                                <button class="dropdown-btn" id="dropdownBtn">
+                                    <span id="selectedCategory">Category</span>
+                                    <span class="arrow" id="arrow">▼</span>
+                                </button>
+                            </div>
 
                         <div class="dropdown-menu" id="dropdownMenu">
                             <div class="option">Food</div>
@@ -98,6 +172,11 @@
                             <div class="option add-option" data-add="true">+ Add category</div>
                         </div>
 
+                            <!-- Tags ispod -->
+                            <div class="form-row" style="margin-top: 8px;">
+                                <input type="text" id="tagsInput" placeholder="Tags (npr: #kafa, #posao, #putovanje)">
+                            </div>
+
                         </div>
 
                         
@@ -105,11 +184,161 @@
 
                     <button class="primary">Add Expense</button>
                 </section>
+
+                <section class="add-savings">
+                    <h2>Add Savings</h2>
+                    <div class="form-row">
+                        <input type="number" id="savingsInput" placeholder="Amount">
+                    </div>
+                    <button class="primary primary-success">Add Money</button>
+                </section>
+
+                
+
+                <section class="budget-progress" id="budgetProgress">
+                    <h3>Budget Progress</h3>
+                    <div class="progress-list" id="progressList"></div>
+                </section>
+
+                <section class="reset-section">
+                    <button class="primary primary-danger" id="resetBtn">🔄 Reset All</button>
+                </section>
+
+                <section class="spending-by-category">
+                    <h3>Spending by Category</h3>
+                    <div class="chart-stats">
+                        <!-- Dinamički će se popuniti sa JS -->
+                    </div>
+                </section>
+
+                <section class="calendar-card">
+                    <div class="calendar-header">
+                        <div class="calendar-title-wrap">
+                            <h3>Spending Calendar</h3>
+                            <span class="calendar-date" id="calendarDateLabel"></span>
+                        </div>
+                        <div class="calendar-header-actions">
+                            <button class="calendar-open-month" id="openMonthSpendings">Open Month</button>
+                        </div>
+                    </div>
+                    <div class="calendar-grid" id="calendarGrid"></div>
+                    <div class="calendar-tooltip" id="calendarTooltip"></div>
+                </section>
+
+                <section class="top-spending-days-card">
+                    <h3>Top Spending Days</h3>
+                    <div class="top-days-list" id="topDaysList"></div>
+                </section>
+
+                <section class="recurring-expenses-card" id="recurringCard">
+                    <h3>🔄 Recurring Expenses</h3>
+                    <p class="recurring-description">Automatski se dodaju svakog meseca</p>
+                    <div class="recurring-add-form">
+                        <input type="text" id="recurringName" placeholder="Naziv (Rent, Netflix, Internet...)">
+                        <input type="number" id="recurringAmount" placeholder="Iznos (RSD)">
+                        <button class="primary" id="addRecurringBtn">
+                            <i class="fa-solid fa-plus"></i> Dodaj Recurring
+                        </button>
+                    </div>
+                    <div class="recurring-list" id="recurringList"></div>
+                    <div class="recurring-insight" id="recurringInsight"></div>
+                    <button class="recurring-manual-add" id="manualAddRecurringBtn" style="display:none;">
+                        <i class="fa-solid fa-rotate"></i> Dodaj sve recurring za novi mesec
+                    </button>
+                </section>
+
+                <section class="smart-suggestions-card" id="smartSuggestions">
+                    <h3>🤖 Smart Suggestions</h3>
+                    <p class="smart-description">We recommend:</p>
+                    <div class="suggestions-list" id="suggestionsList">
+                        <div class="suggestion-placeholder">Analyzing your spending...</div>
+                    </div>
+                </section>
             </aside>
         </div>
     </main>
-    <div class="duzina"></div>
+    <!-- <div class="duzina"></div> -->
 
+    <div class="modal-overlay" id="spendingsModal" aria-hidden="true" role="dialog" aria-modal="true">
+        <div class="modal-content" role="document">
+            <div class="modal-header">
+                <h2>Spendings</h2>
+                <button class="modal-close" id="spendingsClose" aria-label="Close">✕</button>
+            </div>
+            <div class="modal-body">
+                <div class="spendings-summary">
+                    <div class="summary-box">
+                        <span>Total</span>
+                        <strong id="spendingsTotal">0 RSD</strong>
+                    </div>
+                    <div class="summary-box">
+                        <span>Top Category</span>
+                        <strong id="spendingsTopCategory">—</strong>
+                    </div>
+                    <div class="summary-box">
+                        <span>Transactions</span>
+                        <strong id="spendingsCount">0</strong>
+                    </div>
+                </div>
+
+                <div class="spendings-filters simple">
+                    <div class="filter-group">
+                        <label for="spendingsFrom">From</label>
+                        <input type="date" id="spendingsFrom">
+                    </div>
+                    <div class="filter-group">
+                        <label for="spendingsTo">To</label>
+                        <input type="date" id="spendingsTo">
+                    </div>
+                    <div class="filter-group">
+                        <label for="spendingsCategory">Category</label>
+                        <select id="spendingsCategory">
+                            <option value="all">All</option>
+                        </select>
+                    </div>
+                </div>
+
+                <div class="spendings-content simple">
+                    <section class="spendings-card">
+                        <h3>Categories</h3>
+                        <div class="spendings-categories" id="spendingsCategories"></div>
+                    </section>
+                    <section class="spendings-card">
+                        <h3>Latest Transactions</h3>
+                        <ul class="spendings-transactions" id="spendingsTransactions"></ul>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <footer class="dashboard-footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>Money Tracker</h4>
+                <p>Smart expense tracking for better financial management</p>
+            </div>
+            <div class="footer-section">
+                <h4>Features</h4>
+                <ul>
+                    <li><a href="#mainChartSection" class="footer-link">📊 Budget Tracking</a></li>
+                    <li><a href="#tagsCard" class="footer-link">🏷️ Tag Management</a></li>
+                    <li><a href="#recurringCard" class="footer-link">🔄 Recurring Expenses</a></li>
+                    <li><a href="#smartSuggestions" class="footer-link">🤖 Smart Suggestions</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Info</h4>
+                <p>Version 1.0.0</p>
+                <p style="font-size: 12px; color: #94a3b8; margin-top: 8px;">
+                    © 2026 Money Tracker. All rights reserved.
+                </p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="/public/auth-guard.js"></script>
+    <script src="/public/account-avatar.js"></script>
     <script src="script.js"></script>
 </body>
 </html>

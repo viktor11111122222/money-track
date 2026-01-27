@@ -1,0 +1,267 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Family Buget</title>
+    <link rel="stylesheet" href="../dashboard/style.css">
+    <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+</head>
+<body>
+    <header>
+        <nav class="sidebar">
+            <div class="top-title-wrap">
+                <img src="/public/Ikona novčanika u jednostavnom dizajnu.png" alt="logo">
+                <h2>Expense Tracker</h2>
+            </div>
+
+            <hr>
+
+            <div class="side-card" onclick="window.location.href='../dashboard/index.html'">
+                <i class="fa-solid fa-house"></i>
+                <h3>Dashboard</h3>
+            </div>
+
+            <div class="side-card" onclick="window.location.href='../expenses/index.html'">
+                <i class="fa-solid fa-money-check-dollar"></i>
+                <h3>Expenses</h3>
+            </div>
+
+            <div class="side-card" onclick="window.location.href='../dashboard/index.html'">
+                <i class="fa-solid fa-chart-line"></i>
+                <h3>Spendings</h3>
+            </div>
+
+            <div class="side-card active" id="familyBudgetBtn">
+                <i class="fa-solid fa-people-group"></i>
+                <h3>Family Buget</h3>
+            </div>
+
+            <div class="sidebar-spacer"></div>
+
+            <div class="sidebar-footer">
+                <div class="quick-stats">
+                    <h4>This Month</h4>
+                    <div class="stat-item">
+                        <span class="stat-label">Spent</span>
+                        <span class="stat-value" id="sidebarSpent">0 RSD</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label">Remaining</span>
+                        <span class="stat-value remaining" id="sidebarRemaining">0 RSD</span>
+                    </div>
+                </div>
+                <div class="sidebar-info">
+                    <p>Version 1.0.0</p>
+                </div>
+            </div>
+
+            <div class="settings-wrap">
+                <div class="settings-card">
+                    <i class="fa-solid fa-gear"></i>
+                    <h3>Settings</h3>
+                </div>
+                <div class="account-chip" id="accountChip">
+                    <img src="/public/avatar-default.svg" alt="Account">
+                </div>
+            </div>
+        </nav>
+    </header>
+
+    <main>
+        <section class="auth-card" id="authCard">
+            <div class="auth-header">
+                <h1>Welcome back</h1>
+                <p>Log in to manage shared budgets.</p>
+            </div>
+            <div class="auth-toggle">
+                <button type="button" class="auth-tab active" id="showLogin">Login</button>
+                <button type="button" class="auth-tab" id="showRegister">Create account</button>
+            </div>
+
+            <form id="authLoginForm" class="auth-form">
+                <div class="form-row">
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" required>
+                </div>
+                <div class="form-row">
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" required>
+                </div>
+                <button class="primary" type="submit">Login</button>
+            </form>
+
+            <form id="authRegisterForm" class="auth-form is-hidden">
+                <div class="form-row">
+                    <label for="registerName">Full name</label>
+                    <input type="text" id="registerName" required>
+                </div>
+                <div class="form-row">
+                    <label for="registerEmail">Email</label>
+                    <input type="email" id="registerEmail" required>
+                </div>
+                <div class="form-row">
+                    <label for="registerPassword">Password</label>
+                    <input type="password" id="registerPassword" required>
+                </div>
+                <button class="primary" type="submit">Create account</button>
+            </form>
+
+            <div class="form-error" id="authError" role="alert"></div>
+        </section>
+
+        <div class="shared-container" id="sharedApp">
+            <div class="shared-hero">
+                <div>
+                    <span class="shared-kicker">Shared / Family Budgets</span>
+                    <h1>Family Buget</h1>
+                    <p>Invite people, create shared wallets, and split expenses in one place.</p>
+                </div>
+                <div class="shared-hero-actions">
+                    <button class="primary" id="openInviteHero">Invite</button>
+                    <button class="ghost" id="openWalletHero">Create Wallet</button>
+                </div>
+            </div>
+
+            <div class="shared-grid">
+                <article class="shared-card">
+                    <div class="shared-card-icon"><i class="fa-solid fa-user-plus"></i></div>
+                    <h2>Invite People</h2>
+                    <p>Add family members and set roles for visibility and access.</p>
+                    <button class="primary" id="openInviteCard">Send Invite</button>
+                </article>
+                <article class="shared-card">
+                    <div class="shared-card-icon"><i class="fa-solid fa-wallet"></i></div>
+                    <h2>Wallets</h2>
+                    <p>Track multiple shared wallets with clear monthly goals.</p>
+                    <button class="primary" id="openWalletCard">New Wallet</button>
+                </article>
+                <article class="shared-card">
+                    <div class="shared-card-icon"><i class="fa-solid fa-scale-balanced"></i></div>
+                    <h2>Split Expenses</h2>
+                    <p>Split bills evenly or by custom ratios per person.</p>
+                    <button class="primary" id="openSplitCard">Split Bill</button>
+                </article>
+            </div>
+
+            <section class="shared-section" id="invitesSection">
+                <div class="section-header">
+                    <h2>Invites</h2>
+                    <button class="ghost" id="openInviteSection">New Invite</button>
+                </div>
+                <div class="shared-list" id="invitesList"></div>
+            </section>
+
+            <section class="shared-section" id="friendsSection">
+                <div class="section-header">
+                    <h2>Friends</h2>
+                    <span class="shared-hint">Accepted invites appear here.</span>
+                </div>
+                <div class="shared-list" id="friendsList"></div>
+            </section>
+
+            <section class="shared-section" id="walletsSection">
+                <div class="section-header">
+                    <h2>Wallets</h2>
+                    <button class="ghost" id="openWalletSection">New Wallet</button>
+                </div>
+                <div class="shared-list" id="walletsList"></div>
+            </section>
+
+            <section class="shared-section" id="splitsSection">
+                <div class="section-header">
+                    <h2>Split Expenses</h2>
+                    <button class="ghost" id="openSplitSection">New Split</button>
+                </div>
+                <div class="shared-list" id="splitsList"></div>
+            </section>
+
+            <div class="shared-routes">
+                <span class="chip">Route: /shared</span>
+                <span class="chip">Route: /teams</span>
+            </div>
+        </div>
+    </main>
+
+    <div class="modal-overlay" id="sharedModal" aria-hidden="true">
+        <div class="modal-card" role="dialog" aria-modal="true">
+            <div class="modal-header">
+                <h3 id="modalTitle">New Item</h3>
+                <button class="modal-close" id="closeSharedModal" aria-label="Close">✕</button>
+            </div>
+            <form id="sharedForm" class="modal-form">
+                <div class="form-row">
+                    <label for="sharedName">Name
+                        <span class="label-info" data-tooltip="Name of the wallet you are creating.">i</span>
+                    </label>
+                    <input type="text" id="sharedName" required>
+                </div>
+                <div class="form-row" id="sharedEmailRow">
+                    <label for="sharedEmail">Email
+                        <span class="label-info" data-tooltip="Invite email for the person you want to add.">i</span>
+                    </label>
+                    <input type="email" id="sharedEmail" placeholder="name@email.com">
+                    <div class="form-error" id="sharedEmailError" role="alert"></div>
+                </div>
+                <div class="form-row" id="sharedAmountRow">
+                    <label for="sharedAmount">Amount (RSD)
+                        <span class="label-info" data-tooltip="Starting balance or initial amount for the wallet.">i</span>
+                    </label>
+                    <input type="number" id="sharedAmount" min="0" step="0.01">
+                </div>
+                <div class="form-row" id="sharedGoalRow">
+                    <label for="sharedGoalAmount">Goal (RSD)
+                        <span class="label-info" data-tooltip="Target amount you want to reach for this wallet.">i</span>
+                    </label>
+                    <input type="number" id="sharedGoalAmount" min="0" step="0.01" placeholder="e.g. 60000">
+                </div>
+                <div class="form-row" id="sharedCapRow">
+                    <label for="sharedCapAmount">Monthly cap (RSD)
+                        <span class="label-info" data-tooltip="Maximum allowed spending for this wallet per month.">i</span>
+                    </label>
+                    <input type="number" id="sharedCapAmount" min="0" step="0.01" placeholder="e.g. 45000">
+                </div>
+                <div class="form-row" id="sharedDeadlineRow">
+                    <label for="sharedDeadline">Deadline
+                        <span class="label-info" data-tooltip="Optional target date for reaching the goal.">i</span>
+                    </label>
+                    <input type="date" id="sharedDeadline">
+                </div>
+                <div class="form-row" id="sharedMembersRow">
+                    <label for="sharedMembers">Members (comma separated)
+                        <span class="label-info" data-tooltip="People who contribute to or track this wallet.">i</span>
+                    </label>
+                    <input type="text" id="sharedMembers" placeholder="Ana, Marko, Ivana">
+                    <div class="member-picker" id="walletMemberPicker"></div>
+                </div>
+                <div class="form-row" id="sharedCategoriesRow">
+                    <label for="sharedCategories">Categories (comma separated)
+                        <span class="label-info" data-tooltip="Spending categories you want to track in this wallet.">i</span>
+                    </label>
+                    <div class="input-with-addon">
+                        <input type="text" id="sharedCategories" placeholder="Food, Travel, Utilities">
+                        <button type="button" class="input-addon" id="sharedCategoriesAll" aria-label="Use all categories">All</button>
+                    </div>
+                </div>
+                <div class="form-row" id="sharedNotesRow">
+                    <label for="sharedNotes">Notes
+                        <span class="label-info" data-tooltip="Short description or context for this wallet.">i</span>
+                    </label>
+                    <input type="text" id="sharedNotes" placeholder="Optional">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="ghost" id="cancelSharedModal">Cancel</button>
+                    <button type="submit" class="primary" id="submitSharedModal">Save</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+    <script src="/public/account-avatar.js"></script>
+</body>
+</html>
