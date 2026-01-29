@@ -651,20 +651,26 @@ function renderFriends() {
   
   // Add event listeners for nickname inputs
   ui.friendsList.querySelectorAll('.friend-nickname').forEach(input => {
-    input.addEventListener('change', (e) => {
+    input.addEventListener('blur', (e) => {
       const friendId = input.dataset.id;
       const nickname = input.value.trim();
+      const friend = sharedData.friends.find(f => String(f.id) === String(friendId));
+      
+      // Only update if nickname actually changed
+      if (!friend || friend.nickname === (nickname || null)) {
+        return;
+      }
       
       apiFetch(`/friends/${friendId}`, {
         method: 'PATCH',
         body: JSON.stringify({ nickname: nickname || null })
       }).then(() => {
-        const friend = sharedData.friends.find(f => String(f.id) === String(friendId));
         if (friend) {
           friend.nickname = nickname || null;
-          renderFriends();
+          // Only re-render splits, not friends list to avoid losing focus
           renderAllSplits();
           renderSplits();
+          showNotification('Nickname updated', 'success');
         }
       }).catch((error) => {
         showNotification('Failed to update nickname: ' + (error.message || 'Unknown error'), 'error');
