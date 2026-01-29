@@ -4,6 +4,7 @@
     "/^cd /Users/vica/Desktop/money-track-1/backend && node server\\.js$/": {
       "approve": true,
       "matchCommandLine": true
-    }
+    },
+    "pkill": true
   }
 }

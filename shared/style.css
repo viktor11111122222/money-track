@@ -1054,58 +1054,54 @@
     color: #94a3b8;
 }
 
+.friend-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    width: 100%;
+    gap: 12px;
+}
+
+.friend-actions {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.friend-display-name {
+    margin: 0;
+    font-size: 16px;
+    color: #0f1724;
+}
+
+.friend-real-name {
+    margin: 4px 0 0 0;
+    font-size: 12px;
+    color: #94a3b8;
+    font-style: italic;
+}
+
+.friend-edit {
+    background: transparent;
+    border: 1px solid #e2e8f0;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 6px 10px;
+    border-radius: 8px;
+    opacity: 0.7;
+    transition: all 0.2s ease;
+}
+
+.friend-edit:hover {
+    opacity: 1;
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+}
+
 .friend-controls {
     display: flex;
     gap: 12px;
     flex-wrap: wrap;
-}
-
-.friend-nickname-group {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    font-size: 12px;
-    color: #64748b;
-    min-width: 140px;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
-    padding: 10px 12px;
-    border-radius: 12px;
-    box-shadow: 0 4px 12px rgba(15, 23, 36, 0.06);
-}
-
-.friend-nickname-group::before {
-    content: "Nadimak";
-    display: block;
-    font-size: 11px;
-    color: #94a3b8;
-    font-weight: 600;
-    margin-bottom: 4px;
-}
-
-.friend-nickname {
-    border: 1px solid #dbeafe;
-    border-radius: 10px;
-    padding: 8px 10px;
-    font-size: 13px;
-    font-family: inherit;
-    background: #f8fafc;
-    transition: border-color 0.2s ease, box-shadow 0.2s ease;
-}
-
-.friend-nickname:focus {
-    outline: none;
-    border-color: #3b82f6;
-    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
-    background: #ffffff;
-}
-
-.friend-original-name {
-    display: block;
-    font-size: 12px;
-    color: #94a3b8;
-    margin-top: 2px;
-    font-style: italic;
 }
 
 .friend-controls label {
@@ -1149,11 +1145,29 @@
     padding: 4px;
     opacity: 0.6;
     transition: opacity 0.2s ease;
-    align-self: center;
 }
 
 .friend-delete:hover {
     opacity: 1;
+}
+
+.prompt-input {
+    width: 100%;
+    padding: 10px 12px;
+    border: 1px solid #e2e8f0;
+    border-radius: 10px;
+    font-size: 14px;
+    font-family: inherit;
+    background: #f8fafc;
+    margin-bottom: 16px;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.prompt-input:focus {
+    outline: none;
+    border-color: #3b82f6;
+    box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
+    background: #ffffff;
 }
 /* Split Expenses Styles */
 #splitMembersBreakdownRow {

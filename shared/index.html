@@ -183,12 +183,33 @@
                 <div class="shared-list" id="splitsList"></div>
             </section>
 
-            <div class="shared-routes">
-                <span class="chip">Route: /shared</span>
-                <span class="chip">Route: /teams</span>
-            </div>
         </div>
     </main>
+
+    <footer class="dashboard-footer">
+        <div class="footer-content">
+            <div class="footer-section">
+                <h4>Money Tracker</h4>
+                <p>Smart expense tracking for better financial management</p>
+            </div>
+            <div class="footer-section">
+                <h4>Features</h4>
+                <ul>
+                    <li><a href="#mainChartSection" class="footer-link">📊 Budget Tracking</a></li>
+                    <li><a href="#tagsCard" class="footer-link">🏷️ Tag Management</a></li>
+                    <li><a href="#recurringCard" class="footer-link">🔄 Recurring Expenses</a></li>
+                    <li><a href="#smartSuggestions" class="footer-link">🤖 Smart Suggestions</a></li>
+                </ul>
+            </div>
+            <div class="footer-section">
+                <h4>Info</h4>
+                <p>Version 1.0.0</p>
+                <p style="font-size: 12px; color: #94a3b8; margin-top: 8px;">
+                    © 2026 Money Tracker. All rights reserved.
+                </p>
+            </div>
+        </div>
+    </footer>
 
     <div class="modal-overlay" id="sharedModal" aria-hidden="true">
         <div class="modal-card" role="dialog" aria-modal="true">
@@ -291,6 +312,23 @@
         </div>
     </div>
 
+    <div class="modal-overlay confirm-overlay" id="promptModal" aria-hidden="true">
+        <div class="confirm-card" role="dialog" aria-modal="true" aria-labelledby="promptTitle">
+            <div class="confirm-header">
+                <h3 id="promptTitle">Input</h3>
+                <button class="modal-close" id="promptClose" aria-label="Close">✕</button>
+            </div>
+            <p class="confirm-text" id="promptText">Enter value:</p>
+            <div class="form-row">
+                <input type="text" id="promptInput" class="prompt-input" />
+            </div>
+            <div class="confirm-actions">
+                <button type="button" class="ghost" id="promptCancel">Cancel</button>
+                <button type="button" class="primary" id="promptOk">OK</button>
+            </div>
+        </div>
+    </div>
+
     <div class="modal-overlay" id="allSplitsModal" aria-hidden="true">
         <div class="modal-card" role="dialog" aria-modal="true">
             <div class="modal-header">
@@ -303,7 +341,8 @@
 
     <div id="notificationContainer"></div>
 
-    <script src="script.js?v=20260129"></script>
+    <script src="/public/auth-guard.js"></script>
     <script src="/public/account-avatar.js"></script>
+    <script src="script.js?v=20260129"></script>
 </body>
 </html>

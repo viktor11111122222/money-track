@@ -149,6 +149,16 @@ const confirmUi = {
   close: document.getElementById('confirmClose')
 };
 
+const promptUi = {
+  modal: document.getElementById('promptModal'),
+  title: document.getElementById('promptTitle'),
+  text: document.getElementById('promptText'),
+  input: document.getElementById('promptInput'),
+  ok: document.getElementById('promptOk'),
+  cancel: document.getElementById('promptCancel'),
+  close: document.getElementById('promptClose')
+};
+
 let currentType = 'invite';
 let splitMembers = {}; // Track split members with their percentages (0-100)
 let splitMemberFriendIds = {}; // Track which members are friends with their IDs
@@ -231,8 +241,8 @@ function renderWalletMemberPicker() {
     return;
   }
   ui.walletMemberPicker.innerHTML = friends.map(friend => {
-    const name = friend.name || friend.email;
-    return `<button type="button" class="member-chip" data-name="${name}">${name}</button>`;
+    const displayName = friend.displayName || friend.name || friend.email;
+    return `<button type="button" class="member-chip" data-name="${displayName}">${displayName}</button>`;
   }).join('');
 }
 
@@ -388,29 +398,25 @@ function setModalMode(type, wallet = null) {
       ui.sharedName.value = split.name || '';
       ui.sharedAmount.value = split.amount ?? '';
       
-      // Load members and percentages, map original names to display names (nicknames)
-      splitMembers = {};
+      // Load members and percentages
+      // Try to use memberPercentages first (new format), fall back to calculating from memberAmounts
       if (split.memberPercentages) {
-        Object.entries(split.memberPercentages).forEach(([member, percentage]) => {
-          const displayMember = getDisplayNameForMember(member);
-          splitMembers[displayMember] = percentage;
-        });
+        splitMembers = { ...split.memberPercentages };
       } else if (split.memberAmounts) {
         // Calculate percentages from amounts
         const totalAmount = split.amount || 0;
+        splitMembers = {};
         Object.entries(split.memberAmounts).forEach(([member, amount]) => {
-          const displayMember = getDisplayNameForMember(member);
-          splitMembers[displayMember] = totalAmount > 0 ? (Number(amount) / totalAmount) * 100 : 0;
+          splitMembers[member] = totalAmount > 0 ? (Number(amount) / totalAmount) * 100 : 0;
         });
       }
       
-      // Build friend IDs map with display names
+      // Build friend IDs map
       splitMemberFriendIds = {};
       if (split.friendIds && Array.isArray(split.friendIds)) {
         split.members.forEach((member, idx) => {
-          const displayMember = getDisplayNameForMember(member);
           if (split.friendIds[idx]) {
-            splitMemberFriendIds[displayMember] = split.friendIds[idx];
+            splitMemberFriendIds[member] = split.friendIds[idx];
           }
         });
       }
@@ -536,6 +542,68 @@ function openConfirm({ title = 'Confirm action', text = 'Are you sure?', okText 
   });
 }
 
+function openPrompt({ title = 'Input', text = 'Enter value:', defaultValue = '', placeholder = '' } = {}) {
+  return new Promise((resolve) => {
+    if (!promptUi.modal || !promptUi.input) {
+      resolve(null);
+      return;
+    }
+    if (promptUi.title) promptUi.title.textContent = title;
+    if (promptUi.text) promptUi.text.textContent = text;
+    promptUi.input.value = defaultValue;
+    promptUi.input.placeholder = placeholder;
+
+    const cleanup = () => {
+      promptUi.modal.classList.remove('active');
+      promptUi.modal.setAttribute('aria-hidden', 'true');
+      promptUi.ok?.removeEventListener('click', onOk);
+      promptUi.cancel?.removeEventListener('click', onCancel);
+      promptUi.close?.removeEventListener('click', onCancel);
+      promptUi.modal?.removeEventListener('click', onOverlay);
+      promptUi.input?.removeEventListener('keydown', onKeyDown);
+      document.body.style.overflow = '';
+    };
+
+    const onOk = () => {
+      const value = promptUi.input?.value || '';
+      cleanup();
+      resolve(value);
+    };
+
+    const onCancel = () => {
+      cleanup();
+      resolve(null);
+    };
+
+    const onKeyDown = (event) => {
+      if (event.key === 'Enter') {
+        event.preventDefault();
+        onOk();
+      } else if (event.key === 'Escape') {
+        onCancel();
+      }
+    };
+
+    const onOverlay = (event) => {
+      if (event.target === promptUi.modal) onCancel();
+    };
+
+    promptUi.ok?.addEventListener('click', onOk);
+    promptUi.cancel?.addEventListener('click', onCancel);
+    promptUi.close?.addEventListener('click', onCancel);
+    promptUi.modal?.addEventListener('click', onOverlay);
+    promptUi.input?.addEventListener('keydown', onKeyDown);
+
+    promptUi.modal.classList.add('active');
+    promptUi.modal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+    setTimeout(() => {
+      promptUi.input?.focus();
+      promptUi.input?.select();
+    }, 100);
+  });
+}
+
 function renderEmpty(container, text) {
   container.innerHTML = `<div class="shared-empty">${text}</div>`;
 }
@@ -587,36 +655,6 @@ function renderInvites() {
   }).join('');
 }
 
-function getFriendDisplayName(friend) {
-  return friend.nickname || friend.name || friend.email;
-}
-
-function getFriendDisplayNameById(friendId) {
-  if (!friendId) return null;
-  const friend = sharedData.friends.find(f => String(f.id) === String(friendId));
-  return friend ? getFriendDisplayName(friend) : null;
-}
-
-function getDisplayNameForMember(memberName) {
-  // Try to find by nickname first, then by name, then return original
-  const friend = sharedData.friends.find(f => {
-    const displayName = getFriendDisplayName(f);
-    return displayName === memberName || f.name === memberName;
-  });
-  
-  if (friend) {
-    return getFriendDisplayName(friend);
-  }
-  
-  // If it's current user, return as is
-  const currentUserName = currentUser ? (currentUser.name || currentUser.email) : '';
-  if (memberName === currentUserName) {
-    return memberName;
-  }
-  
-  return memberName;
-}
-
 function renderFriends() {
   if (!ui.friendsList) return;
   if (sharedData.friends.length === 0) {
@@ -624,87 +662,64 @@ function renderFriends() {
     return;
   }
   ui.friendsList.innerHTML = sharedData.friends.map(friend => {
-    const displayName = getFriendDisplayName(friend);
-    const originalName = friend.name || friend.email;
-    const showOriginalName = friend.nickname ? `<span class="friend-original-name">${originalName}</span>` : '';
-    
+    const displayName = friend.displayName || friend.name || friend.email;
+    const realName = friend.name || friend.email;
     return `
-      <div class="shared-item friend-item" data-id="${friend.id}" data-name="${displayName}" data-email="${friend.email || ''}">
-        <div>
-          <h4>${displayName}</h4>
-          ${showOriginalName}
-          <p>${friend.email || ''}</p>
+      <div class="shared-item friend-item" data-id="${friend.id}" data-name="${displayName}" data-email="${friend.email || ''}" draggable="true">
+        <div class="friend-header">
+          <div>
+            <h4 class="friend-display-name">${displayName}</h4>
+            ${friend.displayName ? `<p class="friend-real-name">Real name: ${realName}</p>` : ''}
+            <p>${friend.email || ''}</p>
+          </div>
+          <div class="friend-actions">
+            <button type="button" class="friend-edit" data-id="${friend.id}" title="Edit nickname">✏️</button>
+            <button type="button" class="friend-delete" data-id="${friend.id}" title="Delete friend">🗑️</button>
+          </div>
         </div>
         <div class="friend-controls">
-          <div class="friend-nickname-group">
-            <input type="text" class="friend-nickname" data-id="${friend.id}" placeholder="Nadimak..." value="${friend.nickname || ''}">
-          </div>
           <label>
             Limit (RSD)
             <input type="number" class="friend-limit" data-id="${friend.id}" min="0" step="0.01" value="${friend.limitAmount ?? 0}">
           </label>
-          <button type="button" class="friend-delete" data-id="${friend.id}" title="Delete friend">🗑️</button>
         </div>
       </div>
     `;
   }).join('');
-  
-  // Add event listeners for nickname inputs
-  ui.friendsList.querySelectorAll('.friend-nickname').forEach(input => {
-    const friendId = input.dataset.id;
-    const friend = sharedData.friends.find(f => String(f.id) === String(friendId));
-    const friendItem = input.closest('.friend-item');
-    const h4 = friendItem?.querySelector('h4');
-    const originalNameSpan = friendItem?.querySelector('.friend-original-name');
-    const originalName = friend?.name || friend?.email || '';
-    
-    // Update display in real-time as user types
-    input.addEventListener('input', (e) => {
-      const currentNickname = input.value.trim();
-      if (h4) {
-        if (currentNickname) {
-          h4.textContent = currentNickname;
-          // Show or update original name below
-          if (originalNameSpan) {
-            originalNameSpan.textContent = originalName;
-          } else {
-            const newSpan = document.createElement('span');
-            newSpan.className = 'friend-original-name';
-            newSpan.textContent = originalName;
-            h4.insertAdjacentElement('afterend', newSpan);
-          }
-        } else {
-          h4.textContent = originalName;
-          if (originalNameSpan) {
-            originalNameSpan.remove();
-          }
-        }
-      }
-    });
-    
-    // Save to server when user leaves the field
-    input.addEventListener('blur', (e) => {
-      const nickname = input.value.trim();
-      
-      // Only update if nickname actually changed
-      if (!friend || friend.nickname === (nickname || null)) {
-        return;
-      }
-      
+
+  ui.friendsList.querySelectorAll('.friend-edit').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const friendId = btn.dataset.id;
+      if (!friendId) return;
+
+      const friend = sharedData.friends.find(f => String(f.id) === String(friendId));
+      if (!friend) return;
+
+      const currentDisplayName = friend.displayName || '';
+      const realName = friend.name || friend.email;
+
+      const newName = await openPrompt({
+        title: 'Edit Friend Nickname',
+        text: `Set a custom nickname for ${realName}. Leave empty to use their real name.`,
+        defaultValue: currentDisplayName,
+        placeholder: 'Enter nickname...'
+      });
+
+      if (newName === null) return;
+
       apiFetch(`/friends/${friendId}`, {
         method: 'PATCH',
-        body: JSON.stringify({ nickname: nickname || null })
-      }).then(() => {
-        if (friend) {
-          friend.nickname = nickname || null;
-          // Only re-render splits, not friends list to avoid losing focus
-          renderAllSplits();
-          renderSplits();
-          showNotification('Nadimak sačuvan', 'success', 2000);
-        }
-      }).catch((error) => {
-        showNotification('Greška pri čuvanju nadimka: ' + (error.message || 'Unknown error'), 'error');
-      });
+        body: JSON.stringify({ displayName: newName.trim() })
+      })
+        .then(() => {
+          friend.displayName = newName.trim() || null;
+          renderFriends();
+          showNotification('Nickname updated!', 'success');
+        })
+        .catch((error) => {
+          showNotification('Failed to update nickname: ' + (error.message || 'Unknown error'), 'error');
+        });
     });
   });
   
@@ -1098,7 +1113,7 @@ async function removeMemberFromWallet(walletId, memberName) {
 function showSplitMemberPicker() {
   // Create a simple list of friends to add to split
   const availableFriends = sharedData.friends.filter(friend => {
-    const displayName = getFriendDisplayName(friend);
+    const displayName = friend.displayName || friend.name || friend.email;
     return !splitMembers.hasOwnProperty(displayName);
   });
   
@@ -1112,9 +1127,9 @@ function showSplitMemberPicker() {
   pickerContainer.className = 'split-member-picker-menu';
   
   const items = availableFriends.map(friend => {
-    const displayName = getFriendDisplayName(friend);
     const btn = document.createElement('button');
     btn.type = 'button';
+    const displayName = friend.displayName || friend.name || friend.email;
     btn.textContent = displayName;
     btn.className = 'split-picker-item';
     btn.onclick = () => {
@@ -1294,17 +1309,15 @@ function renderSplits() {
     const isOwner = currentUser && split.owner_id === currentUser.id;
     
     const breakdown = split.members.map(member => {
-      const displayMember = getDisplayNameForMember(member);
       const amount = memberAmounts[member] || 0;
       const percentage = memberPercentages[member] || 0;
       const displayAmount = isRecurring ? monthlyAmount || split.amount : amount;
       const monthlyText = isRecurring ? ' RSD/month' : ' RSD';
       const percentText = percentage > 0 ? ` (${Number(percentage).toFixed(1)}%)` : '';
-      return `<div class="breakdown-item">${displayMember}: ${Number(displayAmount).toLocaleString()}${monthlyText}${percentText}</div>`;
+      return `<div class="breakdown-item">${member}: ${Number(displayAmount).toLocaleString()}${monthlyText}${percentText}</div>`;
     }).join('');
     
-    const displayMembers = split.members.map(m => getDisplayNameForMember(m));
-    const membersDisplay = displayMembers.length ? displayMembers.join(', ') : 'No members';
+    const membersDisplay = split.members.length ? split.members.join(', ') : 'No members';
     const totalDisplay = isRecurring ? `${Number(monthlyAmount || split.amount).toLocaleString()} RSD/month` : `${split.amount.toLocaleString()} RSD`;
     const recurringBadge = isRecurring ? '<span class="split-recurring-badge">🔄 Monthly</span>' : '';
     const editButton = isOwner ? `<button class="ghost split-edit" data-id="${split.id}" title="Edit split">✎</button>` : '';
@@ -1342,17 +1355,15 @@ function renderAllSplits() {
     const isOwner = currentUser && split.owner_id === currentUser.id;
     
     const breakdown = split.members.map(member => {
-      const displayMember = getDisplayNameForMember(member);
       const amount = memberAmounts[member] || 0;
       const percentage = memberPercentages[member] || 0;
       const displayAmount = isRecurring ? monthlyAmount || split.amount : amount;
       const monthlyText = isRecurring ? ' RSD/month' : ' RSD';
       const percentText = percentage > 0 ? ` (${Number(percentage).toFixed(1)}%)` : '';
-      return `<div class="breakdown-item">${displayMember}: ${Number(displayAmount).toLocaleString()}${monthlyText}${percentText}</div>`;
+      return `<div class="breakdown-item">${member}: ${Number(displayAmount).toLocaleString()}${monthlyText}${percentText}</div>`;
     }).join('');
     
-    const displayMembers = split.members.map(m => getDisplayNameForMember(m));
-    const membersDisplay = displayMembers.length ? displayMembers.join(', ') : 'No members';
+    const membersDisplay = split.members.length ? split.members.join(', ') : 'No members';
     const totalDisplay = isRecurring ? `${Number(monthlyAmount || split.amount).toLocaleString()} RSD/month` : `${split.amount.toLocaleString()} RSD`;
     const recurringBadge = isRecurring ? '<span class="split-recurring-badge">🔄 Monthly</span>' : '';
     const editButton = isOwner ? `<button class="ghost split-edit" data-id="${split.id}" title="Edit split">✎</button>` : '';
@@ -1454,32 +1465,21 @@ function handleSubmit(event) {
 
   if (currentType === 'split') {
     const amount = Number(ui.sharedAmount.value || 0);
-    const displayMembers = Object.keys(splitMembers);
+    const members = Object.keys(splitMembers);
     const memberPercentages = splitMembers; // Now storing percentages
     const isRecurring = ui.splitIsRecurring?.checked || false;
     
-    // Map display names (with nicknames) back to original names for storage
-    const members = displayMembers.map(displayName => {
-      const friend = sharedData.friends.find(f => getFriendDisplayName(f) === displayName);
-      return friend ? friend.name : displayName;
-    });
-    
-    // Create memberAmounts and memberPercentages with original names
+    // Calculate member amounts based on percentages
     const memberAmounts = {};
-    const memberPercentsForStorage = {};
-    displayMembers.forEach((displayName, idx) => {
-      const originalName = members[idx];
-      const percentage = Number(memberPercentages[displayName]) || 0;
-      memberAmounts[originalName] = (amount * percentage) / 100;
-      memberPercentsForStorage[originalName] = percentage;
+    members.forEach(member => {
+      const percentage = Number(memberPercentages[member]) || 0;
+      memberAmounts[member] = (amount * percentage) / 100;
     });
     
     const monthlyAmount = isRecurring ? amount : null;
     
     // Get friend IDs for members who are friends
-    const friendIds = displayMembers.map(displayName => {
-      return splitMemberFriendIds[displayName] || null;
-    }).filter(id => id != null);
+    const friendIds = Object.values(splitMemberFriendIds).filter(id => id != null);
     
     if (members.length === 0) {
       alert('Please add at least one member to the split.');
@@ -1494,7 +1494,7 @@ function handleSubmit(event) {
     }
     
     const isEditing = editingSplitId !== null;
-    const payload = { name, amount, members, memberAmounts, memberPercentages: memberPercentsForStorage, is_recurring: isRecurring, monthly_amount: monthlyAmount, friendIds };
+    const payload = { name, amount, members, memberAmounts, memberPercentages, is_recurring: isRecurring, monthly_amount: monthlyAmount, friendIds };
     
     apiFetch(isEditing ? `/splits/${editingSplitId}` : '/splits', {
       method: isEditing ? 'PATCH' : 'POST',
@@ -1919,7 +1919,14 @@ async function loadAll() {
       setToken(null);
       setLoggedIn(false);
     } else {
-      setLoggedIn(true);
+      sharedData = { invites: [], wallets: [], splits: [], friends: [], walletTransactions: {} };
+      renderAll();
+      showNotification(error.message || 'Failed to load shared data.', 'error');
+      if (error.status === 0) {
+        setLoggedIn(false);
+      } else {
+        setLoggedIn(true);
+      }
     }
   }
 }
@@ -1991,7 +1998,9 @@ async function init() {
       setLoggedIn(false);
       return;
     }
-    setLoggedIn(true);
+    setToken(null);
+    setLoggedIn(false);
+    showNotification(error.message || 'Failed to load profile. Please log in again.', 'error');
   }
 }
 
