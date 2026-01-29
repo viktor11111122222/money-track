@@ -1075,7 +1075,20 @@ function renderSplitMembersBreakdown() {
 
 function addSplitMember(memberName, friendId = null) {
   if (memberName && !splitMembers.hasOwnProperty(memberName)) {
-    splitMembers[memberName] = 0;
+    const totalAmount = Number(ui.sharedAmount?.value || 0);
+    const newMemberCount = Object.keys(splitMembers).length + 1;
+    
+    // Distribute total amount equally among all members including the new one
+    if (totalAmount > 0 && newMemberCount > 0) {
+      const perMember = totalAmount / newMemberCount;
+      Object.keys(splitMembers).forEach(member => {
+        splitMembers[member] = perMember;
+      });
+      splitMembers[memberName] = perMember;
+    } else {
+      splitMembers[memberName] = 0;
+    }
+    
     // Store friend ID if provided
     if (friendId) {
       splitMemberFriendIds[memberName] = friendId;
@@ -1321,15 +1334,12 @@ if (addSplitMemberBtn) {
   });
 }
 
-// Update split total when amount changes
-ui.sharedAmount?.addEventListener('change', () => {
-  // If manually typing amount, user is overriding auto-calculation
-  const total = Object.values(splitMembers).reduce((sum, amount) => sum + Number(amount), 0);
-  if (Math.abs(total - Number(ui.sharedAmount.value)) > 0.01) {
-    // User manually changed, distribute if members exist
+// Update split total when amount changes - real-time calculation
+ui.sharedAmount?.addEventListener('input', () => {
+  if (currentType === 'split') {
     const manualTotal = Number(ui.sharedAmount.value) || 0;
     const memberCount = Object.keys(splitMembers).length;
-    if (memberCount > 0) {
+    if (memberCount > 0 && manualTotal > 0) {
       const perMember = manualTotal / memberCount;
       Object.keys(splitMembers).forEach(member => {
         splitMembers[member] = perMember;
