@@ -155,6 +155,7 @@ let splitMemberFriendIds = {}; // Track which members are friends with their IDs
 let sharedData = { invites: [], wallets: [], splits: [], friends: [], walletTransactions: {} };
 let currentUser = null;
 let editingWalletId = null;
+let editingSplitId = null;
 
 function getHiddenWallets() {
   try {
@@ -308,6 +309,15 @@ function setLoggedIn(isLoggedIn) {
 function setModalMode(type, wallet = null) {
   currentType = type;
   editingWalletId = wallet ? wallet.id : null;
+  
+  // Handle split editing
+  const split = type === 'split' && wallet ? wallet : null;
+  if (split) {
+    editingSplitId = split.id;
+  } else {
+    editingSplitId = null;
+  }
+  
   ui.sharedForm.reset();
   if (ui.sharedEmailError) ui.sharedEmailError.textContent = '';
   ui.sharedEmailRow.style.display = type === 'invite' ? 'flex' : 'none';
@@ -366,21 +376,49 @@ function setModalMode(type, wallet = null) {
     }
   }
   if (type === 'split') {
-    ui.modalTitle.textContent = 'New Split';
+    const isEditing = split !== null;
+    ui.modalTitle.textContent = isEditing ? 'Edit Split' : 'New Split';
     ui.sharedName.placeholder = 'Bill name';
     ui.sharedEmail.required = false;
-    if (ui.submitModal) ui.submitModal.textContent = 'Create Split';
-    ui.sharedMembers.value = '';
-    splitMembers = {};
-    splitMemberFriendIds = {};
+    if (ui.submitModal) ui.submitModal.textContent = isEditing ? 'Save changes' : 'Create Split';
     
-    // Add current user as default member
-    if (currentUser) {
-      const currentUserName = currentUser.name || currentUser.email;
-      splitMembers[currentUserName] = 0;
+    // Initialize split data
+    if (isEditing && split) {
+      // Load existing split data for editing
+      ui.sharedName.value = split.name || '';
+      ui.sharedAmount.value = split.amount ?? '';
+      
+      // Load members and amounts
+      splitMembers = { ...split.memberAmounts };
+      splitMemberFriendIds = {};
+      
+      // Build friend IDs map
+      if (split.friendIds && Array.isArray(split.friendIds)) {
+        split.friendIds.forEach(friendId => {
+          const member = split.members.find((m, idx) => {
+            // Try to match by position or find correct member
+            return true;
+          });
+        });
+      }
+      
+      if (ui.splitIsRecurring) ui.splitIsRecurring.checked = split.is_recurring || false;
+    } else {
+      // New split
+      ui.sharedName.value = '';
+      ui.sharedAmount.value = '';
+      splitMembers = {};
+      splitMemberFriendIds = {};
+      
+      // Add current user as default member
+      if (currentUser) {
+        const currentUserName = currentUser.name || currentUser.email;
+        splitMembers[currentUserName] = 0;
+      }
+      
+      if (ui.splitIsRecurring) ui.splitIsRecurring.checked = false;
     }
     
-    if (ui.splitIsRecurring) ui.splitIsRecurring.checked = false;
     renderSplitMembersBreakdown();
     
     // Re-attach event listener to Add Friend button
@@ -427,6 +465,7 @@ function showNotification(message, type = 'info', duration = 3000) {
       }
     }, 300);
   }, duration);
+
 }
 
 function closeModal() {
@@ -1025,19 +1064,35 @@ function renderSplitMembersBreakdown() {
   ui.splitMembersBreakdown.style.display = 'block';
   
   const currentUserName = currentUser ? (currentUser.name || currentUser.email) : '';
+  const isEditing = editingSplitId !== null;
+  const editingSplit = isEditing ? sharedData.splits.find(s => s.id === editingSplitId) : null;
+  const isOwner = isEditing && editingSplit && currentUser && editingSplit.owner_id === currentUser.id;
   
   const breakdown = Object.entries(splitMembers).map(([member, amount]) => {
     const isCurrentUser = member === currentUserName;
     const displayName = isCurrentUser ? `${member} <span class="split-you-badge">You</span>` : member;
     const formattedAmount = Number(amount).toLocaleString();
-    const removeBtn = isCurrentUser 
-      ? '' 
-      : `<button type="button" class="split-member-remove" data-member="${member}">✕</button>`;
+    
+    // Show remove button based on editing mode
+    let removeBtn = '';
+    if (!isCurrentUser) {
+      // Always allow removing other members
+      removeBtn = `<button type="button" class="split-member-remove" data-member="${member}">✕</button>`;
+    } else if (isEditing && isOwner) {
+      // When editing and user is owner, can't remove themselves
+      removeBtn = '';
+    } else if (isEditing && !isOwner && isCurrentUser) {
+      // When editing and not owner, can remove themselves (leave the split)
+      removeBtn = `<button type="button" class="split-member-remove" data-member="${member}">✕</button>`;
+    }
+    
+    // Disable amount field for current user when creating, but allow when owner is editing
+    const amountDisabled = isCurrentUser && (!isEditing || !isOwner);
     
     return `
       <div class="split-member-row ${isCurrentUser ? 'split-current-user' : ''}">
         <span class="split-member-name">${displayName}</span>
-        <input type="number" class="split-member-amount" min="0" step="0.01" value="${amount}" data-member="${member}" ${isCurrentUser ? 'disabled' : ''}>
+        <input type="number" class="split-member-amount" min="0" step="0.01" value="${amount}" data-member="${member}" ${amountDisabled ? 'disabled' : ''}>
         ${removeBtn}
       </div>
     `;
@@ -1059,13 +1114,6 @@ function renderSplitMembersBreakdown() {
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       const member = btn.dataset.member;
-      const currentUserName = currentUser ? (currentUser.name || currentUser.email) : '';
-      
-      if (member === currentUserName) {
-        showNotification('You cannot remove yourself from the split!', 'info');
-        return;
-      }
-      
       delete splitMembers[member];
       delete splitMemberFriendIds[member];
       renderSplitMembersBreakdown();
@@ -1116,6 +1164,7 @@ function renderSplits() {
     const memberAmounts = split.memberAmounts || {};
     const isRecurring = split.is_recurring;
     const monthlyAmount = split.monthly_amount;
+    const isOwner = currentUser && split.owner_id === currentUser.id;
     
     const breakdown = Object.entries(memberAmounts)
       .map(([member, amount]) => {
@@ -1128,6 +1177,7 @@ function renderSplits() {
     const membersDisplay = split.members.length ? split.members.join(', ') : 'No members';
     const totalDisplay = isRecurring ? `${Number(monthlyAmount || split.amount).toLocaleString()} RSD/month` : `${split.amount.toLocaleString()} RSD`;
     const recurringBadge = isRecurring ? '<span class="split-recurring-badge">🔄 Monthly</span>' : '';
+    const editButton = isOwner ? `<button class="ghost split-edit" data-id="${split.id}" title="Edit split">✎</button>` : '';
     
     return `
       <div class="shared-item">
@@ -1138,7 +1188,10 @@ function renderSplits() {
         </div>
         <div class="split-item-footer">
           <span class="shared-amount">${totalDisplay}</span>
-          <button class="ghost split-delete" data-id="${split.id}" title="Delete split">🗑️</button>
+          <div class="split-item-buttons">
+            ${editButton}
+            <button class="ghost split-delete" data-id="${split.id}" title="Delete split">🗑️</button>
+          </div>
         </div>
       </div>
     `;
@@ -1155,6 +1208,7 @@ function renderAllSplits() {
     const memberAmounts = split.memberAmounts || {};
     const isRecurring = split.is_recurring;
     const monthlyAmount = split.monthly_amount;
+    const isOwner = currentUser && split.owner_id === currentUser.id;
     
     const breakdown = Object.entries(memberAmounts)
       .map(([member, amount]) => {
@@ -1167,6 +1221,7 @@ function renderAllSplits() {
     const membersDisplay = split.members.length ? split.members.join(', ') : 'No members';
     const totalDisplay = isRecurring ? `${Number(monthlyAmount || split.amount).toLocaleString()} RSD/month` : `${split.amount.toLocaleString()} RSD`;
     const recurringBadge = isRecurring ? '<span class="split-recurring-badge">🔄 Monthly</span>' : '';
+    const editButton = isOwner ? `<button class="ghost split-edit" data-id="${split.id}" title="Edit split">✎</button>` : '';
     
     return `
       <div class="shared-item">
@@ -1177,7 +1232,10 @@ function renderAllSplits() {
         </div>
         <div class="split-item-footer">
           <span class="shared-amount">${totalDisplay}</span>
-          <button class="ghost split-delete" data-id="${split.id}" title="Delete split">🗑️</button>
+          <div class="split-item-buttons">
+            ${editButton}
+            <button class="ghost split-delete" data-id="${split.id}" title="Delete split">🗑️</button>
+          </div>
         </div>
       </div>
     `;
@@ -1275,17 +1333,27 @@ function handleSubmit(event) {
       return;
     }
     
-    apiFetch('/splits', {
-      method: 'POST',
-      body: JSON.stringify({ name, amount, members, memberAmounts, is_recurring: isRecurring, monthly_amount: monthlyAmount, friendIds })
+    const isEditing = editingSplitId !== null;
+    const payload = { name, amount, members, memberAmounts, is_recurring: isRecurring, monthly_amount: monthlyAmount, friendIds };
+    
+    apiFetch(isEditing ? `/splits/${editingSplitId}` : '/splits', {
+      method: isEditing ? 'PATCH' : 'POST',
+      body: JSON.stringify(payload)
     }).then((split) => {
-      sharedData.splits.unshift(split);
+      if (isEditing) {
+        sharedData.splits = sharedData.splits.map(s => String(s.id) === String(split.id) ? { ...s, ...split } : s);
+      } else {
+        sharedData.splits.unshift(split);
+      }
       renderSplits();
+      renderAllSplits();
       closeModal();
+      editingSplitId = null;
       splitMembers = {};
       splitMemberFriendIds = {};
     }).catch(() => {
       closeModal();
+      editingSplitId = null;
     });
     return;
   }
@@ -1353,6 +1421,21 @@ ui.splitsList?.addEventListener('click', async (event) => {
   const target = event.target;
   if (!(target instanceof HTMLElement)) return;
   
+  if (target.classList.contains('split-edit')) {
+    const splitId = target.dataset.id;
+    if (!splitId) return;
+    const split = sharedData.splits.find(s => String(s.id) === String(splitId));
+    if (!split) return;
+    
+    // Only owner can edit
+    if (!currentUser || split.owner_id !== currentUser.id) {
+      showNotification('Only the split owner can edit it!', 'error');
+      return;
+    }
+    
+    openModal('split', split);
+  }
+  
   if (target.classList.contains('split-delete')) {
     const splitId = target.dataset.id;
     if (!splitId) return;
@@ -1380,6 +1463,21 @@ ui.splitsList?.addEventListener('click', async (event) => {
 ui.allSplitsList?.addEventListener('click', async (event) => {
   const target = event.target;
   if (!(target instanceof HTMLElement)) return;
+  
+  if (target.classList.contains('split-edit')) {
+    const splitId = target.dataset.id;
+    if (!splitId) return;
+    const split = sharedData.splits.find(s => String(s.id) === String(splitId));
+    if (!split) return;
+    
+    // Only owner can edit
+    if (!currentUser || split.owner_id !== currentUser.id) {
+      showNotification('Only the split owner can edit it!', 'error');
+      return;
+    }
+    
+    openModal('split', split);
+  }
   
   if (target.classList.contains('split-delete')) {
     const splitId = target.dataset.id;

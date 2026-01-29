@@ -467,6 +467,36 @@ app.post('/api/splits', authMiddleware, async (req, res) => {
   });
 });
 
+app.patch('/api/splits/:id', authMiddleware, async (req, res) => {
+  const split = await get('SELECT id, owner_id FROM splits WHERE id = ?', [req.params.id]);
+  if (!split) return res.status(404).json({ message: 'Split not found.' });
+  if (split.owner_id !== req.userId) return res.status(403).json({ message: 'Forbidden.' });
+
+  const { name, amount = 0, members = [], memberAmounts = {}, is_recurring = false, monthly_amount = null, friendIds = [] } = req.body || {};
+  if (!name) return res.status(400).json({ message: 'Missing fields.' });
+  
+  const memberString = Array.isArray(members) ? members.join('|') : '';
+  const memberAmountsString = JSON.stringify(memberAmounts);
+  const friendIdsString = Array.isArray(friendIds) ? friendIds.join('|') : '';
+  
+  await run(
+    'UPDATE splits SET name = ?, amount = ?, members = ?, member_amounts = ?, is_recurring = ?, monthly_amount = ?, friend_ids = ? WHERE id = ?',
+    [name.trim(), Number(amount) || 0, memberString, memberAmountsString, is_recurring ? 1 : 0, monthly_amount, friendIdsString, req.params.id]
+  );
+  
+  res.json({ 
+    id: split.id,
+    owner_id: split.owner_id,
+    name: name.trim(), 
+    amount: Number(amount) || 0, 
+    members, 
+    memberAmounts,
+    friendIds: Array.isArray(friendIds) ? friendIds : [],
+    is_recurring: is_recurring === 1 || is_recurring === true,
+    monthly_amount: monthly_amount
+  });
+});
+
 app.delete('/api/splits/:id', authMiddleware, async (req, res) => {
   const split = await get('SELECT id, owner_id FROM splits WHERE id = ?', [req.params.id]);
   if (!split) return res.status(404).json({ message: 'Split not found.' });

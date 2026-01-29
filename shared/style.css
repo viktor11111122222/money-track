@@ -1276,6 +1276,26 @@
     justify-content: space-between;
 }
 
+.split-item-buttons {
+    display: flex;
+    gap: 8px;
+    align-items: center;
+}
+
+.split-edit {
+    padding: 4px 8px !important;
+    background: transparent !important;
+    border: none !important;
+    font-size: 16px;
+    cursor: pointer;
+    opacity: 0.6;
+    transition: opacity 0.2s;
+}
+
+.split-edit:hover {
+    opacity: 1;
+}
+
 .split-delete {
     padding: 4px 8px !important;
     background: transparent !important;
