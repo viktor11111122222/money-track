@@ -651,10 +651,40 @@ function renderFriends() {
   
   // Add event listeners for nickname inputs
   ui.friendsList.querySelectorAll('.friend-nickname').forEach(input => {
+    const friendId = input.dataset.id;
+    const friend = sharedData.friends.find(f => String(f.id) === String(friendId));
+    const friendItem = input.closest('.friend-item');
+    const h4 = friendItem?.querySelector('h4');
+    const originalNameSpan = friendItem?.querySelector('.friend-original-name');
+    const originalName = friend?.name || friend?.email || '';
+    
+    // Update display in real-time as user types
+    input.addEventListener('input', (e) => {
+      const currentNickname = input.value.trim();
+      if (h4) {
+        if (currentNickname) {
+          h4.textContent = currentNickname;
+          // Show or update original name below
+          if (originalNameSpan) {
+            originalNameSpan.textContent = originalName;
+          } else {
+            const newSpan = document.createElement('span');
+            newSpan.className = 'friend-original-name';
+            newSpan.textContent = originalName;
+            h4.insertAdjacentElement('afterend', newSpan);
+          }
+        } else {
+          h4.textContent = originalName;
+          if (originalNameSpan) {
+            originalNameSpan.remove();
+          }
+        }
+      }
+    });
+    
+    // Save to server when user leaves the field
     input.addEventListener('blur', (e) => {
-      const friendId = input.dataset.id;
       const nickname = input.value.trim();
-      const friend = sharedData.friends.find(f => String(f.id) === String(friendId));
       
       // Only update if nickname actually changed
       if (!friend || friend.nickname === (nickname || null)) {
@@ -670,10 +700,10 @@ function renderFriends() {
           // Only re-render splits, not friends list to avoid losing focus
           renderAllSplits();
           renderSplits();
-          showNotification('Nickname updated', 'success');
+          showNotification('Nadimak sačuvan', 'success', 2000);
         }
       }).catch((error) => {
-        showNotification('Failed to update nickname: ' + (error.message || 'Unknown error'), 'error');
+        showNotification('Greška pri čuvanju nadimka: ' + (error.message || 'Unknown error'), 'error');
       });
     });
   });
