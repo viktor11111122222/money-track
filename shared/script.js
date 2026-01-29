@@ -315,8 +315,9 @@ function setModalMode(type, wallet = null) {
   ui.sharedGoalRow.style.display = type === 'wallet' ? 'flex' : 'none';
   ui.sharedCapRow.style.display = type === 'wallet' ? 'flex' : 'none';
   ui.sharedDeadlineRow.style.display = type === 'wallet' ? 'flex' : 'none';
-  ui.sharedMembersRow.style.display = type === 'wallet' || type === 'split' ? 'flex' : 'none';
+  ui.sharedMembersRow.style.display = type === 'wallet' ? 'flex' : 'none';
   ui.splitMembersBreakdownRow.style.display = type === 'split' ? 'flex' : 'none';
+  ui.splitRecurringRow.style.display = type === 'split' ? 'flex' : 'none';
   ui.sharedCategoriesRow.style.display = type === 'wallet' ? 'flex' : 'none';
   ui.sharedNotesRow.style.display = type === 'wallet' ? 'flex' : 'none';
   if (type === 'wallet') {
