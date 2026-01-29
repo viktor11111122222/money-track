@@ -952,35 +952,18 @@ function showSplitMemberPicker() {
   // Show a simple menu with available friends
   const pickerContainer = document.createElement('div');
   pickerContainer.className = 'split-member-picker-menu';
-  pickerContainer.style.cssText = `
-    position: absolute;
-    background: white;
-    border: 1px solid #ddd;
-    border-radius: 4px;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
-    z-index: 1000;
-    min-width: 200px;
-  `;
   
   const items = availableFriends.map(friend => {
     const btn = document.createElement('button');
     btn.type = 'button';
     btn.textContent = friend.name;
-    btn.style.cssText = `
-      display: block;
-      width: 100%;
-      padding: 8px 12px;
-      border: none;
-      background: none;
-      text-align: left;
-      cursor: pointer;
-      border-bottom: 1px solid #eee;
-    `;
-    btn.onmouseover = () => btn.style.background = '#f5f5f5';
-    btn.onmouseout = () => btn.style.background = 'none';
+    btn.className = 'split-picker-item';
     btn.onclick = () => {
       addSplitMember(friend.name, friend.id);
-      document.body.removeChild(pickerContainer);
+      if (pickerContainer.parentNode) {
+        document.body.removeChild(pickerContainer);
+      }
+      renderSplitMembersBreakdown();
     };
     return btn;
   });
@@ -988,10 +971,10 @@ function showSplitMemberPicker() {
   items.forEach(item => pickerContainer.appendChild(item));
   
   // Position near the button
-  const btn = ui.addSplitMember;
+  const btn = document.getElementById('addSplitMember');
   if (btn) {
     const rect = btn.getBoundingClientRect();
-    pickerContainer.style.top = (rect.bottom + 5) + 'px';
+    pickerContainer.style.top = (rect.bottom + window.scrollY + 5) + 'px';
     pickerContainer.style.left = rect.left + 'px';
   }
   
