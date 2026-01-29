@@ -404,14 +404,28 @@ app.post('/api/wallets/:id/transactions', authMiddleware, async (req, res) => {
 });
 
 app.get('/api/splits', authMiddleware, async (req, res) => {
-  const rows = await all('SELECT id, name, amount, members, member_amounts, is_recurring, monthly_amount, created_at FROM splits WHERE owner_id = ? ORDER BY created_at DESC', [req.userId]);
-  const mapped = rows.map(row => {
+  const rows = await all('SELECT id, owner_id, name, amount, members, member_amounts, is_recurring, monthly_amount, friend_ids, created_at FROM splits ORDER BY created_at DESC');
+  
+  // Filter splits where user is owner OR user is in friend_ids
+  const filtered = rows.filter(row => {
+    if (row.owner_id === req.userId) return true;
+    if (row.friend_ids) {
+      const friendIds = row.friend_ids.split('|').filter(Boolean).map(id => parseInt(id));
+      if (friendIds.includes(req.userId)) return true;
+    }
+    return false;
+  });
+  
+  const mapped = filtered.map(row => {
     const members = row.members ? row.members.split('|').filter(Boolean) : [];
     const memberAmounts = row.member_amounts ? JSON.parse(row.member_amounts) : {};
+    const friendIds = row.friend_ids ? row.friend_ids.split('|').filter(Boolean).map(id => parseInt(id)) : [];
     return {
       ...row,
+      owner_id: row.owner_id,
       members,
       memberAmounts,
+      friendIds,
       is_recurring: row.is_recurring === 1,
       monthly_amount: row.monthly_amount
     };
@@ -420,21 +434,24 @@ app.get('/api/splits', authMiddleware, async (req, res) => {
 });
 
 app.post('/api/splits', authMiddleware, async (req, res) => {
-  const { name, amount = 0, members = [], memberAmounts = {}, is_recurring = false, monthly_amount = null } = req.body || {};
+  const { name, amount = 0, members = [], memberAmounts = {}, is_recurring = false, monthly_amount = null, friendIds = [] } = req.body || {};
   if (!name) return res.status(400).json({ message: 'Missing fields.' });
   const createdAt = Date.now();
   const memberString = Array.isArray(members) ? members.join('|') : '';
   const memberAmountsString = JSON.stringify(memberAmounts);
+  const friendIdsString = Array.isArray(friendIds) ? friendIds.join('|') : '';
   const result = await run(
-    'INSERT INTO splits (owner_id, name, amount, members, member_amounts, is_recurring, monthly_amount, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
-    [req.userId, name.trim(), Number(amount) || 0, memberString, memberAmountsString, is_recurring ? 1 : 0, monthly_amount, createdAt]
+    'INSERT INTO splits (owner_id, name, amount, members, member_amounts, is_recurring, monthly_amount, friend_ids, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)',
+    [req.userId, name.trim(), Number(amount) || 0, memberString, memberAmountsString, is_recurring ? 1 : 0, monthly_amount, friendIdsString, createdAt]
   );
   res.status(201).json({ 
-    id: result.lastID, 
+    id: result.lastID,
+    owner_id: req.userId,
     name: name.trim(), 
     amount: Number(amount) || 0, 
     members, 
     memberAmounts,
+    friendIds: Array.isArray(friendIds) ? friendIds : [],
     is_recurring: is_recurring === 1 || is_recurring === true,
     monthly_amount: monthly_amount,
     created_at: createdAt 

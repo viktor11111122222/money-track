@@ -151,6 +151,7 @@ const confirmUi = {
 
 let currentType = 'invite';
 let splitMembers = {}; // Track split members with their amounts
+let splitMemberFriendIds = {}; // Track which members are friends with their IDs
 let sharedData = { invites: [], wallets: [], splits: [], friends: [], walletTransactions: {} };
 let currentUser = null;
 let editingWalletId = null;
@@ -388,6 +389,8 @@ function closeModal() {
   ui.modal.setAttribute('aria-hidden', 'true');
   document.body.style.overflow = '';
   if (ui.sharedEmailError) ui.sharedEmailError.textContent = '';
+  splitMembers = {};
+  splitMemberFriendIds = {};
 }
 
 function openConfirm({ title = 'Confirm action', text = 'Are you sure?', okText = 'Confirm' } = {}) {
@@ -915,7 +918,7 @@ function showSplitMemberPicker() {
     btn.onmouseover = () => btn.style.background = '#f5f5f5';
     btn.onmouseout = () => btn.style.background = 'none';
     btn.onclick = () => {
-      addSplitMember(friend.name);
+      addSplitMember(friend.name, friend.id);
       document.body.removeChild(pickerContainer);
     };
     return btn;
@@ -998,14 +1001,19 @@ function renderSplitMembersBreakdown() {
       e.preventDefault();
       const member = btn.dataset.member;
       delete splitMembers[member];
+      delete splitMemberFriendIds[member];
       renderSplitMembersBreakdown();
     });
   });
 }
 
-function addSplitMember(memberName) {
+function addSplitMember(memberName, friendId = null) {
   if (memberName && !splitMembers.hasOwnProperty(memberName)) {
     splitMembers[memberName] = 0;
+    // Store friend ID if provided
+    if (friendId) {
+      splitMemberFriendIds[memberName] = friendId;
+    }
     renderSplitMembersBreakdown();
   }
 }
@@ -1180,6 +1188,9 @@ function handleSubmit(event) {
     const isRecurring = ui.splitIsRecurring?.checked || false;
     const monthlyAmount = isRecurring ? amount / Object.keys(splitMembers).length : null;
     
+    // Get friend IDs for members who are friends
+    const friendIds = Object.values(splitMemberFriendIds).filter(id => id != null);
+    
     if (members.length === 0) {
       alert('Please add at least one member to the split.');
       return;
@@ -1187,12 +1198,13 @@ function handleSubmit(event) {
     
     apiFetch('/splits', {
       method: 'POST',
-      body: JSON.stringify({ name, amount, members, memberAmounts, is_recurring: isRecurring, monthly_amount: monthlyAmount })
+      body: JSON.stringify({ name, amount, members, memberAmounts, is_recurring: isRecurring, monthly_amount: monthlyAmount, friendIds })
     }).then((split) => {
       sharedData.splits.unshift(split);
       renderSplits();
       closeModal();
       splitMembers = {};
+      splitMemberFriendIds = {};
     }).catch(() => {
       closeModal();
     });
