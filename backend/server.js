@@ -245,6 +245,15 @@ app.patch('/api/friends/:id', authMiddleware, async (req, res) => {
   res.json({ ok: true });
 });
 
+app.delete('/api/friends/:id', authMiddleware, async (req, res) => {
+  const friend = await get('SELECT id, owner_id FROM friends WHERE id = ?', [req.params.id]);
+  if (!friend) return res.status(404).json({ message: 'Friend not found.' });
+  if (friend.owner_id !== req.userId) return res.status(403).json({ message: 'Forbidden.' });
+
+  await run('DELETE FROM friends WHERE id = ?', [friend.id]);
+  res.json({ ok: true });
+});
+
 app.get('/api/wallets', authMiddleware, async (req, res) => {
   const user = await get('SELECT id, name, email FROM users WHERE id = ?', [req.userId]);
   if (!user) return res.status(404).json({ message: 'User not found.' });

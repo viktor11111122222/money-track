@@ -529,10 +529,36 @@ function renderFriends() {
             Limit (RSD)
             <input type="number" class="friend-limit" data-id="${friend.id}" min="0" step="0.01" value="${friend.limitAmount ?? 0}">
           </label>
+          <button type="button" class="friend-delete" data-id="${friend.id}" title="Delete friend">🗑️</button>
         </div>
       </div>
     `;
   }).join('');
+  
+  // Add event listeners for delete buttons
+  ui.friendsList.querySelectorAll('.friend-delete').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      e.preventDefault();
+      const friendId = btn.dataset.id;
+      if (!friendId) return;
+      
+      const confirmed = await openConfirm({
+        title: 'Delete Friend',
+        text: 'Are you sure you want to remove this friend?',
+        okText: 'Yes, delete'
+      });
+      if (!confirmed) return;
+      
+      apiFetch(`/friends/${friendId}`, { method: 'DELETE' })
+        .then(() => {
+          sharedData.friends = sharedData.friends.filter(f => String(f.id) !== String(friendId));
+          renderFriends();
+        })
+        .catch((error) => {
+          showNotification('Failed to delete friend: ' + (error.message || 'Unknown error'), 'error');
+        });
+    });
+  });
 }
 
 function applyWalletProgressAnimation(scope) {
@@ -1262,14 +1288,15 @@ ui.modal?.addEventListener('click', (event) => {
   if (event.target === ui.modal) closeModal();
 });
 
-// Add split member button - use event delegation
-ui.modal?.addEventListener('click', (event) => {
-  const target = event.target;
-  if (target && target.id === 'addSplitMember') {
-    event.preventDefault();
+// Add split member button - direct event listener
+const addSplitMemberBtn = document.getElementById('addSplitMember');
+if (addSplitMemberBtn) {
+  addSplitMemberBtn.addEventListener('click', (e) => {
+    e.preventDefault();
+    e.stopPropagation();
     showSplitMemberPicker();
-  }
-});
+  });
+}
 
 // Update split total when amount changes
 ui.sharedAmount?.addEventListener('change', () => {

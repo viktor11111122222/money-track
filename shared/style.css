@@ -1092,6 +1092,21 @@
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
     background: #ffffff;
 }
+
+.friend-delete {
+    background: transparent;
+    border: none;
+    font-size: 18px;
+    cursor: pointer;
+    padding: 4px;
+    opacity: 0.6;
+    transition: opacity 0.2s ease;
+    align-self: center;
+}
+
+.friend-delete:hover {
+    opacity: 1;
+}
 /* Split Expenses Styles */
 #splitMembersBreakdownRow {
     flex-direction: column;
