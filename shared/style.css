@@ -953,8 +953,8 @@
     content: '';
     position: absolute;
     inset: 0 0 auto 0;
-    height: 6px;
-    background: linear-gradient(90deg, #fed7aa 0%, #fde68a 50%, #fde2e2 100%);
+    height: 4px;
+    background: linear-gradient(90deg, rgba(254, 215, 170, 0.3) 0%, rgba(253, 230, 138, 0.3) 50%, rgba(253, 226, 226, 0.3) 100%);
 }
 
 .confirm-header {
@@ -997,7 +997,7 @@
 }
 
 .confirm-actions .primary {
-    box-shadow: 0 10px 24px rgba(59, 130, 246, 0.25);
+    box-shadow: 0 2px 8px rgba(59, 130, 246, 0.15);
 }
 
 .confirm-actions .ghost {
@@ -1007,15 +1007,15 @@
 }
 
 .confirm-actions .primary {
-    background: linear-gradient(135deg, #60a5fa 0%, #a78bfa 100%);
+    background: #3b82f6;
     border: none;
     color: #ffffff;
     transition: 0.2s;
+    font-weight: 600;
 }
 
 .confirm-actions .primary:hover {
-    filter: brightness(0.96);
-    background: linear-gradient(135deg, #4c89d2 0%, #8972d1 100%);
+    background: #2563eb;
 }
 
 .confirm-actions .primary:active {
