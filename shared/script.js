@@ -1262,11 +1262,13 @@ ui.modal?.addEventListener('click', (event) => {
   if (event.target === ui.modal) closeModal();
 });
 
-// Add split member button
-ui.addSplitMember?.addEventListener('click', (e) => {
-  e.preventDefault();
-  // Show a dropdown or modal to select friends
-  showSplitMemberPicker();
+// Add split member button - use event delegation
+ui.modal?.addEventListener('click', (event) => {
+  const target = event.target;
+  if (target && target.id === 'addSplitMember') {
+    event.preventDefault();
+    showSplitMemberPicker();
+  }
 });
 
 // Update split total when amount changes
