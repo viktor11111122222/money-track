@@ -954,7 +954,7 @@
     position: absolute;
     inset: 0 0 auto 0;
     height: 6px;
-    background: linear-gradient(90deg, #93c5fd 0%, #a7f3d0 50%, #c4b5fd 100%);
+    background: linear-gradient(90deg, #fed7aa 0%, #fde68a 50%, #fde2e2 100%);
 }
 
 .confirm-header {
