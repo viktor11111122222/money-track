@@ -233,7 +233,7 @@ app.post('/api/invites/:id/accept', authMiddleware, async (req, res) => {
 
 app.get('/api/friends', authMiddleware, async (req, res) => {
   const rows = await all(
-    'SELECT id, name, email, limit_amount as limitAmount, created_at FROM friends WHERE owner_id = ? ORDER BY created_at DESC',
+    'SELECT id, name, email, nickname, limit_amount as limitAmount, created_at FROM friends WHERE owner_id = ? ORDER BY created_at DESC',
     [req.userId]
   );
   res.json(rows);
@@ -241,7 +241,8 @@ app.get('/api/friends', authMiddleware, async (req, res) => {
 
 app.patch('/api/friends/:id', authMiddleware, async (req, res) => {
   const limit = Number(req.body?.limit || 0);
-  await run('UPDATE friends SET limit_amount = ? WHERE id = ? AND owner_id = ?', [limit, req.params.id, req.userId]);
+  const nickname = req.body?.nickname || null;
+  await run('UPDATE friends SET limit_amount = ?, nickname = ? WHERE id = ? AND owner_id = ?', [limit, nickname, req.params.id, req.userId]);
   res.json({ ok: true });
 });
 

@@ -76,6 +76,7 @@ db.serialize(() => {
   db.run('ALTER TABLE splits ADD COLUMN is_recurring INTEGER DEFAULT 0', () => {});
   db.run('ALTER TABLE splits ADD COLUMN monthly_amount REAL', () => {});
   db.run('ALTER TABLE splits ADD COLUMN friend_ids TEXT', () => {});
+  db.run('ALTER TABLE friends ADD COLUMN nickname TEXT', () => {});
 
   db.run(`
     CREATE TABLE IF NOT EXISTS wallet_transactions (

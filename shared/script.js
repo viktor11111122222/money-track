@@ -388,25 +388,29 @@ function setModalMode(type, wallet = null) {
       ui.sharedName.value = split.name || '';
       ui.sharedAmount.value = split.amount ?? '';
       
-      // Load members and percentages
-      // Try to use memberPercentages first (new format), fall back to calculating from memberAmounts
+      // Load members and percentages, map original names to display names (nicknames)
+      splitMembers = {};
       if (split.memberPercentages) {
-        splitMembers = { ...split.memberPercentages };
+        Object.entries(split.memberPercentages).forEach(([member, percentage]) => {
+          const displayMember = getDisplayNameForMember(member);
+          splitMembers[displayMember] = percentage;
+        });
       } else if (split.memberAmounts) {
         // Calculate percentages from amounts
         const totalAmount = split.amount || 0;
-        splitMembers = {};
         Object.entries(split.memberAmounts).forEach(([member, amount]) => {
-          splitMembers[member] = totalAmount > 0 ? (Number(amount) / totalAmount) * 100 : 0;
+          const displayMember = getDisplayNameForMember(member);
+          splitMembers[displayMember] = totalAmount > 0 ? (Number(amount) / totalAmount) * 100 : 0;
         });
       }
       
-      // Build friend IDs map
+      // Build friend IDs map with display names
       splitMemberFriendIds = {};
       if (split.friendIds && Array.isArray(split.friendIds)) {
         split.members.forEach((member, idx) => {
+          const displayMember = getDisplayNameForMember(member);
           if (split.friendIds[idx]) {
-            splitMemberFriendIds[member] = split.friendIds[idx];
+            splitMemberFriendIds[displayMember] = split.friendIds[idx];
           }
         });
       }
@@ -583,6 +587,36 @@ function renderInvites() {
   }).join('');
 }
 
+function getFriendDisplayName(friend) {
+  return friend.nickname || friend.name || friend.email;
+}
+
+function getFriendDisplayNameById(friendId) {
+  if (!friendId) return null;
+  const friend = sharedData.friends.find(f => String(f.id) === String(friendId));
+  return friend ? getFriendDisplayName(friend) : null;
+}
+
+function getDisplayNameForMember(memberName) {
+  // Try to find by nickname first, then by name, then return original
+  const friend = sharedData.friends.find(f => {
+    const displayName = getFriendDisplayName(f);
+    return displayName === memberName || f.name === memberName;
+  });
+  
+  if (friend) {
+    return getFriendDisplayName(friend);
+  }
+  
+  // If it's current user, return as is
+  const currentUserName = currentUser ? (currentUser.name || currentUser.email) : '';
+  if (memberName === currentUserName) {
+    return memberName;
+  }
+  
+  return memberName;
+}
+
 function renderFriends() {
   if (!ui.friendsList) return;
   if (sharedData.friends.length === 0) {
@@ -590,14 +624,21 @@ function renderFriends() {
     return;
   }
   ui.friendsList.innerHTML = sharedData.friends.map(friend => {
-    const label = friend.name || friend.email;
+    const displayName = getFriendDisplayName(friend);
+    const originalName = friend.name || friend.email;
+    const showOriginalName = friend.nickname ? `<span class="friend-original-name">${originalName}</span>` : '';
+    
     return `
-      <div class="shared-item friend-item" data-id="${friend.id}" data-name="${label}" data-email="${friend.email || ''}" draggable="true">
+      <div class="shared-item friend-item" data-id="${friend.id}" data-name="${displayName}" data-email="${friend.email || ''}">
         <div>
-          <h4>${friend.name || friend.email}</h4>
+          <h4>${displayName}</h4>
+          ${showOriginalName}
           <p>${friend.email || ''}</p>
         </div>
         <div class="friend-controls">
+          <div class="friend-nickname-group">
+            <input type="text" class="friend-nickname" data-id="${friend.id}" placeholder="Nadimak..." value="${friend.nickname || ''}">
+          </div>
           <label>
             Limit (RSD)
             <input type="number" class="friend-limit" data-id="${friend.id}" min="0" step="0.01" value="${friend.limitAmount ?? 0}">
@@ -607,6 +648,29 @@ function renderFriends() {
       </div>
     `;
   }).join('');
+  
+  // Add event listeners for nickname inputs
+  ui.friendsList.querySelectorAll('.friend-nickname').forEach(input => {
+    input.addEventListener('change', (e) => {
+      const friendId = input.dataset.id;
+      const nickname = input.value.trim();
+      
+      apiFetch(`/friends/${friendId}`, {
+        method: 'PATCH',
+        body: JSON.stringify({ nickname: nickname || null })
+      }).then(() => {
+        const friend = sharedData.friends.find(f => String(f.id) === String(friendId));
+        if (friend) {
+          friend.nickname = nickname || null;
+          renderFriends();
+          renderAllSplits();
+          renderSplits();
+        }
+      }).catch((error) => {
+        showNotification('Failed to update nickname: ' + (error.message || 'Unknown error'), 'error');
+      });
+    });
+  });
   
   // Add event listeners for delete buttons
   ui.friendsList.querySelectorAll('.friend-delete').forEach(btn => {
@@ -997,7 +1061,10 @@ async function removeMemberFromWallet(walletId, memberName) {
 
 function showSplitMemberPicker() {
   // Create a simple list of friends to add to split
-  const availableFriends = sharedData.friends.filter(friend => !splitMembers.hasOwnProperty(friend.name));
+  const availableFriends = sharedData.friends.filter(friend => {
+    const displayName = getFriendDisplayName(friend);
+    return !splitMembers.hasOwnProperty(displayName);
+  });
   
   if (availableFriends.length === 0) {
     showNotification('No friends available. Please add friends first in the Friends section.', 'info');
@@ -1009,12 +1076,13 @@ function showSplitMemberPicker() {
   pickerContainer.className = 'split-member-picker-menu';
   
   const items = availableFriends.map(friend => {
+    const displayName = getFriendDisplayName(friend);
     const btn = document.createElement('button');
     btn.type = 'button';
-    btn.textContent = friend.name;
+    btn.textContent = displayName;
     btn.className = 'split-picker-item';
     btn.onclick = () => {
-      addSplitMember(friend.name, friend.id);
+      addSplitMember(displayName, friend.id);
       if (pickerContainer.parentNode) {
         document.body.removeChild(pickerContainer);
       }
@@ -1190,15 +1258,17 @@ function renderSplits() {
     const isOwner = currentUser && split.owner_id === currentUser.id;
     
     const breakdown = split.members.map(member => {
+      const displayMember = getDisplayNameForMember(member);
       const amount = memberAmounts[member] || 0;
       const percentage = memberPercentages[member] || 0;
       const displayAmount = isRecurring ? monthlyAmount || split.amount : amount;
       const monthlyText = isRecurring ? ' RSD/month' : ' RSD';
       const percentText = percentage > 0 ? ` (${Number(percentage).toFixed(1)}%)` : '';
-      return `<div class="breakdown-item">${member}: ${Number(displayAmount).toLocaleString()}${monthlyText}${percentText}</div>`;
+      return `<div class="breakdown-item">${displayMember}: ${Number(displayAmount).toLocaleString()}${monthlyText}${percentText}</div>`;
     }).join('');
     
-    const membersDisplay = split.members.length ? split.members.join(', ') : 'No members';
+    const displayMembers = split.members.map(m => getDisplayNameForMember(m));
+    const membersDisplay = displayMembers.length ? displayMembers.join(', ') : 'No members';
     const totalDisplay = isRecurring ? `${Number(monthlyAmount || split.amount).toLocaleString()} RSD/month` : `${split.amount.toLocaleString()} RSD`;
     const recurringBadge = isRecurring ? '<span class="split-recurring-badge">🔄 Monthly</span>' : '';
     const editButton = isOwner ? `<button class="ghost split-edit" data-id="${split.id}" title="Edit split">✎</button>` : '';
@@ -1236,15 +1306,17 @@ function renderAllSplits() {
     const isOwner = currentUser && split.owner_id === currentUser.id;
     
     const breakdown = split.members.map(member => {
+      const displayMember = getDisplayNameForMember(member);
       const amount = memberAmounts[member] || 0;
       const percentage = memberPercentages[member] || 0;
       const displayAmount = isRecurring ? monthlyAmount || split.amount : amount;
       const monthlyText = isRecurring ? ' RSD/month' : ' RSD';
       const percentText = percentage > 0 ? ` (${Number(percentage).toFixed(1)}%)` : '';
-      return `<div class="breakdown-item">${member}: ${Number(displayAmount).toLocaleString()}${monthlyText}${percentText}</div>`;
+      return `<div class="breakdown-item">${displayMember}: ${Number(displayAmount).toLocaleString()}${monthlyText}${percentText}</div>`;
     }).join('');
     
-    const membersDisplay = split.members.length ? split.members.join(', ') : 'No members';
+    const displayMembers = split.members.map(m => getDisplayNameForMember(m));
+    const membersDisplay = displayMembers.length ? displayMembers.join(', ') : 'No members';
     const totalDisplay = isRecurring ? `${Number(monthlyAmount || split.amount).toLocaleString()} RSD/month` : `${split.amount.toLocaleString()} RSD`;
     const recurringBadge = isRecurring ? '<span class="split-recurring-badge">🔄 Monthly</span>' : '';
     const editButton = isOwner ? `<button class="ghost split-edit" data-id="${split.id}" title="Edit split">✎</button>` : '';
@@ -1346,21 +1418,32 @@ function handleSubmit(event) {
 
   if (currentType === 'split') {
     const amount = Number(ui.sharedAmount.value || 0);
-    const members = Object.keys(splitMembers);
+    const displayMembers = Object.keys(splitMembers);
     const memberPercentages = splitMembers; // Now storing percentages
     const isRecurring = ui.splitIsRecurring?.checked || false;
     
-    // Calculate member amounts based on percentages
+    // Map display names (with nicknames) back to original names for storage
+    const members = displayMembers.map(displayName => {
+      const friend = sharedData.friends.find(f => getFriendDisplayName(f) === displayName);
+      return friend ? friend.name : displayName;
+    });
+    
+    // Create memberAmounts and memberPercentages with original names
     const memberAmounts = {};
-    members.forEach(member => {
-      const percentage = Number(memberPercentages[member]) || 0;
-      memberAmounts[member] = (amount * percentage) / 100;
+    const memberPercentsForStorage = {};
+    displayMembers.forEach((displayName, idx) => {
+      const originalName = members[idx];
+      const percentage = Number(memberPercentages[displayName]) || 0;
+      memberAmounts[originalName] = (amount * percentage) / 100;
+      memberPercentsForStorage[originalName] = percentage;
     });
     
     const monthlyAmount = isRecurring ? amount : null;
     
     // Get friend IDs for members who are friends
-    const friendIds = Object.values(splitMemberFriendIds).filter(id => id != null);
+    const friendIds = displayMembers.map(displayName => {
+      return splitMemberFriendIds[displayName] || null;
+    }).filter(id => id != null);
     
     if (members.length === 0) {
       alert('Please add at least one member to the split.');
@@ -1375,7 +1458,7 @@ function handleSubmit(event) {
     }
     
     const isEditing = editingSplitId !== null;
-    const payload = { name, amount, members, memberAmounts, memberPercentages, is_recurring: isRecurring, monthly_amount: monthlyAmount, friendIds };
+    const payload = { name, amount, members, memberAmounts, memberPercentages: memberPercentsForStorage, is_recurring: isRecurring, monthly_amount: monthlyAmount, friendIds };
     
     apiFetch(isEditing ? `/splits/${editingSplitId}` : '/splits', {
       method: isEditing ? 'PATCH' : 'POST',
