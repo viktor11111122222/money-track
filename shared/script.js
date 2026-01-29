@@ -372,8 +372,26 @@ function setModalMode(type, wallet = null) {
     if (ui.submitModal) ui.submitModal.textContent = 'Create Split';
     ui.sharedMembers.value = '';
     splitMembers = {};
+    splitMemberFriendIds = {};
     if (ui.splitIsRecurring) ui.splitIsRecurring.checked = false;
     renderSplitMembersBreakdown();
+    
+    // Re-attach event listener to Add Friend button
+    setTimeout(() => {
+      const addSplitMemberBtn = document.getElementById('addSplitMember');
+      if (addSplitMemberBtn) {
+        // Remove old listeners first
+        const newBtn = addSplitMemberBtn.cloneNode(true);
+        addSplitMemberBtn.parentNode.replaceChild(newBtn, addSplitMemberBtn);
+        
+        // Add new listener
+        newBtn.addEventListener('click', (e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          showSplitMemberPicker();
+        });
+      }
+    }, 0);
   }
 }
 
