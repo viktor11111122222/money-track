@@ -384,6 +384,26 @@ function openModal(type, wallet = null) {
   document.body.style.overflow = 'hidden';
 }
 
+function showNotification(message, type = 'info', duration = 3000) {
+  const container = document.getElementById('notificationContainer');
+  if (!container) return;
+  
+  const notification = document.createElement('div');
+  notification.className = `notification ${type}`;
+  notification.textContent = message;
+  
+  container.appendChild(notification);
+  
+  setTimeout(() => {
+    notification.style.animation = 'slideOutRight 0.3s ease';
+    setTimeout(() => {
+      if (notification.parentNode) {
+        container.removeChild(notification);
+      }
+    }, 300);
+  }, duration);
+}
+
 function closeModal() {
   if (!ui.modal) return;
   ui.modal.classList.remove('active');
@@ -881,7 +901,7 @@ function showSplitMemberPicker() {
   const availableFriends = sharedData.friends.filter(friend => !splitMembers.hasOwnProperty(friend.name));
   
   if (availableFriends.length === 0) {
-    alert('No friends available. Please add friends first in the Friends section.');
+    showNotification('No friends available. Please add friends first in the Friends section.', 'info');
     return;
   }
   
