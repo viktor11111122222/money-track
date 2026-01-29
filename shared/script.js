@@ -881,11 +881,7 @@ function showSplitMemberPicker() {
   const availableFriends = sharedData.friends.filter(friend => !splitMembers.hasOwnProperty(friend.name));
   
   if (availableFriends.length === 0) {
-    // If no friends, show input dialog
-    const memberName = prompt('Enter member name:');
-    if (memberName && memberName.trim()) {
-      addSplitMember(memberName.trim());
-    }
+    alert('No friends available. Please add friends first in the Friends section.');
     return;
   }
   
@@ -925,30 +921,6 @@ function showSplitMemberPicker() {
     return btn;
   });
   
-  // Add manual entry option
-  const manualBtn = document.createElement('button');
-  manualBtn.type = 'button';
-  manualBtn.textContent = '+ Custom member...';
-  manualBtn.style.cssText = `
-    display: block;
-    width: 100%;
-    padding: 8px 12px;
-    border: none;
-    background: none;
-    text-align: left;
-    cursor: pointer;
-    color: #0066cc;
-    font-weight: 500;
-  `;
-  manualBtn.onclick = () => {
-    document.body.removeChild(pickerContainer);
-    const memberName = prompt('Enter member name:');
-    if (memberName && memberName.trim()) {
-      addSplitMember(memberName.trim());
-    }
-  };
-  items.push(manualBtn);
-  
   items.forEach(item => pickerContainer.appendChild(item));
   
   // Position near the button
@@ -973,6 +945,30 @@ function showSplitMemberPicker() {
 
 function renderSplitMembersBreakdown() {
   if (!ui.splitMembersBreakdown) return;
+  
+  const memberCount = Object.keys(splitMembers).length;
+  
+  // Sakrij label i breakdown ako nema članova
+  const label = document.querySelector('label[for="splitMembersBreakdown"]');
+  if (!label) {
+    // Find the label that contains "Members & Amounts"
+    const labels = document.querySelectorAll('#splitMembersBreakdownRow label');
+    labels.forEach(l => {
+      if (memberCount === 0) {
+        l.style.display = 'none';
+      } else {
+        l.style.display = 'inline-flex';
+      }
+    });
+  }
+  
+  if (memberCount === 0) {
+    ui.splitMembersBreakdown.innerHTML = '';
+    ui.splitMembersBreakdown.style.display = 'none';
+    return;
+  }
+  
+  ui.splitMembersBreakdown.style.display = 'block';
   
   const breakdown = Object.entries(splitMembers).map(([member, amount]) => {
     const formattedAmount = Number(amount).toLocaleString();
