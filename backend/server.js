@@ -404,28 +404,30 @@ app.post('/api/wallets/:id/transactions', authMiddleware, async (req, res) => {
 });
 
 app.get('/api/splits', authMiddleware, async (req, res) => {
-  const rows = await all('SELECT id, name, amount, members, member_amounts, created_at FROM splits WHERE owner_id = ? ORDER BY created_at DESC', [req.userId]);
+  const rows = await all('SELECT id, name, amount, members, member_amounts, is_recurring, monthly_amount, created_at FROM splits WHERE owner_id = ? ORDER BY created_at DESC', [req.userId]);
   const mapped = rows.map(row => {
     const members = row.members ? row.members.split('|').filter(Boolean) : [];
     const memberAmounts = row.member_amounts ? JSON.parse(row.member_amounts) : {};
     return {
       ...row,
       members,
-      memberAmounts
+      memberAmounts,
+      is_recurring: row.is_recurring === 1,
+      monthly_amount: row.monthly_amount
     };
   });
   res.json(mapped);
 });
 
 app.post('/api/splits', authMiddleware, async (req, res) => {
-  const { name, amount = 0, members = [], memberAmounts = {} } = req.body || {};
+  const { name, amount = 0, members = [], memberAmounts = {}, is_recurring = false, monthly_amount = null } = req.body || {};
   if (!name) return res.status(400).json({ message: 'Missing fields.' });
   const createdAt = Date.now();
   const memberString = Array.isArray(members) ? members.join('|') : '';
   const memberAmountsString = JSON.stringify(memberAmounts);
   const result = await run(
-    'INSERT INTO splits (owner_id, name, amount, members, member_amounts, created_at) VALUES (?, ?, ?, ?, ?, ?)',
-    [req.userId, name.trim(), Number(amount) || 0, memberString, memberAmountsString, createdAt]
+    'INSERT INTO splits (owner_id, name, amount, members, member_amounts, is_recurring, monthly_amount, created_at) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+    [req.userId, name.trim(), Number(amount) || 0, memberString, memberAmountsString, is_recurring ? 1 : 0, monthly_amount, createdAt]
   );
   res.status(201).json({ 
     id: result.lastID, 
@@ -433,8 +435,19 @@ app.post('/api/splits', authMiddleware, async (req, res) => {
     amount: Number(amount) || 0, 
     members, 
     memberAmounts,
+    is_recurring: is_recurring === 1 || is_recurring === true,
+    monthly_amount: monthly_amount,
     created_at: createdAt 
   });
+});
+
+app.delete('/api/splits/:id', authMiddleware, async (req, res) => {
+  const split = await get('SELECT id, owner_id FROM splits WHERE id = ?', [req.params.id]);
+  if (!split) return res.status(404).json({ message: 'Split not found.' });
+  if (split.owner_id !== req.userId) return res.status(403).json({ message: 'Forbidden.' });
+
+  await run('DELETE FROM splits WHERE id = ?', [split.id]);
+  res.json({ ok: true });
 });
 
 app.listen(PORT, () => {

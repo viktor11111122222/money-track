@@ -87,9 +87,15 @@ const ui = {
   openInviteSection: document.getElementById('openInviteSection'),
   openWalletSection: document.getElementById('openWalletSection'),
   openSplitSection: document.getElementById('openSplitSection'),
+  openSplitsAllButton: document.getElementById('openSplitsAllButton'),
   invitesList: document.getElementById('invitesList'),
   walletsList: document.getElementById('walletsList'),
   splitsList: document.getElementById('splitsList'),
+  allSplitsList: document.getElementById('allSplitsList'),
+  allSplitsModal: document.getElementById('allSplitsModal'),
+  closeAllSplitsModal: document.getElementById('closeAllSplitsModal'),
+  splitIsRecurring: document.getElementById('splitIsRecurring'),
+  splitRecurringRow: document.getElementById('splitRecurringRow'),
   friendsList: document.getElementById('friendsList'),
   modal: document.getElementById('sharedModal'),
   modalTitle: document.getElementById('modalTitle'),
@@ -364,6 +370,7 @@ function setModalMode(type, wallet = null) {
     if (ui.submitModal) ui.submitModal.textContent = 'Create Split';
     ui.sharedMembers.value = '';
     splitMembers = {};
+    if (ui.splitIsRecurring) ui.splitIsRecurring.checked = false;
     renderSplitMembersBreakdown();
   }
 }
@@ -1016,22 +1023,75 @@ function renderSplits() {
     renderEmpty(ui.splitsList, 'No splits yet.');
     return;
   }
-  ui.splitsList.innerHTML = sharedData.splits.map(split => {
+  // Prikaži samo prvi 3 splitova
+  const visibleSplits = sharedData.splits.slice(0, 3);
+  ui.splitsList.innerHTML = visibleSplits.map(split => {
     const memberAmounts = split.memberAmounts || {};
+    const isRecurring = split.is_recurring;
+    const monthlyAmount = split.monthly_amount;
+    
     const breakdown = Object.entries(memberAmounts)
-      .map(([member, amount]) => `<div class="breakdown-item">${member}: ${Number(amount).toLocaleString()} RSD</div>`)
+      .map(([member, amount]) => {
+        const displayAmount = isRecurring ? monthlyAmount || amount : amount;
+        const monthlyText = isRecurring ? ' RSD/month' : ' RSD';
+        return `<div class="breakdown-item">${member}: ${Number(displayAmount).toLocaleString()}${monthlyText}</div>`;
+      })
       .join('');
     
     const membersDisplay = split.members.length ? split.members.join(', ') : 'No members';
+    const totalDisplay = isRecurring ? `${Number(monthlyAmount || split.amount).toLocaleString()} RSD/month` : `${split.amount.toLocaleString()} RSD`;
+    const recurringBadge = isRecurring ? '<span class="split-recurring-badge">🔄 Monthly</span>' : '';
     
     return `
       <div class="shared-item">
         <div>
-          <h4>${split.name}</h4>
+          <h4>${split.name} ${recurringBadge}</h4>
           <p>${membersDisplay}</p>
           ${breakdown ? `<div class="split-breakdown">${breakdown}</div>` : ''}
         </div>
-        <span class="shared-amount">${split.amount.toLocaleString()} RSD</span>
+        <div class="split-item-footer">
+          <span class="shared-amount">${totalDisplay}</span>
+          <button class="ghost split-delete" data-id="${split.id}" title="Delete split">🗑️</button>
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function renderAllSplits() {
+  if (!ui.allSplitsList) return;
+  if (sharedData.splits.length === 0) {
+    ui.allSplitsList.innerHTML = '<div class="shared-empty">No splits created yet.</div>';
+    return;
+  }
+  ui.allSplitsList.innerHTML = sharedData.splits.map(split => {
+    const memberAmounts = split.memberAmounts || {};
+    const isRecurring = split.is_recurring;
+    const monthlyAmount = split.monthly_amount;
+    
+    const breakdown = Object.entries(memberAmounts)
+      .map(([member, amount]) => {
+        const displayAmount = isRecurring ? monthlyAmount || amount : amount;
+        const monthlyText = isRecurring ? ' RSD/month' : ' RSD';
+        return `<div class="breakdown-item">${member}: ${Number(displayAmount).toLocaleString()}${monthlyText}</div>`;
+      })
+      .join('');
+    
+    const membersDisplay = split.members.length ? split.members.join(', ') : 'No members';
+    const totalDisplay = isRecurring ? `${Number(monthlyAmount || split.amount).toLocaleString()} RSD/month` : `${split.amount.toLocaleString()} RSD`;
+    const recurringBadge = isRecurring ? '<span class="split-recurring-badge">🔄 Monthly</span>' : '';
+    
+    return `
+      <div class="shared-item">
+        <div>
+          <h4>${split.name} ${recurringBadge}</h4>
+          <p>${membersDisplay}</p>
+          ${breakdown ? `<div class="split-breakdown">${breakdown}</div>` : ''}
+        </div>
+        <div class="split-item-footer">
+          <span class="shared-amount">${totalDisplay}</span>
+          <button class="ghost split-delete" data-id="${split.id}" title="Delete split">🗑️</button>
+        </div>
       </div>
     `;
   }).join('');
@@ -1117,6 +1177,8 @@ function handleSubmit(event) {
     const amount = Number(ui.sharedAmount.value || 0);
     const members = Object.keys(splitMembers);
     const memberAmounts = splitMembers;
+    const isRecurring = ui.splitIsRecurring?.checked || false;
+    const monthlyAmount = isRecurring ? amount / Object.keys(splitMembers).length : null;
     
     if (members.length === 0) {
       alert('Please add at least one member to the split.');
@@ -1125,7 +1187,7 @@ function handleSubmit(event) {
     
     apiFetch('/splits', {
       method: 'POST',
-      body: JSON.stringify({ name, amount, members, memberAmounts })
+      body: JSON.stringify({ name, amount, members, memberAmounts, is_recurring: isRecurring, monthly_amount: monthlyAmount })
     }).then((split) => {
       sharedData.splits.unshift(split);
       renderSplits();
@@ -1146,6 +1208,25 @@ ui.openWalletCard?.addEventListener('click', () => openModal('wallet'));
 ui.openWalletSection?.addEventListener('click', () => openModal('wallet'));
 ui.openSplitCard?.addEventListener('click', () => openModal('split'));
 ui.openSplitSection?.addEventListener('click', () => openModal('split'));
+ui.openSplitsAllButton?.addEventListener('click', () => {
+  renderAllSplits();
+  if (ui.allSplitsModal) {
+    ui.allSplitsModal.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  }
+});
+ui.closeAllSplitsModal?.addEventListener('click', () => {
+  if (ui.allSplitsModal) {
+    ui.allSplitsModal.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+});
+ui.allSplitsModal?.addEventListener('click', (e) => {
+  if (e.target === ui.allSplitsModal) {
+    ui.allSplitsModal.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+});
 ui.closeModal?.addEventListener('click', closeModal);
 ui.cancelModal?.addEventListener('click', closeModal);
 ui.modal?.addEventListener('click', (event) => {
@@ -1174,6 +1255,58 @@ ui.sharedAmount?.addEventListener('change', () => {
       });
       renderSplitMembersBreakdown();
     }
+  }
+});
+
+ui.splitsList?.addEventListener('click', async (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) return;
+  
+  if (target.classList.contains('split-delete')) {
+    const splitId = target.dataset.id;
+    if (!splitId) return;
+    const confirmed = await openConfirm({
+      title: 'Delete Split',
+      text: 'Are you sure you want to delete this split? This cannot be undone.',
+      okText: 'Yes, delete'
+    });
+    if (!confirmed) return;
+    
+    apiFetch(`/splits/${splitId}`, { method: 'DELETE' })
+      .then(() => {
+        sharedData.splits = sharedData.splits.filter(s => String(s.id) !== String(splitId));
+        renderSplits();
+        renderAllSplits();
+      })
+      .catch((error) => {
+        alert('Failed to delete split: ' + (error.message || 'Unknown error'));
+      });
+  }
+});
+
+ui.allSplitsList?.addEventListener('click', async (event) => {
+  const target = event.target;
+  if (!(target instanceof HTMLElement)) return;
+  
+  if (target.classList.contains('split-delete')) {
+    const splitId = target.dataset.id;
+    if (!splitId) return;
+    const confirmed = await openConfirm({
+      title: 'Delete Split',
+      text: 'Are you sure you want to delete this split? This cannot be undone.',
+      okText: 'Yes, delete'
+    });
+    if (!confirmed) return;
+    
+    apiFetch(`/splits/${splitId}`, { method: 'DELETE' })
+      .then(() => {
+        sharedData.splits = sharedData.splits.filter(s => String(s.id) !== String(splitId));
+        renderSplits();
+        renderAllSplits();
+      })
+      .catch((error) => {
+        alert('Failed to delete split: ' + (error.message || 'Unknown error'));
+      });
   }
 });
 

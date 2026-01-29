@@ -175,7 +175,10 @@
             <section class="shared-section" id="splitsSection">
                 <div class="section-header">
                     <h2>Split Expenses</h2>
-                    <button class="ghost" id="openSplitSection">New Split</button>
+                    <div class="section-header-buttons">
+                        <button class="ghost" id="openSplitsAllButton">View All</button>
+                        <button class="ghost" id="openSplitSection">New Split</button>
+                    </div>
                 </div>
                 <div class="shared-list" id="splitsList"></div>
             </section>
@@ -245,6 +248,12 @@
                     <div id="splitMembersBreakdown" class="split-members-breakdown"></div>
                     <button type="button" class="ghost small" id="addSplitMember">+ Add Friend</button>
                 </div>
+                <div class="form-row" id="splitRecurringRow">
+                    <label>
+                        <input type="checkbox" id="splitIsRecurring"> Recurring (monthly)
+                        <span class="label-info" data-tooltip="Enable this for recurring bills like rent or Netflix.">i</span>
+                    </label>
+                </div>
                 <div class="form-row" id="sharedCategoriesRow">
                     <label for="sharedCategories">Categories (comma separated)
                         <span class="label-info" data-tooltip="Spending categories you want to track in this wallet.">i</span>
@@ -282,7 +291,17 @@
         </div>
     </div>
 
-    <script src="script.js?v=20260127"></script>
+    <div class="modal-overlay" id="allSplitsModal" aria-hidden="true">
+        <div class="modal-card" role="dialog" aria-modal="true">
+            <div class="modal-header">
+                <h3>All Splits</h3>
+                <button class="modal-close" id="closeAllSplitsModal" aria-label="Close">✕</button>
+            </div>
+            <div class="all-splits-list" id="allSplitsList"></div>
+        </div>
+    </div>
+
+    <script src="script.js?v=20260129"></script>
     <script src="/public/account-avatar.js"></script>
 </body>
 </html>
