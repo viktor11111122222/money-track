@@ -19,6 +19,17 @@
     if (img && dataUrl) img.src = dataUrl;
   }
 
+  function applyUserName(name) {
+    if (!chip || !name) return;
+    let nameLabel = chip.querySelector('.account-name');
+    if (!nameLabel) {
+      nameLabel = document.createElement('span');
+      nameLabel.className = 'account-name';
+      chip.appendChild(nameLabel);
+    }
+    nameLabel.textContent = name;
+  }
+
   async function fetchMe() {
     const token = getToken();
     if (!token) return;
@@ -28,6 +39,7 @@
     if (!res.ok) return;
     const user = await res.json();
     if (user.avatar) applyAvatar(user.avatar);
+    if (user.name) applyUserName(user.name);
   }
 
   async function uploadAvatar(file) {

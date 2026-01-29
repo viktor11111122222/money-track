@@ -3,6 +3,8 @@ const DEFAULT_MONTHLY_INCOME = 100000;
 const CURRENCY = " RSD";
 const API_BASE = 'http://localhost:4000/api';
 const TOKEN_KEY = 'sharedBudgetToken';
+const WALLET_SYNC_QUEUE_KEY = 'walletSyncQueue';
+const WALLET_SYNCED_KEY = 'walletSyncedExpenseIds';
 
 let cachedFriendLimit = null;
 let friendLimitLoaded = false;
@@ -42,26 +44,81 @@ async function getWalletUser() {
   }
 }
 
-async function syncWalletTransaction({ amount, category, note }) {
+function getWalletSyncQueue() {
+  try {
+    const raw = localStorage.getItem(WALLET_SYNC_QUEUE_KEY);
+    return raw ? JSON.parse(raw) : [];
+  } catch {
+    return [];
+  }
+}
+
+function saveWalletSyncQueue(queue) {
+  localStorage.setItem(WALLET_SYNC_QUEUE_KEY, JSON.stringify(queue));
+}
+
+function enqueueWalletSync(payload) {
+  const queue = getWalletSyncQueue();
+  queue.push({
+    id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
+    createdAt: Date.now(),
+    ...payload
+  });
+  saveWalletSyncQueue(queue);
+}
+
+function getWalletSyncedIds() {
+  try {
+    const raw = localStorage.getItem(WALLET_SYNCED_KEY);
+    const parsed = raw ? JSON.parse(raw) : [];
+    return new Set(Array.isArray(parsed) ? parsed : []);
+  } catch {
+    return new Set();
+  }
+}
+
+function saveWalletSyncedIds(ids) {
+  localStorage.setItem(WALLET_SYNCED_KEY, JSON.stringify(Array.from(ids)));
+}
+
+function markWalletSynced(expenseId) {
+  if (!expenseId) return;
+  const ids = getWalletSyncedIds();
+  ids.add(expenseId);
+  saveWalletSyncedIds(ids);
+}
+
+async function syncWalletTransaction({ amount, category, note, expenseId }, options = {}) {
+  const { skipQueue = false } = options;
   const token = localStorage.getItem(TOKEN_KEY);
-  if (!token) return;
+  if (!token) {
+    if (!skipQueue) enqueueWalletSync({ amount, category, note, expenseId });
+    return false;
+  }
   const user = await getWalletUser();
-  if (!user) return;
+  if (!user) {
+    if (!skipQueue) enqueueWalletSync({ amount, category, note, expenseId });
+    return false;
+  }
   let wallets = [];
   try {
     const res = await fetch(`${API_BASE}/wallets`, {
       headers: { Authorization: `Bearer ${token}` }
     });
-    if (!res.ok) return;
+    if (!res.ok) throw new Error('wallets');
     wallets = await res.json();
   } catch {
-    return;
+    if (!skipQueue) enqueueWalletSync({ amount, category, note, expenseId });
+    return false;
   }
-  if (!Array.isArray(wallets) || wallets.length === 0) return;
+  if (!Array.isArray(wallets) || wallets.length === 0) {
+    if (!skipQueue) enqueueWalletSync({ amount, category, note, expenseId });
+    return false;
+  }
 
   const member = user.name || user.email || 'You';
   const body = JSON.stringify({ member, amount, category, note });
-  await Promise.all(wallets.map(wallet =>
+  const results = await Promise.all(wallets.map(wallet =>
     fetch(`${API_BASE}/wallets/${wallet.id}/transactions`, {
       method: 'POST',
       headers: {
@@ -69,9 +126,45 @@ async function syncWalletTransaction({ amount, category, note }) {
         Authorization: `Bearer ${token}`
       },
       body
-    }).catch(() => null)
+    }).then(res => res.ok).catch(() => false)
   ));
+  const ok = results.every(Boolean);
+  if (!ok && !skipQueue) {
+    enqueueWalletSync({ amount, category, note, expenseId });
+    return false;
+  }
+  if (ok) markWalletSynced(expenseId);
   localStorage.setItem('walletSyncStamp', String(Date.now()));
+  return true;
+}
+
+async function flushWalletSyncQueue() {
+  const queue = getWalletSyncQueue();
+  if (queue.length === 0) return;
+  const remaining = [];
+  for (const item of queue) {
+    const ok = await syncWalletTransaction(item, { skipQueue: true });
+    if (!ok) remaining.push(item);
+  }
+  saveWalletSyncQueue(remaining);
+}
+
+function enqueueMissingWalletSync() {
+  const queue = getWalletSyncQueue();
+  const queuedIds = new Set(queue.map(item => item.expenseId).filter(Boolean));
+  const syncedIds = getWalletSyncedIds();
+  appData.expenses.forEach(exp => {
+    if (exp.type === 'income') return;
+    if (!exp.id) return;
+    if (syncedIds.has(exp.id) || queuedIds.has(exp.id)) return;
+    const note = Array.isArray(exp.tags) ? exp.tags.join(', ') : (exp.note || '');
+    enqueueWalletSync({
+      amount: exp.amount,
+      category: exp.category || (exp.type === 'savings' ? 'Savings' : 'Expense'),
+      note,
+      expenseId: exp.id
+    });
+  });
 }
 
 function isExpenseInCurrentMonth(exp) {
@@ -95,6 +188,7 @@ function initializeData() {
   if (!data) {
     data = {
       income: DEFAULT_MONTHLY_INCOME,
+      currentBalance: 0,
       expenses: [],
       categories: ["Food", "Transport", "Rent", "Entertainment"],
       categoryLimits: {},
@@ -112,6 +206,10 @@ function initializeData() {
       data.expenses = [];
       data._cleared = true;
       localStorage.setItem('expenseTrackerData', JSON.stringify(data));
+    }
+    // Add currentBalance if it doesn't exist
+    if (data.currentBalance === undefined) {
+      data.currentBalance = 0;
     }
     // Add categoryLimits if it doesn't exist (for existing data)
     if (!data.categoryLimits) {
@@ -142,20 +240,62 @@ function saveData() {
 
 // Reset all data (for testing)
 function resetAllData() {
-  if (confirm('⚠️ Are you sure you want to reset ALL data? This will delete all expenses!')) {
+  if (confirm('⚠️ Are you sure you want to reset ALL data? This will delete all expenses, transactions, friends, wallets, and settings!\n\nOnly your income and current balance will be kept.')) {
+    // Reset local data
     appData = {
-      income: DEFAULT_MONTHLY_INCOME,
+      income: appData.income,
+      currentBalance: appData.currentBalance,
       expenses: [],
       categories: ["Food", "Transport", "Rent", "Entertainment"],
       categoryLimits: {},
+      categoryColors: {},
       savingsTotal: 0,
       recurringExpenses: [],
-      lastMonthCheck: new Date().getMonth()
+      lastMonthCheck: new Date().getMonth(),
+      _cleared: true
     };
     saveData();
-    updateDashboard();
-    updateChart();
-    alert('✅ Data has been reset!');
+    
+    // Reset backend data (friends, wallets, invites)
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (token) {
+      fetch(`${API_BASE}/reset-all`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        }
+      }).then(res => {
+        if (res.ok) {
+          // Refresh all UI
+          updateDashboard();
+          updateChart();
+          updateSpendingCalendar();
+          updateTopSpendingDays();
+          initDailyChart();
+          updateBudgetProgress();
+          updateSmartSuggestions();
+          
+          // Reload page to refresh shared/friends data
+          setTimeout(() => {
+            window.location.reload();
+          }, 500);
+        }
+      }).catch(err => {
+        console.error('Reset error:', err);
+        alert('❌ Failed to reset some data. Please try again.');
+      });
+    } else {
+      // Offline mode - just refresh UI
+      updateDashboard();
+      updateChart();
+      updateSpendingCalendar();
+      updateTopSpendingDays();
+      initDailyChart();
+      updateBudgetProgress();
+      updateSmartSuggestions();
+      alert('✅ All local data has been reset!');
+    }
   }
 }
 
@@ -168,7 +308,13 @@ function getTotalSpent() {
 }
 
 function getSavings() {
-  return appData.income - getTotalSpent() + (appData.savingsTotal || 0);
+  // Balance = Current Balance - Total Spent this month
+  const totalSpent = getTotalSpent();
+  if (appData.currentBalance !== undefined) {
+    return appData.currentBalance - totalSpent;
+  }
+  // Fallback untuk stare podatke
+  return appData.income - totalSpent + (appData.savingsTotal || 0);
 }
 
 function getSpendingByCategory() {
@@ -204,6 +350,10 @@ const spendingsTopCategory = document.getElementById('spendingsTopCategory');
 const spendingsCount = document.getElementById('spendingsCount');
 const openMonthSpendings = document.getElementById('openMonthSpendings');
 const calendarDateLabel = document.getElementById('calendarDateLabel');
+
+// Calendar navigation state
+let currentCalendarYear = new Date().getFullYear();
+let currentCalendarMonth = new Date().getMonth();
 
 function toInputDate(date) {
   const yyyy = date.getFullYear();
@@ -362,6 +512,16 @@ function closeSpendingsModal() {
   };
 
   spendingsModal.addEventListener('animationend', finishClose);
+
+  if (window.location.hash === '#spendings') {
+    const returnUrl = sessionStorage.getItem('spendingsReturn');
+    if (returnUrl) {
+      sessionStorage.removeItem('spendingsReturn');
+      setTimeout(() => {
+        window.location.href = returnUrl;
+      }, 150);
+    }
+  }
 }
 
 if (spendingsBtn) {
@@ -380,11 +540,78 @@ if (spendingsModal) {
   });
 }
 
+if (window.location.hash === '#spendings') {
+  setTimeout(() => {
+    openSpendingsModal();
+  }, 0);
+}
+
 if (openMonthSpendings) {
   openMonthSpendings.addEventListener('click', () => {
-    const now = new Date();
-    openSpendingsForMonth(now.getFullYear(), now.getMonth());
+    openSpendingsForMonth(currentCalendarYear, currentCalendarMonth);
   });
+}
+
+// Calendar navigation listeners
+const prevMonthBtn = document.getElementById('prevMonthBtn');
+const nextMonthBtn = document.getElementById('nextMonthBtn');
+const todayBtn = document.getElementById('todayBtn');
+
+if (prevMonthBtn) {
+  prevMonthBtn.addEventListener('click', () => {
+    currentCalendarMonth--;
+    if (currentCalendarMonth < 0) {
+      currentCalendarMonth = 11;
+      currentCalendarYear--;
+    }
+    saveCalendarState();
+    updateSpendingCalendar();
+    updateTopSpendingDays();
+  });
+}
+
+if (nextMonthBtn) {
+  nextMonthBtn.addEventListener('click', () => {
+    currentCalendarMonth++;
+    if (currentCalendarMonth > 11) {
+      currentCalendarMonth = 0;
+      currentCalendarYear++;
+    }
+    saveCalendarState();
+    updateSpendingCalendar();
+    updateTopSpendingDays();
+  });
+}
+
+if (todayBtn) {
+  todayBtn.addEventListener('click', () => {
+    const now = new Date();
+    currentCalendarYear = now.getFullYear();
+    currentCalendarMonth = now.getMonth();
+    saveCalendarState();
+    updateSpendingCalendar();
+    updateTopSpendingDays();
+  });
+}
+
+function saveCalendarState() {
+  localStorage.setItem('calendarState', JSON.stringify({
+    year: currentCalendarYear,
+    month: currentCalendarMonth
+  }));
+}
+
+function loadCalendarState() {
+  try {
+    const saved = localStorage.getItem('calendarState');
+    if (saved) {
+      const state = JSON.parse(saved);
+      currentCalendarYear = state.year || new Date().getFullYear();
+      currentCalendarMonth = state.month || new Date().getMonth();
+    }
+  } catch (e) {
+    console.error('Error loading calendar state:', e);
+  }
 }
 
 [spendingsFrom, spendingsTo, spendingsCategory].forEach((el) => {
@@ -590,7 +817,8 @@ addExpenseBtn.addEventListener('click', async () => {
   await syncWalletTransaction({
     amount,
     category,
-    note: tagsText || ''
+    note: tagsText || '',
+    expenseId: expense.id
   });
 
   // Reset form
@@ -636,7 +864,8 @@ addSavingsBtn.addEventListener('click', async () => {
   await syncWalletTransaction({
     amount,
     category: 'Savings',
-    note: 'Savings'
+    note: 'Savings',
+    expenseId: savingsTransaction.id
   });
 
   // Show notification about added savings
@@ -897,13 +1126,21 @@ function updateLimitWarnings(overLimitList) {
 }
 
 // ===== CATEGORY LIMITS FUNCTIONALITY =====
+let limitsEditMode = false;
+let limitsExpanded = false;
+let limitsScrollPosition = 0;
+
 function updateCategoryLimits() {
   const limitsContainer = document.querySelector('.limits-list');
+  const showAllBtn = document.getElementById('limitsShowAll');
   if (!limitsContainer) return;
 
   limitsContainer.innerHTML = '';
+  
+  const categoriesToShow = limitsExpanded ? appData.categories : appData.categories.slice(0, 3);
+  const hasMore = appData.categories.length > 3;
 
-  appData.categories.forEach(cat => {
+  categoriesToShow.forEach(cat => {
     const item = document.createElement('div');
     item.className = 'limit-item';
     item.dataset.category = cat;
@@ -919,21 +1156,126 @@ function updateCategoryLimits() {
     
     if (appData.categoryLimits[cat]) {
       limitValue.textContent = appData.categoryLimits[cat].toLocaleString() + CURRENCY;
+      
+      // Add delete button for existing limits (only visible in edit mode)
+      const deleteBtn = document.createElement('button');
+      deleteBtn.className = 'limit-delete-btn';
+      if (!limitsEditMode) {
+        deleteBtn.style.display = 'none';
+      }
+      deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+      deleteBtn.title = 'Delete limit';
+      deleteBtn.addEventListener('click', (evt) => {
+        evt.stopPropagation();
+        deleteCategoryLimit(cat);
+      });
+      item.appendChild(categoryName);
+      item.appendChild(limitValue);
+      item.appendChild(deleteBtn);
     } else {
       limitValue.textContent = 'Set limit';
       limitValue.style.opacity = '0.5';
+      item.appendChild(categoryName);
+      item.appendChild(limitValue);
     }
 
-    item.appendChild(categoryName);
-    item.appendChild(limitValue);
     limitsContainer.appendChild(item);
 
-    // Click handler to show input
-    item.addEventListener('click', (evt) => {
-      showLimitInput(cat, item, evt);
-    });
+    // Click handler to show input (disabled in edit mode)
+    if (!limitsEditMode) {
+      item.addEventListener('click', (evt) => {
+        showLimitInput(cat, item, evt);
+      });
+    }
   });
+  
+  // Show/hide the expand button
+  if (showAllBtn) {
+    showAllBtn.style.display = hasMore ? 'flex' : 'none';
+  }
 }
+
+function toggleLimitsExpanded() {
+  const limitsSection = document.querySelector('.category-limits-compact');
+  const limitsList = document.querySelector('.limits-list');
+  
+  limitsExpanded = !limitsExpanded;
+  const showAllText = document.getElementById('showAllText');
+  const showAllIcon = document.getElementById('showAllIcon');
+  
+  if (limitsExpanded) {
+    if (showAllText) showAllText.textContent = 'Show less';
+    if (showAllIcon) showAllIcon.style.transform = 'rotate(180deg)';
+    updateCategoryLimits();
+  } else {
+    if (showAllText) showAllText.textContent = 'Show all';
+    if (showAllIcon) showAllIcon.style.transform = 'rotate(0deg)';
+    
+    // Start scroll animation
+    if (limitsSection) {
+      limitsSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    }
+    
+    // Add collapsing class for animation
+    if (limitsList) {
+      limitsList.classList.add('collapsing');
+    }
+    
+    // Update content after scroll completes
+    setTimeout(() => {
+      updateCategoryLimits();
+      if (limitsList) {
+        limitsList.classList.remove('collapsing');
+      }
+    }, 600);
+    return;
+  }
+}
+
+function toggleLimitsEditMode() {
+  limitsEditMode = !limitsEditMode;
+  const editBtn = document.getElementById('editLimitsBtn');
+  const limitsSection = document.querySelector('.category-limits-compact');
+  const backdrop = document.getElementById('limitsBackdrop');
+  
+  if (limitsEditMode) {
+    editBtn.textContent = 'Done';
+    editBtn.classList.add('active');
+    limitsSection.classList.add('edit-mode');
+    if (backdrop) backdrop.classList.add('active');
+    document.body.style.overflow = 'hidden';
+  } else {
+    editBtn.textContent = 'Edit Limits';
+    editBtn.classList.remove('active');
+    limitsSection.classList.remove('edit-mode');
+    if (backdrop) backdrop.classList.remove('active');
+    document.body.style.overflow = '';
+  }
+  
+  updateCategoryLimits();
+}
+
+// Initialize edit button
+document.addEventListener('DOMContentLoaded', () => {
+  const editBtn = document.getElementById('editLimitsBtn');
+  if (editBtn) {
+    editBtn.addEventListener('click', toggleLimitsEditMode);
+  }
+  
+  const showAllBtn = document.getElementById('limitsShowAll');
+  if (showAllBtn) {
+    showAllBtn.addEventListener('click', toggleLimitsExpanded);
+  }
+  
+  const backdrop = document.getElementById('limitsBackdrop');
+  if (backdrop) {
+    backdrop.addEventListener('click', () => {
+      if (limitsEditMode) {
+        toggleLimitsEditMode();
+      }
+    });
+  }
+});
 
 function showLimitInput(category, itemElement, evt) {
   const isEditing = itemElement.classList.contains('editing');
@@ -1023,6 +1365,16 @@ function saveCategoryLimit(category, rawValue) {
   appData.categoryLimits[category] = value;
   saveData();
   updateCategoryLimits();
+  updateBudgetProgress();
+}
+
+function deleteCategoryLimit(category) {
+  if (!confirm(`Delete limit for ${category}?`)) return;
+  
+  delete appData.categoryLimits[category];
+  saveData();
+  updateCategoryLimits();
+  updateBudgetProgress();
 }
 
 // ===== CHART.JS SETUP =====
@@ -1398,7 +1750,7 @@ function buildDailySpendingData(year, month) {
 }
 
 function getHeatColor(amount) {
-  if (!amount || amount <= 0) return '#e5e7eb'; // gray
+  if (!amount || amount <= 0) return '#dbeafe'; // subtle light blue for zero spending
   if (amount < 2000) return '#d9f99d'; // very light green
   if (amount < 10000) return '#86efac'; // light green
   if (amount < 20000) return '#34d399'; // green
@@ -1488,26 +1840,30 @@ function hideCalendarTooltip() {
 function updateSpendingCalendar() {
   const grid = document.getElementById('calendarGrid');
   if (!grid) return;
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
+  const year = currentCalendarYear;
+  const month = currentCalendarMonth;
   const { labels, data } = buildDailySpendingData(year, month);
 
+  // Create date for display
+  const displayDate = new Date(year, month, 1);
   if (calendarDateLabel) {
-    calendarDateLabel.textContent = now.toLocaleDateString('sr-RS', {
-      day: '2-digit',
+    calendarDateLabel.textContent = displayDate.toLocaleDateString('sr-RS', {
       month: 'long',
       year: 'numeric'
     });
   }
 
   grid.innerHTML = '';
+  const today = new Date();
+  const isCurrentMonth = year === today.getFullYear() && month === today.getMonth();
+  
   labels.forEach((label, idx) => {
     const el = document.createElement('div');
     el.className = 'calendar-day';
     el.style.background = getHeatColor(data[idx] || 0);
 
-    if (parseInt(label) === now.getDate()) {
+    // Mark today only if viewing current month
+    if (isCurrentMonth && parseInt(label) === today.getDate()) {
       el.classList.add('today');
     }
 
@@ -1538,9 +1894,8 @@ function updateSpendingCalendar() {
 }
 
 function getTopSpendingDays() {
-  const now = new Date();
-  const year = now.getFullYear();
-  const month = now.getMonth();
+  const year = currentCalendarYear;
+  const month = currentCalendarMonth;
   const { labels, data } = buildDailySpendingData(year, month);
   
   const daysWithSpend = labels
@@ -1717,45 +2072,84 @@ function updateComparisonChart() {
 function updateBudgetProgress() {
   const container = document.getElementById('progressList');
   if (!container) return;
-  container.innerHTML = '';
   const spending = getSpendingByCategory();
   const catsWithLimit = Object.keys(appData.categoryLimits || {});
   if (catsWithLimit.length === 0) {
-    container.innerHTML = '<p style="opacity:0.6">No limits set</p>';
+    container.innerHTML = '<p data-empty="true" style="opacity:0.6">No limits set</p>';
     return;
   }
+  const emptyMessage = container.querySelector('[data-empty="true"]');
+  if (emptyMessage) emptyMessage.remove();
+  const existingItems = new Map(
+    Array.from(container.querySelectorAll('.progress-item')).map(item => [item.dataset.category, item])
+  );
+  const seen = new Set();
   catsWithLimit.forEach(cat => {
     const limit = appData.categoryLimits[cat];
     const spent = spending[cat] || 0;
     const pct = limit > 0 ? Math.min(100, Math.round((spent / limit) * 100)) : 0;
     const state = spent > limit ? 'danger' : (pct > 80 ? 'warning' : '');
     const color = getCategoryColor(cat);
+    const safePercent = limit > 0 ? Math.round((spent / limit) * 100) : 0;
 
-    const item = document.createElement('div');
-    item.className = 'progress-item';
+    let item = existingItems.get(cat);
+    if (!item) {
+      item = document.createElement('div');
+      item.className = 'progress-item';
+      item.dataset.category = cat;
 
-    const header = document.createElement('div');
-    header.className = 'progress-header';
-    header.innerHTML = `<span style="display: flex; align-items: center; gap: 8px;"><span style="width: 12px; height: 12px; border-radius: 3px; background: ${color};"></span>${cat}</span><span>${spent.toLocaleString()}${CURRENCY} / ${limit.toLocaleString()}${CURRENCY}</span>`;
+      const header = document.createElement('div');
+      header.className = 'progress-header';
 
-    const bar = document.createElement('div');
-    bar.className = 'progress-bar';
-    const fill = document.createElement('div');
-    fill.className = 'progress-fill' + (state ? ' ' + state : '');
-    fill.style.width = pct + '%';
-    if (!state) {
-      fill.style.background = color;
+      const bar = document.createElement('div');
+      bar.className = 'progress-bar';
+
+      const fill = document.createElement('div');
+      fill.className = 'progress-fill';
+      fill.style.width = '0%';
+      bar.appendChild(fill);
+
+      const text = document.createElement('div');
+      text.className = 'progress-text';
+
+      item.appendChild(header);
+      item.appendChild(bar);
+      item.appendChild(text);
+      container.appendChild(item);
     }
-    bar.appendChild(fill);
 
-    const text = document.createElement('div');
-    text.className = 'progress-text';
-    text.textContent = `Potrošio si ${Math.round((spent/limit)*100)}% ${cat} budžeta`;
+    const header = item.querySelector('.progress-header');
+    const fill = item.querySelector('.progress-fill');
+    const text = item.querySelector('.progress-text');
 
-    item.appendChild(header);
-    item.appendChild(bar);
-    item.appendChild(text);
-    container.appendChild(item);
+    if (header) {
+      header.innerHTML = `<span style="display: flex; align-items: center; gap: 8px;"><span style="width: 12px; height: 12px; border-radius: 3px; background: ${color};"></span>${cat}</span><span>${spent.toLocaleString()}${CURRENCY} / ${limit.toLocaleString()}${CURRENCY}</span>`;
+    }
+
+    if (fill) {
+      fill.classList.remove('warning', 'danger');
+      if (state) {
+        fill.classList.add(state);
+        fill.style.background = '';
+      } else {
+        fill.style.background = color;
+      }
+      requestAnimationFrame(() => {
+        fill.style.width = pct + '%';
+      });
+    }
+
+    if (text) {
+      text.textContent = `Potrošio si ${safePercent}% ${cat} budžeta`;
+    }
+
+    seen.add(cat);
+  });
+
+  existingItems.forEach((item, cat) => {
+    if (!seen.has(cat)) {
+      item.remove();
+    }
   });
 }
 
@@ -2292,7 +2686,15 @@ function updateMonthlySummary() {
 }
 
 // Initial dashboard update
+loadCalendarState(); // Load saved calendar state
+checkOnboarding(); // Check if user needs onboarding
 updateDashboard();
+
+enqueueMissingWalletSync();
+flushWalletSyncQueue();
+setInterval(() => {
+  flushWalletSyncQueue();
+}, 8000);
 
 // Initialize chart after a small delay to ensure DOM is ready
 setTimeout(() => {
@@ -2313,3 +2715,141 @@ document.querySelectorAll('.footer-link').forEach(link => {
     }
   });
 });
+
+// ===== ONBOARDING =====
+async function checkOnboarding() {
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token) return;
+  
+  try {
+    const res = await fetch(`${API_BASE}/me`, {
+      headers: { Authorization: `Bearer ${token}` }
+    });
+    
+    if (!res.ok) return;
+    
+    const user = await res.json();
+    
+    console.log('User onboarding status:', user.onboarding_completed);
+    
+    // Check if user has completed onboarding (0 or null means not completed)
+    if (!user.onboarding_completed || user.onboarding_completed === 0) {
+      showOnboardingModal(user);
+    } else {
+      // If user has completed onboarding, sync income and current balance with app data
+      if (user.monthly_income) {
+        appData.income = user.monthly_income;
+      }
+      if (user.current_balance !== undefined && user.current_balance !== null) {
+        appData.currentBalance = user.current_balance;
+      }
+      saveData();
+      updateDashboard();
+    }
+  } catch (error) {
+    console.error('Error checking onboarding:', error);
+  }
+}
+
+function showOnboardingModal(user) {
+  const modal = document.getElementById('onboardingModal');
+  const nameInput = document.getElementById('onboardingName');
+  const incomeInput = document.getElementById('onboardingIncome');
+  const balanceInput = document.getElementById('onboardingBalance');
+  const completeBtn = document.getElementById('completeOnboardingBtn');
+  
+  console.log('Showing onboarding modal');
+  
+  if (!modal) {
+    console.error('Onboarding modal not found!');
+    return;
+  }
+  
+  // Pre-fill name if available
+  if (user.name) {
+    nameInput.value = user.name;
+  }
+  
+  // Show modal with flexbox display
+  modal.style.display = 'flex';
+  modal.setAttribute('aria-hidden', 'false');
+  setTimeout(() => modal.classList.add('active'), 10);
+  
+  // Handle completion
+  completeBtn.onclick = async () => {
+    const name = nameInput.value.trim();
+    const monthlyIncome = parseFloat(incomeInput.value) || 0;
+    const currentBalance = parseFloat(balanceInput.value) || 0;
+    
+    if (!name) {
+      alert('Please enter your name.');
+      return;
+    }
+    
+    if (monthlyIncome <= 0) {
+      alert('Please enter a valid monthly income.');
+      return;
+    }
+    
+    if (currentBalance < 0) {
+      alert('Please enter a valid current balance.');
+      return;
+    }
+    
+    try {
+      const token = localStorage.getItem(TOKEN_KEY);
+      const res = await fetch(`${API_BASE}/onboarding`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          name,
+          monthlyIncome,
+          currentBalance
+        })
+      });
+      
+      if (!res.ok) {
+        throw new Error('Failed to complete onboarding');
+      }
+      
+      // Reset all local data for new user
+      appData = {
+        income: monthlyIncome,
+        currentBalance: currentBalance,
+        expenses: [],
+        categories: ["Food", "Transport", "Rent", "Entertainment"],
+        categoryLimits: {},
+        categoryColors: {},
+        savingsTotal: 0,
+        recurringExpenses: [],
+        lastMonthCheck: new Date().getMonth(),
+        _cleared: true
+      };
+      saveData();
+      
+      // Close modal
+      modal.style.display = 'none';
+      modal.setAttribute('aria-hidden', 'true');
+      
+      // Refresh dashboard with all new data
+      updateDashboard();
+      updateSpendingCalendar();
+      updateTopSpendingDays();
+      initChart();
+      initDailyChart();
+      updateBudgetProgress();
+      updateSmartSuggestions();
+      
+      // Show success message
+      setTimeout(() => {
+        alert(`✅ Welcome ${name}! Your account has been set up successfully.\n\n💰 Monthly Income: ${monthlyIncome.toLocaleString()} RSD\n💵 Current Balance: ${currentBalance.toLocaleString()} RSD`);
+      }, 300);
+    } catch (error) {
+      console.error('Error completing onboarding:', error);
+      alert('Failed to complete setup. Please try again.');
+    }
+  };
+}

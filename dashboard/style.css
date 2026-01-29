@@ -189,13 +189,22 @@ hr {
 .settings-card.active { background: rgba(255,255,255,0.035); }
 
 .account-chip {
-  width: 44px;
+  width: auto;
+  min-width: 44px;
   height: 44px;
-  border-radius: 50%;
+  padding: 0 12px 0 4px;
+  border-radius: 22px;
   background: rgba(255,255,255,0.06);
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  gap: 8px;
   border: 1px solid rgba(255,255,255,0.08);
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.account-chip:hover {
+  background: rgba(255,255,255,0.1);
 }
 
 .account-chip img {
@@ -203,6 +212,16 @@ hr {
   height: 36px;
   border-radius: 50%;
   object-fit: cover;
+}
+
+.account-chip .account-name {
+  color: #e6eef8;
+  font-size: 13px;
+  font-weight: 500;
+  white-space: nowrap;
+  max-width: 120px;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* Spendings Modal */
@@ -557,6 +576,43 @@ main {
   gap: 10px;
 }
 
+.calendar-nav-buttons {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  margin-right: 8px;
+}
+
+.calendar-nav-btn {
+  border: none;
+  background: #ffffff;
+  color: #64748b;
+  font-size: 14px;
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid #e4e7ec;
+  box-shadow: 0 1px 2px rgba(16,24,40,0.05);
+}
+
+.calendar-nav-btn:hover {
+  background: #f8fafb;
+  color: #111827;
+  border-color: #d1d5db;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(16,24,40,0.08);
+}
+
+.calendar-nav-btn:active {
+  transform: translateY(0);
+  box-shadow: 0 1px 2px rgba(16,24,40,0.05);
+}
+
 .calendar-date {
   font-size: 12px;
   color: #94a3b8;
@@ -568,20 +624,23 @@ main {
 }
 
 .calendar-open-month {
-  border: none;
-  background: #0f1724;
-  color: #ffffff;
+  border: 1px solid #e4e7ec;
+  background: #ffffff;
+  color: #111827;
   font-size: 12px;
   font-weight: 600;
-  padding: 8px 12px;
-  border-radius: 10px;
+  padding: 8px 14px;
+  border-radius: 8px;
   cursor: pointer;
-  transition: transform 0.1s ease, background 0.2s ease;
+  transition: all 0.2s ease;
+  box-shadow: 0 1px 2px rgba(16,24,40,0.05);
 }
 
 .calendar-open-month:hover {
-  background: #1f2a3a;
+  background: #f8fafb;
+  border-color: #d1d5db;
   transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(16,24,40,0.08);
 }
 
 .calendar-grid {
@@ -1265,36 +1324,149 @@ main {
 }
 
 /* Category Limits Compact Section */
+.limits-backdrop {
+  position: fixed;
+  inset: 0;
+  background: rgba(15, 23, 36, 0.4);
+  backdrop-filter: blur(4px);
+  z-index: 40;
+  opacity: 0;
+  pointer-events: none;
+  transition: opacity 0.3s ease;
+}
+
+.limits-backdrop.active {
+  opacity: 1;
+  pointer-events: auto;
+}
+
 .category-limits-compact {
   background: #fff;
   padding: 16px;
   border-radius: 12px;
   box-shadow: 0 6px 18px rgba(16,24,40,0.06);
   margin-top: 20px;
+  position: relative;
+  transition: all 0.3s ease;
+  overflow: visible;
+}
+
+.category-limits-compact.edit-mode {
+  z-index: 50;
+  box-shadow: 0 20px 60px rgba(16,24,40,0.25);
+  position: fixed;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  max-height: 80vh;
+  overflow-y: auto;
+  width: calc(100% - 80px);
+  max-width: 600px;
+  margin: 0;
+}
+
+.limits-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 12px;
 }
 
 .category-limits-compact h3 {
-  margin: 0 0 12px 0;
+  margin: 0;
   font-size: 1.1rem;
   color: #0f1724;
+}
+
+.edit-limits-btn {
+  background: transparent;
+  border: 1px solid #e2e8f0;
+  color: #0f1724;
+  padding: 6px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.edit-limits-btn:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+}
+
+.edit-limits-btn.active {
+  background: #0f1724;
+  color: #fff;
+  border-color: #0f1724;
+}
+
+.category-limits-compact.edit-mode .limit-item {
+  cursor: default;
+}
+
+.category-limits-compact.edit-mode .limit-item:hover {
+  background: #f8fafc;
 }
 
 .limits-list {
   display: flex;
   flex-direction: column;
   gap: 8px;
+  margin-bottom: 12px;
+  transition: opacity 0.4s ease, transform 0.4s ease;
+}
+
+.limits-list.collapsing {
+  opacity: 0;
+  transform: translateY(-10px);
+}
+
+.limits-show-all {
+  width: 100%;
+  background: transparent;
+  border: 1px solid #e2e8f0;
+  color: #64748b;
+  padding: 8px 12px;
+  border-radius: 8px;
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  transition: all 0.2s ease;
+  margin-top: 4px;
+}
+
+.limits-show-all:hover {
+  background: #f8fafc;
+  border-color: #cbd5e1;
+  color: #0f1724;
+}
+
+.limits-show-all i {
+  transition: transform 0.3s ease;
+  font-size: 12px;
+}
+
+.category-limits-compact.edit-mode .limits-show-all {
+  display: none !important;
 }
 
 .limit-item {
-  display: flex;
-  justify-content: space-between;
+  display: grid;
+  grid-template-columns: 1fr auto auto;
   align-items: center;
+  gap: 12px;
   padding: 10px 12px;
   background: #f8fafc;
   border-radius: 8px;
   cursor: pointer;
   transition: all 0.2s ease;
   border: 2px solid transparent;
+  min-height: 44px;
 }
 
 .limit-item:hover {
@@ -1353,6 +1525,35 @@ main {
 .limit-cancel-btn:hover {
   background: #f8fafc;
   border-color: #d5dce5;
+}
+
+.limit-delete-btn {
+  background: transparent;
+  border: none;
+  color: #ef4444;
+  font-size: 14px;
+  cursor: pointer;
+  padding: 4px 8px;
+  border-radius: 6px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  opacity: 0;
+  transform: scale(0.8) translateX(-10px);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.category-limits-compact.edit-mode .limit-delete-btn {
+  opacity: 1;
+  transform: scale(1) translateX(0);
+  pointer-events: auto;
+}
+
+.limit-delete-btn:hover {
+  background: rgba(239, 68, 68, 0.1);
+  color: #dc2626;
+  transform: scale(1.1) translateX(0);
 }
 
 /* Right panel */
@@ -1937,4 +2138,61 @@ button.primary-danger {
   /* allow summary cards to wrap when there's not enough horizontal space */
   .summary-cards { flex-wrap: wrap; justify-content: flex-start; }
   .card { flex: 1 1 160px; }
+}
+
+/* Onboarding Modal Styles */
+.onboarding-modal {
+  max-width: 500px;
+}
+
+.onboarding-description {
+  color: #64748b;
+  font-size: 14px;
+  margin-bottom: 24px;
+  line-height: 1.6;
+}
+
+.onboarding-form {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.form-group label {
+  font-weight: 600;
+  color: #1e293b;
+  font-size: 14px;
+}
+
+.form-group input {
+  padding: 10px 12px;
+  border: 1px solid #e4e7ec;
+  border-radius: 8px;
+  font-size: 14px;
+  transition: all 0.2s ease;
+}
+
+.form-group input:focus {
+  outline: none;
+  border-color: #3b82f6;
+  box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.1);
+}
+
+.form-group small {
+  color: #94a3b8;
+  font-size: 12px;
+  margin-top: -4px;
+}
+
+#completeOnboardingBtn {
+  margin-top: 8px;
+  padding: 12px 16px;
+  font-size: 15px;
+  font-weight: 600;
 }

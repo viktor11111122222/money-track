@@ -1,5 +1,82 @@
 const API_BASE = 'http://localhost:4000/api';
 const TOKEN_KEY = 'sharedBudgetToken';
+const WALLET_PROGRESS_CACHE_KEY = 'walletProgressCache';
+const DEFAULT_MONTHLY_INCOME = 100000;
+const CURRENCY = ' RSD';
+
+const spendingsBtn = document.getElementById('spendingsBtn');
+
+function getExpenseData() {
+  try {
+    const raw = localStorage.getItem('expenseTrackerData');
+    if (!raw) {
+      return {
+        income: DEFAULT_MONTHLY_INCOME,
+        currentBalance: 0,
+        expenses: [],
+        savingsTotal: 0
+      };
+    }
+    const parsed = JSON.parse(raw);
+    return {
+      income: typeof parsed.income === 'number' ? parsed.income : DEFAULT_MONTHLY_INCOME,
+      currentBalance: typeof parsed.currentBalance === 'number' ? parsed.currentBalance : 0,
+      expenses: Array.isArray(parsed.expenses) ? parsed.expenses : [],
+      savingsTotal: typeof parsed.savingsTotal === 'number' ? parsed.savingsTotal : 0
+    };
+  } catch {
+    return {
+      income: DEFAULT_MONTHLY_INCOME,
+      currentBalance: 0,
+      expenses: [],
+      savingsTotal: 0
+    };
+  }
+}
+
+function getTotalSpent(expenses) {
+  return expenses.reduce((sum, exp) => {
+    if (!exp || exp.type === 'income' || exp.type === 'savings') return sum;
+    const amount = Number(exp.amount) || 0;
+    return sum + amount;
+  }, 0);
+}
+
+function getSavings(income, totalSpent, savingsTotal) {
+  return income - totalSpent + (savingsTotal || 0);
+}
+
+function updateSidebarStats() {
+  const sidebarSpent = document.getElementById('sidebarSpent');
+  const sidebarRemaining = document.getElementById('sidebarRemaining');
+  if (!sidebarSpent && !sidebarRemaining) return;
+
+  const data = getExpenseData();
+  const totalSpent = getTotalSpent(data.expenses);
+  // Use currentBalance if available (new format), fallback to old calculation
+  const remaining = data.currentBalance !== undefined
+    ? data.currentBalance - totalSpent
+    : getSavings(data.income, totalSpent, data.savingsTotal);
+
+  if (sidebarSpent) {
+    sidebarSpent.textContent = totalSpent.toLocaleString() + CURRENCY;
+  }
+  if (sidebarRemaining) {
+    sidebarRemaining.textContent = remaining.toLocaleString() + CURRENCY;
+  }
+}
+
+if (spendingsBtn) {
+  spendingsBtn.addEventListener('click', () => {
+    sessionStorage.setItem('spendingsReturn', window.location.href);
+    window.location.href = '../dashboard/index.html#spendings';
+  });
+}
+
+function getApiBaseUrl() {
+  if (API_BASE.startsWith('http')) return API_BASE;
+  return `http://localhost:4000${API_BASE.startsWith('/') ? '' : '/'}${API_BASE}`;
+}
 
 const ui = {
   openInviteHero: document.getElementById('openInviteHero'),
@@ -31,6 +108,9 @@ const ui = {
   sharedDeadline: document.getElementById('sharedDeadline'),
   sharedMembersRow: document.getElementById('sharedMembersRow'),
   sharedMembers: document.getElementById('sharedMembers'),
+  splitMembersBreakdownRow: document.getElementById('splitMembersBreakdownRow'),
+  splitMembersBreakdown: document.getElementById('splitMembersBreakdown'),
+  addSplitMember: document.getElementById('addSplitMember'),
   sharedCategoriesRow: document.getElementById('sharedCategoriesRow'),
   sharedCategories: document.getElementById('sharedCategories'),
   sharedCategoriesAll: document.getElementById('sharedCategoriesAll'),
@@ -54,9 +134,20 @@ const ui = {
   authError: document.getElementById('authError')
 };
 
+const confirmUi = {
+  modal: document.getElementById('confirmModal'),
+  title: document.getElementById('confirmTitle'),
+  text: document.getElementById('confirmText'),
+  ok: document.getElementById('confirmOk'),
+  cancel: document.getElementById('confirmCancel'),
+  close: document.getElementById('confirmClose')
+};
+
 let currentType = 'invite';
+let splitMembers = {}; // Track split members with their amounts
 let sharedData = { invites: [], wallets: [], splits: [], friends: [], walletTransactions: {} };
 let currentUser = null;
+let editingWalletId = null;
 
 function getHiddenWallets() {
   try {
@@ -67,8 +158,34 @@ function getHiddenWallets() {
   }
 }
 
+function getWalletProgressCache() {
+  try {
+    const raw = localStorage.getItem(WALLET_PROGRESS_CACHE_KEY);
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function setWalletProgressCache(next) {
+  localStorage.setItem(WALLET_PROGRESS_CACHE_KEY, JSON.stringify(next));
+}
+
 function setHiddenWallets(next) {
   localStorage.setItem('hiddenWallets', JSON.stringify(next));
+}
+
+function getWalletProgressModes() {
+  try {
+    const raw = localStorage.getItem('walletProgressModes');
+    return raw ? JSON.parse(raw) : {};
+  } catch {
+    return {};
+  }
+}
+
+function setWalletProgressModes(next) {
+  localStorage.setItem('walletProgressModes', JSON.stringify(next));
 }
 
 function getLocalCategories() {
@@ -124,6 +241,7 @@ function setToken(token) {
 }
 
 async function apiFetch(path, options = {}, withAuth = true) {
+  const baseUrl = getApiBaseUrl();
   const headers = { 'Content-Type': 'application/json', ...(options.headers || {}) };
   if (withAuth) {
     const token = getToken();
@@ -131,7 +249,7 @@ async function apiFetch(path, options = {}, withAuth = true) {
   }
   let response;
   try {
-    response = await fetch(`${API_BASE}${path}`, {
+    response = await fetch(`${baseUrl}${path}`, {
       ...options,
       headers
     });
@@ -141,9 +259,17 @@ async function apiFetch(path, options = {}, withAuth = true) {
     throw error;
   }
 
-  const payload = await response.json().catch(() => ({}));
+  const rawText = await response.text().catch(() => '');
+  let payload = {};
+  if (rawText) {
+    try {
+      payload = JSON.parse(rawText);
+    } catch {
+      payload = {};
+    }
+  }
   if (!response.ok) {
-    const message = payload.message || 'Request failed.';
+    const message = payload.message || rawText || response.statusText || 'Request failed.';
     const error = new Error(message);
     error.status = response.status;
     throw error;
@@ -172,8 +298,9 @@ function setLoggedIn(isLoggedIn) {
   if (ui.sharedApp) ui.sharedApp.classList.toggle('is-hidden', !isLoggedIn);
 }
 
-function setModalMode(type) {
+function setModalMode(type, wallet = null) {
   currentType = type;
+  editingWalletId = wallet ? wallet.id : null;
   ui.sharedForm.reset();
   if (ui.sharedEmailError) ui.sharedEmailError.textContent = '';
   ui.sharedEmailRow.style.display = type === 'invite' ? 'flex' : 'none';
@@ -182,11 +309,15 @@ function setModalMode(type) {
   ui.sharedCapRow.style.display = type === 'wallet' ? 'flex' : 'none';
   ui.sharedDeadlineRow.style.display = type === 'wallet' ? 'flex' : 'none';
   ui.sharedMembersRow.style.display = type === 'wallet' || type === 'split' ? 'flex' : 'none';
+  ui.splitMembersBreakdownRow.style.display = type === 'split' ? 'flex' : 'none';
   ui.sharedCategoriesRow.style.display = type === 'wallet' ? 'flex' : 'none';
   ui.sharedNotesRow.style.display = type === 'wallet' ? 'flex' : 'none';
   if (type === 'wallet') {
     setAllCategoriesMode(false);
     renderWalletMemberPicker();
+    if (ui.sharedMembers) ui.sharedMembers.required = true;
+  } else {
+    if (ui.sharedMembers) ui.sharedMembers.required = false;
   }
 
   if (type === 'invite') {
@@ -194,22 +325,52 @@ function setModalMode(type) {
     ui.modalTitle.textContent = 'New Invite';
     ui.sharedName.placeholder = 'Full name';
     ui.sharedEmail.required = true;
+    if (ui.submitModal) ui.submitModal.textContent = 'Create Invite';
   }
   if (type === 'wallet') {
-    ui.modalTitle.textContent = 'New Wallet';
+    ui.modalTitle.textContent = wallet ? 'Edit Wallet' : 'New Wallet';
     ui.sharedName.placeholder = 'Wallet name';
     ui.sharedEmail.required = false;
+    if (ui.submitModal) ui.submitModal.textContent = wallet ? 'Save changes' : 'Create Wallet';
+    if (wallet) {
+      ui.sharedName.value = wallet.name || '';
+      ui.sharedAmount.value = wallet.amount ?? '';
+      if (ui.sharedGoalAmount) ui.sharedGoalAmount.value = wallet.goalAmount ?? '';
+      if (ui.sharedCapAmount) ui.sharedCapAmount.value = wallet.capAmount ?? '';
+      if (ui.sharedDeadline) ui.sharedDeadline.value = wallet.deadline ?? '';
+      if (ui.sharedMembers) {
+        const members = Array.isArray(wallet.members) ? wallet.members : [];
+        ui.sharedMembers.value = members.join(', ');
+      }
+      if (ui.sharedCategories) {
+        const categories = Array.isArray(wallet.categories) ? wallet.categories : [];
+        if (categories.includes('*')) {
+          setAllCategoriesMode(true);
+        } else {
+          ui.sharedCategories.value = categories.join(', ');
+          setAllCategoriesMode(false);
+        }
+      }
+      if (ui.sharedNotes) ui.sharedNotes.value = wallet.notes || '';
+    } else if (ui.sharedMembers && currentUser) {
+      const defaultName = currentUser.name || currentUser.email;
+      if (defaultName) ui.sharedMembers.value = defaultName;
+    }
   }
   if (type === 'split') {
     ui.modalTitle.textContent = 'New Split';
     ui.sharedName.placeholder = 'Bill name';
     ui.sharedEmail.required = false;
+    if (ui.submitModal) ui.submitModal.textContent = 'Create Split';
+    ui.sharedMembers.value = '';
+    splitMembers = {};
+    renderSplitMembersBreakdown();
   }
 }
 
-function openModal(type) {
+function openModal(type, wallet = null) {
   if (!ui.modal) return;
-  setModalMode(type);
+  setModalMode(type, wallet);
   ui.modal.classList.add('active');
   document.body.style.overflow = 'hidden';
 }
@@ -222,8 +383,75 @@ function closeModal() {
   if (ui.sharedEmailError) ui.sharedEmailError.textContent = '';
 }
 
+function openConfirm({ title = 'Confirm action', text = 'Are you sure?', okText = 'Confirm' } = {}) {
+  return new Promise((resolve) => {
+    if (!confirmUi.modal) {
+      resolve(false);
+      return;
+    }
+    if (confirmUi.title) confirmUi.title.textContent = title;
+    if (confirmUi.text) confirmUi.text.textContent = text;
+    if (confirmUi.ok) confirmUi.ok.textContent = okText;
+
+    const cleanup = () => {
+      confirmUi.modal.classList.remove('active');
+      confirmUi.modal.setAttribute('aria-hidden', 'true');
+      confirmUi.ok?.removeEventListener('click', onOk);
+      confirmUi.cancel?.removeEventListener('click', onCancel);
+      confirmUi.close?.removeEventListener('click', onCancel);
+      confirmUi.modal?.removeEventListener('click', onOverlay);
+      document.body.style.overflow = '';
+    };
+
+    const onOk = () => {
+      cleanup();
+      resolve(true);
+    };
+
+    const onCancel = () => {
+      cleanup();
+      resolve(false);
+    };
+
+    const onOverlay = (event) => {
+      if (event.target === confirmUi.modal) onCancel();
+    };
+
+    confirmUi.ok?.addEventListener('click', onOk);
+    confirmUi.cancel?.addEventListener('click', onCancel);
+    confirmUi.close?.addEventListener('click', onCancel);
+    confirmUi.modal?.addEventListener('click', onOverlay);
+
+    confirmUi.modal.classList.add('active');
+    confirmUi.modal.setAttribute('aria-hidden', 'false');
+    document.body.style.overflow = 'hidden';
+  });
+}
+
 function renderEmpty(container, text) {
   container.innerHTML = `<div class="shared-empty">${text}</div>`;
+}
+
+function getPrimaryScrollElement() {
+  const main = document.querySelector('main');
+  if (main && main.scrollHeight > main.clientHeight) return main;
+  return document.scrollingElement || document.documentElement;
+}
+
+function preserveScrollPosition(callback) {
+  const scrollEl = getPrimaryScrollElement();
+  const top = window.scrollY;
+  const left = window.scrollX;
+  const elTop = scrollEl?.scrollTop ?? 0;
+  const elLeft = scrollEl?.scrollLeft ?? 0;
+  callback();
+  requestAnimationFrame(() => {
+    if (scrollEl) {
+      scrollEl.scrollTop = elTop;
+      scrollEl.scrollLeft = elLeft;
+    }
+    window.scrollTo({ top, left, behavior: 'auto' });
+  });
 }
 
 function renderInvites() {
@@ -258,11 +486,12 @@ function renderFriends() {
     return;
   }
   ui.friendsList.innerHTML = sharedData.friends.map(friend => {
+    const label = friend.name || friend.email;
     return `
-      <div class="shared-item friend-item" data-id="${friend.id}">
+      <div class="shared-item friend-item" data-id="${friend.id}" data-name="${label}" data-email="${friend.email || ''}" draggable="true">
         <div>
-          <h4>${friend.name}</h4>
-          <p>${friend.email}</p>
+          <h4>${friend.name || friend.email}</h4>
+          <p>${friend.email || ''}</p>
         </div>
         <div class="friend-controls">
           <label>
@@ -275,19 +504,46 @@ function renderFriends() {
   }).join('');
 }
 
-function renderWallets() {
-  if (!ui.walletsList) return;
-  if (sharedData.wallets.length === 0) {
-    renderEmpty(ui.walletsList, 'No wallets created.');
-    return;
-  }
-  const hiddenWallets = getHiddenWallets();
-  ui.walletsList.innerHTML = sharedData.wallets.map(wallet => {
+function applyWalletProgressAnimation(scope) {
+  if (!scope) return;
+  scope.querySelectorAll('.wallet-progress-fill[data-target]').forEach((el) => {
+    const target = el.dataset.target;
+    if (target !== undefined) {
+      el.style.width = `${target}%`;
+    }
+  });
+}
+
+function buildWalletItem(wallet, progressModes, progressCache, hiddenWallets) {
     const transactions = sharedData.walletTransactions[wallet.id] || [];
-    const totalSpent = transactions.reduce((sum, txn) => sum + (txn.amount || 0), 0);
+    const isSavingsTxn = txn => String(txn.category || '').toLowerCase() === 'savings';
+    const expenseTotal = transactions.reduce((sum, txn) => sum + (isSavingsTxn(txn) ? 0 : (txn.amount || 0)), 0);
+    const savingsTotal = transactions.reduce((sum, txn) => sum + (isSavingsTxn(txn) ? (txn.amount || 0) : 0), 0);
+    const progressMode = progressModes[wallet.id] || 'all';
+    const totalSpent = expenseTotal;
+    const savedAmount = savingsTotal;
     const goalAmount = Number.isFinite(wallet.goalAmount) && wallet.goalAmount > 0 ? wallet.goalAmount : (Number(wallet.amount) || 0);
     const capAmount = Number.isFinite(wallet.capAmount) && wallet.capAmount > 0 ? wallet.capAmount : null;
-    const progressPct = goalAmount > 0 ? Math.min(100, Math.round((totalSpent / goalAmount) * 100)) : 0;
+    const totalForGoal = progressMode === 'savings-only' ? savingsTotal : (expenseTotal + savingsTotal);
+    const progressPct = goalAmount > 0 ? Math.min(100, Math.round((totalForGoal / goalAmount) * 100)) : 0;
+    let spentPct = goalAmount > 0 ? (expenseTotal / goalAmount) * 100 : 0;
+    let savingsPct = goalAmount > 0 ? (savingsTotal / goalAmount) * 100 : 0;
+    const combinedPct = spentPct + savingsPct;
+    if (combinedPct > 100 && combinedPct > 0) {
+      const scale = 100 / combinedPct;
+      spentPct *= scale;
+      savingsPct *= scale;
+    }
+    const spentProgressPct = goalAmount > 0 ? Math.min(100, Math.round((expenseTotal / goalAmount) * 100)) : 0;
+    const cached = progressCache[wallet.id] || {};
+    const initialSpentPct = Number.isFinite(cached.goalSpent) ? cached.goalSpent : 0;
+    const initialSavingsPct = Number.isFinite(cached.goalSavings) ? cached.goalSavings : 0;
+    const initialSpentOnlyPct = Number.isFinite(cached.spentOnly) ? cached.spentOnly : 0;
+    const cacheUpdate = {
+      goalSpent: progressMode === 'savings-only' ? 0 : Number(spentPct.toFixed(2)),
+      goalSavings: Number(savingsPct.toFixed(2)),
+      spentOnly: Number(spentProgressPct)
+    };
     const capExceeded = capAmount !== null && totalSpent > capAmount;
     const progressState = capExceeded ? 'danger' : (progressPct > 80 ? 'warning' : '');
     const members = Array.isArray(wallet.members) ? wallet.members : [];
@@ -316,33 +572,45 @@ function renderWallets() {
     const currentIdentity = currentUser ? [currentUser.email, currentUser.name].filter(Boolean) : [];
     const isCurrentMember = m => currentIdentity.some(id => String(id).toLowerCase() === String(m).toLowerCase());
     const memberChips = members.map(m => {
-      const label = isCurrentMember(m) ? `${m} (you)` : m;
-      return `<span class="wallet-chip">${label}</span>`;
+      const isYou = isCurrentMember(m);
+      const label = isYou ? `${m} (you)` : m;
+      const chipClass = `wallet-chip ${isYou ? 'wallet-chip--you' : 'wallet-chip--member'}`;
+      const canRemove = isOwner && !isYou;
+      return `<span class="${chipClass}">${label}${canRemove ? `<button type="button" class="wallet-chip-remove" data-id="${wallet.id}" data-member="${m}" aria-label="Remove member">×</button>` : ''}</span>`;
     });
     if (isOwner && !members.some(isCurrentMember)) {
-      memberChips.unshift('<span class="wallet-chip">You</span>');
+      memberChips.unshift('<span class="wallet-chip wallet-chip--you">You</span>');
     }
     if (!memberChips.length && currentUser) {
-      memberChips.push('<span class="wallet-chip">You</span>');
+      memberChips.push('<span class="wallet-chip wallet-chip--you">You</span>');
     }
     const membersHtml = memberChips.length
       ? `<div class="wallet-chip-group">${memberChips.join('')}</div>`
       : '<div class="wallet-muted">No members set.</div>';
 
     const transactionHtml = transactions.length
-      ? transactions.slice(0, 4).map(txn => `
+      ? transactions.slice(0, 2).map(txn => {
+        const isSavings = String(txn.category || '').toLowerCase() === 'savings';
+        const amountLabel = `${isSavings ? '+' : '-'}${txn.amount.toLocaleString()} RSD`;
+        const amountClass = `wallet-txn-amount${isSavings ? ' wallet-txn-amount--savings' : ''}`;
+        return `
         <div class="wallet-txn-item">
           <div>
             <strong>${txn.member}</strong>
             <span>${txn.category}</span>
             ${txn.note ? `<em>${txn.note}</em>` : ''}
           </div>
-          <span class="wallet-txn-amount">-${txn.amount.toLocaleString()} RSD</span>
+          <span class="${amountClass}">${amountLabel}</span>
         </div>
-      `).join('')
+      `;
+      }).join('')
       : '<div class="wallet-muted">No transactions yet.</div>';
+    const showAllButton = transactions.length > 2
+      ? `<button type="button" class="ghost wallet-view-all" data-id="${wallet.id}" data-name="${wallet.name}">Show all transactions</button>`
+      : '';
 
-    return `
+    const spentTarget = progressMode === 'savings-only' ? 0 : Number(spentPct.toFixed(2));
+    const html = `
       <div class="shared-item wallet-item ${isHidden ? 'wallet-collapsed' : ''}" data-id="${wallet.id}">
         <div class="wallet-header">
           <div>
@@ -353,18 +621,30 @@ function renderWallets() {
             <div class="wallet-inline-stats">
               ${goalAmount ? `<span>Goal <span class="wallet-info" data-tooltip="Goal is the target amount you want to reach in this wallet.">i</span>: <strong>${goalAmount.toLocaleString()} RSD</strong></span>` : ''}
               <span>Spent: <strong>${totalSpent.toLocaleString()} RSD</strong></span>
+              <span>Saved: <strong>${savedAmount.toLocaleString()} RSD</strong></span>
               ${capAmount ? `<span class="${capExceeded ? 'wallet-cap-danger' : ''}">Cap: <strong>${capAmount.toLocaleString()} RSD</strong></span>` : ''}
             </div>
+            <button class="ghost wallet-progress-toggle" data-id="${wallet.id}">${progressMode === 'savings-only' ? 'Show all' : 'Show savings only'}</button>
             <button class="ghost wallet-toggle" data-id="${wallet.id}">${isHidden ? 'Show details' : 'Hide wallet'}</button>
+            ${isOwner ? `<button class="ghost wallet-edit" data-id="${wallet.id}">Edit</button>` : ''}
             ${isOwner ? `<button class="ghost wallet-delete" data-id="${wallet.id}">Delete</button>` : ''}
             ${canLeave ? `<button class="ghost wallet-leave" data-id="${wallet.id}">Leave</button>` : ''}
           </div>
         </div>
-        <div class="wallet-progress">
-          <div class="wallet-progress-bar">
-            <div class="wallet-progress-fill ${progressState}" style="width:${progressPct}%;"></div>
+        <div class="wallet-progress-stack">
+          <div class="wallet-progress">
+            <div class="wallet-progress-bar wallet-progress-bar--goal ${progressMode === 'savings-only' ? 'wallet-progress-bar--savings-only' : ''}">
+              <div class="wallet-progress-fill wallet-progress-fill--spent ${progressState}${progressMode === 'savings-only' ? ' is-hidden' : ''}" data-target="${spentTarget.toFixed(2)}" style="width:${initialSpentPct}%;"></div>
+              <div class="wallet-progress-fill wallet-progress-fill--savings" data-target="${savingsPct.toFixed(2)}" style="width:${initialSavingsPct}%;"></div>
+            </div>
+            <span>${progressPct}% of goal</span>
           </div>
-          <span>${progressPct}% of goal</span>
+          <div class="wallet-progress">
+            <div class="wallet-progress-bar">
+              <div class="wallet-progress-fill wallet-progress-fill--spent" data-target="${spentProgressPct}" style="width:${initialSpentOnlyPct}%;"></div>
+            </div>
+            <span>${spentProgressPct}% spent</span>
+          </div>
         </div>
         <div class="wallet-meta">
           ${members.length ? `<div class="wallet-chip-group">${members.map(m => `<span class="wallet-chip">${m}</span>`).join('')}</div>` : ''}
@@ -383,6 +663,7 @@ function renderWallets() {
           <div class="wallet-panel">
             <h5>Recent transactions</h5>
             ${transactionHtml}
+            ${showAllButton}
           </div>
         </div>
         <form class="wallet-transaction-form" data-id="${wallet.id}">
@@ -398,7 +679,335 @@ function renderWallets() {
         </form>
       </div>
     `;
+    return { html, cacheUpdate };
+}
+
+function renderWallets() {
+  if (!ui.walletsList) return;
+  preserveScrollPosition(() => {
+    if (sharedData.wallets.length === 0) {
+      renderEmpty(ui.walletsList, 'No wallets created.');
+      return;
+    }
+    const hiddenWallets = getHiddenWallets();
+    const progressModes = getWalletProgressModes();
+    const progressCache = getWalletProgressCache();
+    const nextProgressCache = { ...progressCache };
+    ui.walletsList.innerHTML = sharedData.wallets.map(wallet => {
+      const { html, cacheUpdate } = buildWalletItem(wallet, progressModes, progressCache, hiddenWallets);
+      nextProgressCache[wallet.id] = cacheUpdate;
+      return html;
+    }).join('');
+    setWalletProgressCache(nextProgressCache);
+    requestAnimationFrame(() => applyWalletProgressAnimation(ui.walletsList));
+  });
+}
+
+function updateWalletCard(wallet) {
+  if (!ui.walletsList) return;
+  preserveScrollPosition(() => {
+    const hiddenWallets = getHiddenWallets();
+    const progressModes = getWalletProgressModes();
+    const progressCache = getWalletProgressCache();
+    const { html, cacheUpdate } = buildWalletItem(wallet, progressModes, progressCache, hiddenWallets);
+    progressCache[wallet.id] = cacheUpdate;
+    setWalletProgressCache(progressCache);
+
+    const existing = ui.walletsList.querySelector(`.wallet-item[data-id="${wallet.id}"]`);
+    if (existing) {
+      existing.outerHTML = html;
+      const updated = ui.walletsList.querySelector(`.wallet-item[data-id="${wallet.id}"]`);
+      requestAnimationFrame(() => applyWalletProgressAnimation(updated));
+    } else {
+      renderWallets();
+    }
+  });
+}
+
+async function addMemberToWallet(walletId, memberName) {
+  const wallet = sharedData.wallets.find(w => String(w.id) === String(walletId));
+  if (!wallet) return;
+  const isOwner = currentUser && String(wallet.ownerId) === String(currentUser.id);
+  if (!isOwner) {
+    alert('Only the wallet owner can add members.');
+    return;
+  }
+
+  const cleanName = (memberName || '').trim();
+  if (!cleanName) return;
+
+  const members = Array.isArray(wallet.members) ? [...wallet.members] : [];
+  const normalizedMembers = members
+    .map(value => String(value || '').trim())
+    .filter(Boolean);
+  const exists = normalizedMembers.some(m => m.toLowerCase() === cleanName.toLowerCase());
+  if (!exists) normalizedMembers.push(cleanName);
+  const uniqueMembers = Array.from(
+    new Map(normalizedMembers.map(member => [member.toLowerCase(), member])).values()
+  );
+
+  const parseNumber = (value, fallback = 0) => {
+    if (value === null || value === undefined || value === '') return fallback;
+    const cleaned = String(value).replace(/,/g, '');
+    const parsed = Number(cleaned);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  };
+
+  const payload = {
+    name: wallet.name,
+    amount: parseNumber(wallet.amount, 0),
+    notes: wallet.notes || '',
+    goalAmount: parseNumber(wallet.goalAmount, null),
+    capAmount: parseNumber(wallet.capAmount, null),
+    deadline: wallet.deadline ?? null,
+    members: uniqueMembers,
+    categories: Array.isArray(wallet.categories) ? wallet.categories : []
+  };
+
+  try {
+    const baseUrl = getApiBaseUrl();
+    const token = getToken();
+    const response = await fetch(`${baseUrl}/wallets/${walletId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify(payload)
+    });
+    const rawText = await response.text().catch(() => '');
+    let updated = {};
+    if (rawText) {
+      try {
+        updated = JSON.parse(rawText);
+      } catch {
+        updated = {};
+      }
+    }
+    if (!response.ok) {
+      const message = updated.message || rawText || response.statusText || 'Request failed.';
+      throw new Error(message);
+    }
+    sharedData.wallets = sharedData.wallets.map(w => String(w.id) === String(walletId) ? { ...w, ...updated } : w);
+    updateWalletCard(sharedData.wallets.find(w => String(w.id) === String(walletId)) || updated);
+  } catch (error) {
+    const message = error?.message || 'Could not add member to wallet.';
+    alert(message);
+  }
+}
+
+async function removeMemberFromWallet(walletId, memberName) {
+  const wallet = sharedData.wallets.find(w => String(w.id) === String(walletId));
+  if (!wallet) return;
+  const isOwner = currentUser && String(wallet.ownerId) === String(currentUser.id);
+  if (!isOwner) {
+    alert('Only the wallet owner can remove members.');
+    return;
+  }
+
+  const cleanName = (memberName || '').trim();
+  if (!cleanName) return;
+
+  const members = Array.isArray(wallet.members) ? [...wallet.members] : [];
+  const normalizedMembers = members
+    .map(value => String(value || '').trim())
+    .filter(Boolean);
+  const updatedMembers = normalizedMembers.filter(m => m.toLowerCase() !== cleanName.toLowerCase());
+  if (updatedMembers.length === normalizedMembers.length) return;
+
+  const parseNumber = (value, fallback = 0) => {
+    if (value === null || value === undefined || value === '') return fallback;
+    const cleaned = String(value).replace(/,/g, '');
+    const parsed = Number(cleaned);
+    return Number.isFinite(parsed) ? parsed : fallback;
+  };
+
+  const payload = {
+    name: wallet.name,
+    amount: parseNumber(wallet.amount, 0),
+    notes: wallet.notes || '',
+    goalAmount: parseNumber(wallet.goalAmount, null),
+    capAmount: parseNumber(wallet.capAmount, null),
+    deadline: wallet.deadline ?? null,
+    members: updatedMembers,
+    categories: Array.isArray(wallet.categories) ? wallet.categories : []
+  };
+
+  try {
+    const baseUrl = getApiBaseUrl();
+    const token = getToken();
+    const response = await fetch(`${baseUrl}/wallets/${walletId}`, {
+      method: 'PATCH',
+      headers: {
+        'Content-Type': 'application/json',
+        ...(token ? { Authorization: `Bearer ${token}` } : {})
+      },
+      body: JSON.stringify(payload)
+    });
+    const rawText = await response.text().catch(() => '');
+    let updated = {};
+    if (rawText) {
+      try {
+        updated = JSON.parse(rawText);
+      } catch {
+        updated = {};
+      }
+    }
+    if (!response.ok) {
+      const message = updated.message || rawText || response.statusText || 'Request failed.';
+      throw new Error(message);
+    }
+    sharedData.wallets = sharedData.wallets.map(w => String(w.id) === String(walletId) ? { ...w, ...updated } : w);
+    updateWalletCard(sharedData.wallets.find(w => String(w.id) === String(walletId)) || updated);
+  } catch (error) {
+    const message = error?.message || 'Could not remove member from wallet.';
+    alert(message);
+  }
+}
+
+function showSplitMemberPicker() {
+  // Create a simple list of friends to add to split
+  const availableFriends = sharedData.friends.filter(friend => !splitMembers.hasOwnProperty(friend.name));
+  
+  if (availableFriends.length === 0) {
+    // If no friends, show input dialog
+    const memberName = prompt('Enter member name:');
+    if (memberName && memberName.trim()) {
+      addSplitMember(memberName.trim());
+    }
+    return;
+  }
+  
+  // Show a simple menu with available friends
+  const pickerContainer = document.createElement('div');
+  pickerContainer.className = 'split-member-picker-menu';
+  pickerContainer.style.cssText = `
+    position: absolute;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 4px;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+    z-index: 1000;
+    min-width: 200px;
+  `;
+  
+  const items = availableFriends.map(friend => {
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.textContent = friend.name;
+    btn.style.cssText = `
+      display: block;
+      width: 100%;
+      padding: 8px 12px;
+      border: none;
+      background: none;
+      text-align: left;
+      cursor: pointer;
+      border-bottom: 1px solid #eee;
+    `;
+    btn.onmouseover = () => btn.style.background = '#f5f5f5';
+    btn.onmouseout = () => btn.style.background = 'none';
+    btn.onclick = () => {
+      addSplitMember(friend.name);
+      document.body.removeChild(pickerContainer);
+    };
+    return btn;
+  });
+  
+  // Add manual entry option
+  const manualBtn = document.createElement('button');
+  manualBtn.type = 'button';
+  manualBtn.textContent = '+ Custom member...';
+  manualBtn.style.cssText = `
+    display: block;
+    width: 100%;
+    padding: 8px 12px;
+    border: none;
+    background: none;
+    text-align: left;
+    cursor: pointer;
+    color: #0066cc;
+    font-weight: 500;
+  `;
+  manualBtn.onclick = () => {
+    document.body.removeChild(pickerContainer);
+    const memberName = prompt('Enter member name:');
+    if (memberName && memberName.trim()) {
+      addSplitMember(memberName.trim());
+    }
+  };
+  items.push(manualBtn);
+  
+  items.forEach(item => pickerContainer.appendChild(item));
+  
+  // Position near the button
+  const btn = ui.addSplitMember;
+  if (btn) {
+    const rect = btn.getBoundingClientRect();
+    pickerContainer.style.top = (rect.bottom + 5) + 'px';
+    pickerContainer.style.left = rect.left + 'px';
+  }
+  
+  document.body.appendChild(pickerContainer);
+  
+  // Close when clicking outside
+  const closeMenu = () => {
+    if (pickerContainer.parentNode) {
+      document.body.removeChild(pickerContainer);
+    }
+    document.removeEventListener('click', closeMenu);
+  };
+  setTimeout(() => document.addEventListener('click', closeMenu), 0);
+}
+
+function renderSplitMembersBreakdown() {
+  if (!ui.splitMembersBreakdown) return;
+  
+  const breakdown = Object.entries(splitMembers).map(([member, amount]) => {
+    const formattedAmount = Number(amount).toLocaleString();
+    return `
+      <div class="split-member-row">
+        <span class="split-member-name">${member}</span>
+        <input type="number" class="split-member-amount" min="0" step="0.01" value="${amount}" data-member="${member}">
+        <button type="button" class="split-member-remove" data-member="${member}">✕</button>
+      </div>
+    `;
   }).join('');
+  
+  ui.splitMembersBreakdown.innerHTML = breakdown;
+  
+  // Add event listeners for amount inputs
+  ui.splitMembersBreakdown.querySelectorAll('.split-member-amount').forEach(input => {
+    input.addEventListener('change', (e) => {
+      const member = e.target.dataset.member;
+      splitMembers[member] = Number(e.target.value) || 0;
+      updateSplitTotalAmount();
+    });
+  });
+  
+  // Add event listeners for remove buttons
+  ui.splitMembersBreakdown.querySelectorAll('.split-member-remove').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.preventDefault();
+      const member = btn.dataset.member;
+      delete splitMembers[member];
+      renderSplitMembersBreakdown();
+    });
+  });
+}
+
+function addSplitMember(memberName) {
+  if (memberName && !splitMembers.hasOwnProperty(memberName)) {
+    splitMembers[memberName] = 0;
+    renderSplitMembersBreakdown();
+  }
+}
+
+function updateSplitTotalAmount() {
+  const total = Object.values(splitMembers).reduce((sum, amount) => sum + Number(amount), 0);
+  if (ui.sharedAmount) {
+    ui.sharedAmount.value = total.toFixed(2);
+  }
 }
 
 function renderSplits() {
@@ -408,12 +1017,19 @@ function renderSplits() {
     return;
   }
   ui.splitsList.innerHTML = sharedData.splits.map(split => {
-    const members = split.members.length ? split.members.join(', ') : 'No members';
+    const memberAmounts = split.memberAmounts || {};
+    const breakdown = Object.entries(memberAmounts)
+      .map(([member, amount]) => `<div class="breakdown-item">${member}: ${Number(amount).toLocaleString()} RSD</div>`)
+      .join('');
+    
+    const membersDisplay = split.members.length ? split.members.join(', ') : 'No members';
+    
     return `
       <div class="shared-item">
         <div>
           <h4>${split.name}</h4>
-          <p>${members}</p>
+          <p>${membersDisplay}</p>
+          ${breakdown ? `<div class="split-breakdown">${breakdown}</div>` : ''}
         </div>
         <span class="shared-amount">${split.amount.toLocaleString()} RSD</span>
       </div>
@@ -422,10 +1038,12 @@ function renderSplits() {
 }
 
 function renderAll() {
-  renderInvites();
-  renderWallets();
-  renderSplits();
-  renderFriends();
+  preserveScrollPosition(() => {
+    renderInvites();
+    renderWallets();
+    renderSplits();
+    renderFriends();
+  });
 }
 
 function handleSubmit(event) {
@@ -451,46 +1069,68 @@ function handleSubmit(event) {
     return;
   }
 
-  if (currentType === 'wallet') {
+    if (currentType === 'wallet') {
     const amount = Number(ui.sharedAmount.value || 0);
     const goalAmount = Number(ui.sharedGoalAmount?.value || 0) || null;
     const capAmount = Number(ui.sharedCapAmount?.value || 0) || null;
     const deadline = ui.sharedDeadline?.value || null;
-    const members = ui.sharedMembers?.value
+    let members = ui.sharedMembers?.value
       ? ui.sharedMembers.value.split(',').map(value => value.trim()).filter(Boolean)
       : [];
+    if (members.length === 0 && currentUser) {
+      const fallbackName = currentUser.name || currentUser.email;
+      if (fallbackName) members = [fallbackName];
+    }
+    if (members.length === 0) {
+      alert('Please add at least one member name.');
+      return;
+    }
     const categories = ui.sharedCategories?.dataset.all === 'true'
       ? ['*']
       : (ui.sharedCategories?.value
         ? ui.sharedCategories.value.split(',').map(value => value.trim()).filter(Boolean)
         : []);
-    apiFetch('/wallets', {
-      method: 'POST',
-      body: JSON.stringify({ name, amount, notes: ui.sharedNotes.value.trim(), goalAmount, capAmount, deadline, members, categories })
+
+    const payload = { name, amount, notes: ui.sharedNotes.value.trim(), goalAmount, capAmount, deadline, members, categories };
+    const isEditing = Boolean(editingWalletId);
+    apiFetch(isEditing ? `/wallets/${editingWalletId}` : '/wallets', {
+      method: isEditing ? 'PATCH' : 'POST',
+      body: JSON.stringify(payload)
     }).then((wallet) => {
-      sharedData.wallets.unshift(wallet);
-      sharedData.walletTransactions[wallet.id] = [];
+      if (isEditing) {
+        sharedData.wallets = sharedData.wallets.map(w => String(w.id) === String(wallet.id) ? { ...w, ...wallet } : w);
+      } else {
+        sharedData.wallets.unshift(wallet);
+        sharedData.walletTransactions[wallet.id] = [];
+      }
       renderWallets();
       closeModal();
+      editingWalletId = null;
     }).catch(() => {
       closeModal();
+      editingWalletId = null;
     });
     return;
   }
 
   if (currentType === 'split') {
     const amount = Number(ui.sharedAmount.value || 0);
-    const members = ui.sharedMembers.value
-      .split(',')
-      .map(value => value.trim())
-      .filter(Boolean);
+    const members = Object.keys(splitMembers);
+    const memberAmounts = splitMembers;
+    
+    if (members.length === 0) {
+      alert('Please add at least one member to the split.');
+      return;
+    }
+    
     apiFetch('/splits', {
       method: 'POST',
-      body: JSON.stringify({ name, amount, members })
+      body: JSON.stringify({ name, amount, members, memberAmounts })
     }).then((split) => {
       sharedData.splits.unshift(split);
       renderSplits();
       closeModal();
+      splitMembers = {};
     }).catch(() => {
       closeModal();
     });
@@ -511,6 +1151,32 @@ ui.cancelModal?.addEventListener('click', closeModal);
 ui.modal?.addEventListener('click', (event) => {
   if (event.target === ui.modal) closeModal();
 });
+
+// Add split member button
+ui.addSplitMember?.addEventListener('click', (e) => {
+  e.preventDefault();
+  // Show a dropdown or modal to select friends
+  showSplitMemberPicker();
+});
+
+// Update split total when amount changes
+ui.sharedAmount?.addEventListener('change', () => {
+  // If manually typing amount, user is overriding auto-calculation
+  const total = Object.values(splitMembers).reduce((sum, amount) => sum + Number(amount), 0);
+  if (Math.abs(total - Number(ui.sharedAmount.value)) > 0.01) {
+    // User manually changed, distribute if members exist
+    const manualTotal = Number(ui.sharedAmount.value) || 0;
+    const memberCount = Object.keys(splitMembers).length;
+    if (memberCount > 0) {
+      const perMember = manualTotal / memberCount;
+      Object.keys(splitMembers).forEach(member => {
+        splitMembers[member] = perMember;
+      });
+      renderSplitMembersBreakdown();
+    }
+  }
+});
+
 ui.invitesList?.addEventListener('click', (event) => {
   const target = event.target;
   if (!(target instanceof HTMLElement)) return;
@@ -526,6 +1192,25 @@ ui.invitesList?.addEventListener('click', (event) => {
   const id = target.dataset.id;
   if (!id) return;
   apiFetch(`/invites/${id}/resend`, { method: 'POST' }).catch(() => {});
+});
+
+ui.friendsList?.addEventListener('dragstart', (event) => {
+  const target = event.target.closest('.friend-item');
+  if (!target || !(target instanceof HTMLElement)) return;
+  const payload = {
+    name: target.dataset.name || '',
+    email: target.dataset.email || '',
+    id: target.dataset.id || ''
+  };
+  event.dataTransfer?.setData('text/plain', JSON.stringify(payload));
+  event.dataTransfer?.setDragImage(target, 16, 16);
+  target.classList.add('is-dragging');
+});
+
+ui.friendsList?.addEventListener('dragend', (event) => {
+  const target = event.target.closest('.friend-item');
+  if (!target || !(target instanceof HTMLElement)) return;
+  target.classList.remove('is-dragging');
 });
 ui.walletsList?.addEventListener('submit', (event) => {
   const form = event.target;
@@ -570,11 +1255,66 @@ ui.walletsList?.addEventListener('click', (event) => {
   const walletId = target.dataset.id;
   if (!walletId) return;
 
+  if (target.classList.contains('wallet-chip-remove')) {
+    const member = target.dataset.member || '';
+    if (!member) return;
+    openConfirm({
+      title: 'Remove member',
+      text: `Da li si siguran da želiš da ukloniš ${member} iz ovog wallet-a?`,
+      okText: 'Yes, remove'
+    }).then((confirmed) => {
+      if (!confirmed) return;
+      removeMemberFromWallet(walletId, member);
+    });
+    return;
+  }
+
   if (target.classList.contains('wallet-toggle')) {
     const hiddenWallets = getHiddenWallets();
     hiddenWallets[walletId] = !hiddenWallets[walletId];
     setHiddenWallets(hiddenWallets);
     renderWallets();
+    return;
+  }
+
+  if (target.classList.contains('wallet-progress-toggle')) {
+    const progressModes = getWalletProgressModes();
+    progressModes[walletId] = progressModes[walletId] === 'savings-only' ? 'all' : 'savings-only';
+    setWalletProgressModes(progressModes);
+    const wallet = sharedData.wallets.find(w => String(w.id) === String(walletId));
+    if (!wallet || !ui.walletsList) {
+      renderWallets();
+      return;
+    }
+    const hiddenWallets = getHiddenWallets();
+    const progressCache = getWalletProgressCache();
+    const { html, cacheUpdate } = buildWalletItem(wallet, progressModes, progressCache, hiddenWallets);
+    progressCache[wallet.id] = cacheUpdate;
+    setWalletProgressCache(progressCache);
+
+    const existing = ui.walletsList.querySelector(`.wallet-item[data-id="${walletId}"]`);
+    if (existing) {
+      existing.outerHTML = html;
+      const updated = ui.walletsList.querySelector(`.wallet-item[data-id="${walletId}"]`);
+      requestAnimationFrame(() => applyWalletProgressAnimation(updated));
+    } else {
+      renderWallets();
+    }
+    return;
+  }
+
+  if (target.classList.contains('wallet-edit')) {
+    const wallet = sharedData.wallets.find(w => String(w.id) === String(walletId));
+    if (!wallet) return;
+    openModal('wallet', wallet);
+    return;
+  }
+
+  if (target.classList.contains('wallet-view-all')) {
+    const name = target.dataset.name || '';
+    const walletName = encodeURIComponent(name);
+    const walletIdParam = encodeURIComponent(walletId);
+    window.location.href = `../expenses/index.html?walletId=${walletIdParam}&walletName=${walletName}`;
     return;
   }
 
@@ -602,6 +1342,39 @@ ui.walletsList?.addEventListener('click', (event) => {
       })
       .catch(() => {});
   }
+});
+
+ui.walletsList?.addEventListener('dragover', (event) => {
+  const target = event.target.closest('.wallet-item');
+  if (!target) return;
+  event.preventDefault();
+  target.classList.add('is-drop-target');
+});
+
+ui.walletsList?.addEventListener('dragleave', (event) => {
+  const target = event.target.closest('.wallet-item');
+  if (!target) return;
+  target.classList.remove('is-drop-target');
+});
+
+ui.walletsList?.addEventListener('drop', (event) => {
+  const target = event.target.closest('.wallet-item');
+  if (!target) return;
+  event.preventDefault();
+  target.classList.remove('is-drop-target');
+  const raw = event.dataTransfer?.getData('text/plain');
+  if (!raw) return;
+  let payload;
+  try {
+    payload = JSON.parse(raw);
+  } catch {
+    payload = null;
+  }
+  const name = payload?.name || payload?.email || '';
+  if (!name) return;
+  const walletId = target.dataset.id;
+  if (!walletId) return;
+  addMemberToWallet(walletId, name);
 });
 ui.friendsList?.addEventListener('change', (event) => {
   const target = event.target;
@@ -714,6 +1487,10 @@ async function handleRegister(event) {
 }
 
 async function init() {
+  if ('scrollRestoration' in history) {
+    history.scrollRestoration = 'manual';
+  }
+  updateSidebarStats();
   setAuthView('login');
   ui.showLogin?.addEventListener('click', () => setAuthView('login'));
   ui.showRegister?.addEventListener('click', () => setAuthView('register'));
@@ -744,6 +1521,9 @@ init();
 window.addEventListener('storage', (event) => {
   if (event.key === 'walletSyncStamp') {
     loadAll();
+  }
+  if (event.key === 'expenseTrackerData') {
+    updateSidebarStats();
   }
 });
 

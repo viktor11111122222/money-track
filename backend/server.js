@@ -110,9 +110,46 @@ app.post('/api/auth/login', async (req, res) => {
 });
 
 app.get('/api/me', authMiddleware, async (req, res) => {
-  const user = await get('SELECT id, name, email, avatar FROM users WHERE id = ?', [req.userId]);
+  const user = await get('SELECT id, name, email, avatar, monthly_income, current_balance, onboarding_completed FROM users WHERE id = ?', [req.userId]);
   if (!user) return res.status(404).json({ message: 'User not found.' });
   res.json(user);
+});
+
+app.post('/api/onboarding', authMiddleware, async (req, res) => {
+  const { name, monthlyIncome, currentBalance } = req.body || {};
+  if (!name || monthlyIncome === undefined || currentBalance === undefined) {
+    return res.status(400).json({ message: 'Missing required fields.' });
+  }
+  
+  await run(
+    'UPDATE users SET name = ?, monthly_income = ?, current_balance = ?, onboarding_completed = 1 WHERE id = ?',
+    [name.trim(), monthlyIncome, currentBalance, req.userId]
+  );
+  
+  res.json({ ok: true });
+});
+
+app.post('/api/reset-all', authMiddleware, async (req, res) => {
+  try {
+    const userId = req.userId;
+    
+    // Delete all user's wallets
+    await run('DELETE FROM wallets WHERE owner_id = ?', [userId]);
+    
+    // Delete all user's friends
+    await run('DELETE FROM friends WHERE owner_id = ?', [userId]);
+    
+    // Delete all user's invites
+    await run('DELETE FROM invites WHERE owner_id = ?', [userId]);
+    
+    // Keep monthly_income and current_balance, reset onboarding if needed
+    // Expenses are handled on frontend (localStorage), so they're already cleared
+    
+    res.json({ ok: true, message: 'All data has been reset.' });
+  } catch (error) {
+    console.error('Reset error:', error);
+    res.status(500).json({ message: 'Failed to reset data.' });
+  }
 });
 
 app.get('/api/friend-limit', authMiddleware, async (req, res) => {
@@ -262,6 +299,48 @@ app.post('/api/wallets', authMiddleware, async (req, res) => {
   });
 });
 
+app.patch('/api/wallets/:id', authMiddleware, async (req, res) => {
+  const wallet = await get('SELECT id, owner_id FROM wallets WHERE id = ?', [req.params.id]);
+  if (!wallet) return res.status(404).json({ message: 'Wallet not found.' });
+  if (wallet.owner_id !== req.userId) return res.status(403).json({ message: 'Forbidden.' });
+
+  const { name, amount = 0, notes = '', goalAmount, capAmount, deadline, members = [], categories = [] } = req.body || {};
+  if (!name) return res.status(400).json({ message: 'Missing fields.' });
+
+  const memberString = Array.isArray(members) ? members.join('|') : '';
+  const categoryString = Array.isArray(categories) ? categories.join('|') : '';
+  const goalValue = Number(goalAmount);
+  const capValue = Number(capAmount);
+
+  await run(
+    'UPDATE wallets SET name = ?, amount = ?, notes = ?, goal_amount = ?, cap_amount = ?, deadline = ?, members = ?, categories = ? WHERE id = ?',
+    [
+      name.trim(),
+      Number(amount) || 0,
+      notes.trim(),
+      Number.isFinite(goalValue) ? goalValue : null,
+      Number.isFinite(capValue) ? capValue : null,
+      deadline || null,
+      memberString,
+      categoryString,
+      wallet.id
+    ]
+  );
+
+  res.json({
+    id: wallet.id,
+    ownerId: req.userId,
+    name: name.trim(),
+    amount: Number(amount) || 0,
+    notes: notes.trim(),
+    goalAmount: Number.isFinite(goalValue) ? goalValue : null,
+    capAmount: Number.isFinite(capValue) ? capValue : null,
+    deadline: deadline || null,
+    members: Array.isArray(members) ? members : [],
+    categories: Array.isArray(categories) ? categories : []
+  });
+});
+
 app.delete('/api/wallets/:id', authMiddleware, async (req, res) => {
   const wallet = await get('SELECT id, owner_id FROM wallets WHERE id = ?', [req.params.id]);
   if (!wallet) return res.status(404).json({ message: 'Wallet not found.' });
@@ -325,24 +404,37 @@ app.post('/api/wallets/:id/transactions', authMiddleware, async (req, res) => {
 });
 
 app.get('/api/splits', authMiddleware, async (req, res) => {
-  const rows = await all('SELECT id, name, amount, members, created_at FROM splits WHERE owner_id = ? ORDER BY created_at DESC', [req.userId]);
-  const mapped = rows.map(row => ({
-    ...row,
-    members: row.members ? row.members.split('|').filter(Boolean) : []
-  }));
+  const rows = await all('SELECT id, name, amount, members, member_amounts, created_at FROM splits WHERE owner_id = ? ORDER BY created_at DESC', [req.userId]);
+  const mapped = rows.map(row => {
+    const members = row.members ? row.members.split('|').filter(Boolean) : [];
+    const memberAmounts = row.member_amounts ? JSON.parse(row.member_amounts) : {};
+    return {
+      ...row,
+      members,
+      memberAmounts
+    };
+  });
   res.json(mapped);
 });
 
 app.post('/api/splits', authMiddleware, async (req, res) => {
-  const { name, amount = 0, members = [] } = req.body || {};
+  const { name, amount = 0, members = [], memberAmounts = {} } = req.body || {};
   if (!name) return res.status(400).json({ message: 'Missing fields.' });
   const createdAt = Date.now();
   const memberString = Array.isArray(members) ? members.join('|') : '';
+  const memberAmountsString = JSON.stringify(memberAmounts);
   const result = await run(
-    'INSERT INTO splits (owner_id, name, amount, members, created_at) VALUES (?, ?, ?, ?, ?)',
-    [req.userId, name.trim(), Number(amount) || 0, memberString, createdAt]
+    'INSERT INTO splits (owner_id, name, amount, members, member_amounts, created_at) VALUES (?, ?, ?, ?, ?, ?)',
+    [req.userId, name.trim(), Number(amount) || 0, memberString, memberAmountsString, createdAt]
   );
-  res.status(201).json({ id: result.lastID, name: name.trim(), amount: Number(amount) || 0, members, created_at: createdAt });
+  res.status(201).json({ 
+    id: result.lastID, 
+    name: name.trim(), 
+    amount: Number(amount) || 0, 
+    members, 
+    memberAmounts,
+    created_at: createdAt 
+  });
 });
 
 app.listen(PORT, () => {

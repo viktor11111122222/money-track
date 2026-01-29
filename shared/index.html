@@ -31,7 +31,7 @@
                 <h3>Expenses</h3>
             </div>
 
-            <div class="side-card" onclick="window.location.href='../dashboard/index.html'">
+            <div class="side-card" id="spendingsBtn" data-route="spendings">
                 <i class="fa-solid fa-chart-line"></i>
                 <h3>Spendings</h3>
             </div>
@@ -238,6 +238,13 @@
                     <input type="text" id="sharedMembers" placeholder="Ana, Marko, Ivana">
                     <div class="member-picker" id="walletMemberPicker"></div>
                 </div>
+                <div class="form-row" id="splitMembersBreakdownRow">
+                    <label>Members & Amounts
+                        <span class="label-info" data-tooltip="Specify how much each person owes in this split.">i</span>
+                    </label>
+                    <div id="splitMembersBreakdown" class="split-members-breakdown"></div>
+                    <button type="button" class="ghost small" id="addSplitMember">+ Add Friend</button>
+                </div>
                 <div class="form-row" id="sharedCategoriesRow">
                     <label for="sharedCategories">Categories (comma separated)
                         <span class="label-info" data-tooltip="Spending categories you want to track in this wallet.">i</span>
@@ -261,7 +268,21 @@
         </div>
     </div>
 
-    <script src="script.js"></script>
+    <div class="modal-overlay confirm-overlay" id="confirmModal" aria-hidden="true">
+        <div class="confirm-card" role="dialog" aria-modal="true" aria-labelledby="confirmTitle">
+            <div class="confirm-header">
+                <h3 id="confirmTitle">Confirm action</h3>
+                <button class="modal-close" id="confirmClose" aria-label="Close">✕</button>
+            </div>
+            <p class="confirm-text" id="confirmText">Are you sure?</p>
+            <div class="confirm-actions">
+                <button type="button" class="ghost" id="confirmCancel">Cancel</button>
+                <button type="button" class="primary" id="confirmOk">Yes, remove</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js?v=20260127"></script>
     <script src="/public/account-avatar.js"></script>
 </body>
 </html>

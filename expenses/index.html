@@ -21,14 +21,24 @@
 
             <hr>
 
-            <div class="side-card" onclick="window.location.href='../dashboard/index.html'">
+            <div class="side-card" data-route="dashboard" onclick="window.location.href='../dashboard/index.html'">
                 <i class="fa-solid fa-house"></i>
                 <h3>Dashboard</h3>
             </div>
 
-            <div class="side-card active" onclick="window.location.href='../expenses/index.html'">
+            <div class="side-card active" data-route="expenses" onclick="window.location.href='../expenses/index.html'">
                 <i class="fa-solid fa-money-check-dollar"></i>
                 <h3>Expenses</h3>
+            </div>
+
+            <div class="side-card" id="spendingsBtn" data-route="spendings">
+                <i class="fa-solid fa-chart-line"></i>
+                <h3>Spendings</h3>
+            </div>
+
+            <div class="side-card" id="familyBudgetBtn" data-route="shared" onclick="window.location.href='../shared/index.html'">
+                <i class="fa-solid fa-people-group"></i>
+                <h3>Family Buget</h3>
             </div>
 
             <div class="sidebar-spacer"></div>
@@ -79,6 +89,13 @@
                 <!-- Sticky scope: filters + list -->
                 <div class="expenses-main">
                     <div class="filters-section">
+                    <div class="wallet-filter-banner" id="walletFilterBanner" hidden>
+                        <div>
+                            <span id="walletFilterLabel">Viewing wallet transactions for</span>
+                            <strong id="walletFilterName">Wallet</strong>
+                        </div>
+                        <button type="button" class="wallet-filter-clear" id="walletFilterClear">Clear</button>
+                    </div>
                     <div class="filter-group">
                         <label>Filter by Category:</label>
                         <select id="categoryFilter">

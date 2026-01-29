@@ -4,6 +4,15 @@ const CURRENCY = " RSD";
 const API_BASE = 'http://localhost:4000/api';
 const TOKEN_KEY = 'sharedBudgetToken';
 
+const spendingsBtn = document.getElementById('spendingsBtn');
+const walletFilterClear = document.getElementById('walletFilterClear');
+
+let walletFilterActive = false;
+let walletFilterId = null;
+let walletFilterName = null;
+let walletTransactions = [];
+let walletFilterError = null;
+
 let cachedFriendLimit = null;
 let friendLimitLoaded = false;
 
@@ -78,6 +87,125 @@ function saveData() {
     localStorage.setItem('expenseTrackerData', JSON.stringify(appData));
 }
 
+function getBaseExpenses() {
+    return walletFilterActive ? walletTransactions : appData.expenses;
+}
+
+function readWalletFilterFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    const id = params.get('walletId');
+    const name = params.get('walletName');
+    if (id) {
+        walletFilterActive = true;
+        walletFilterId = id;
+        walletFilterName = name ? decodeURIComponent(name) : `Wallet ${id}`;
+    } else {
+        walletFilterActive = false;
+        walletFilterId = null;
+        walletFilterName = null;
+        walletTransactions = [];
+        walletFilterError = null;
+    }
+}
+
+function clearWalletFilter(updateUrl = true) {
+    if (updateUrl) {
+        const baseUrl = window.location.pathname;
+        window.location.href = baseUrl;
+        return;
+    }
+    walletFilterActive = false;
+    walletFilterId = null;
+    walletFilterName = null;
+    walletTransactions = [];
+    walletFilterError = null;
+
+    configureWalletFilterUI();
+    populateCategoryOptions();
+    renderExpenses();
+    updateSidebarStats();
+    renderShortcuts();
+    updateShortcutsActive();
+}
+
+if (walletFilterClear) {
+    walletFilterClear.addEventListener('click', (event) => {
+        event.preventDefault();
+        clearWalletFilter(true);
+    });
+}
+
+async function loadWalletTransactions() {
+    if (!walletFilterActive || !walletFilterId) return;
+    const token = localStorage.getItem(TOKEN_KEY);
+    if (!token) {
+        walletFilterError = 'Login required to view wallet transactions.';
+        walletTransactions = [];
+        return;
+    }
+    try {
+        const res = await fetch(`${API_BASE}/wallets/${walletFilterId}/transactions`, {
+            headers: { Authorization: `Bearer ${token}` }
+        });
+        if (!res.ok) {
+            walletFilterError = 'Unable to load wallet transactions.';
+            walletTransactions = [];
+            return;
+        }
+        const list = await res.json();
+        walletTransactions = Array.isArray(list)
+            ? list.map(txn => ({
+                id: txn.id,
+                amount: Number(txn.amount || 0),
+                category: txn.category || 'Other',
+                description: txn.note && String(txn.note).trim()
+                    ? txn.note
+                    : `Wallet: ${walletFilterName}${txn.member ? ` · ${txn.member}` : ''}`,
+                timestamp: txn.created_at || txn.createdAt || Date.now(),
+                tags: txn.member ? [txn.member] : []
+            }))
+            : [];
+        walletFilterError = null;
+    } catch {
+        walletFilterError = 'Unable to load wallet transactions.';
+        walletTransactions = [];
+    }
+}
+
+function configureWalletFilterUI() {
+    const banner = document.getElementById('walletFilterBanner');
+    const labelEl = document.getElementById('walletFilterLabel');
+    const nameEl = document.getElementById('walletFilterName');
+    const clearBtn = document.getElementById('walletFilterClear');
+    const addBtn = document.getElementById('btnAddExpense');
+    const shortcuts = document.getElementById('quickShortcuts');
+
+    if (walletFilterActive) {
+        if (banner) banner.hidden = false;
+        if (labelEl) labelEl.textContent = 'Viewing wallet transactions for';
+        if (nameEl) nameEl.textContent = walletFilterName || 'Wallet';
+        if (nameEl) nameEl.style.display = '';
+        if (clearBtn) clearBtn.style.display = '';
+        if (addBtn) addBtn.style.display = 'none';
+        if (shortcuts) shortcuts.style.display = 'none';
+    } else {
+        if (banner) banner.hidden = false;
+        if (labelEl) labelEl.textContent = 'Viewing all transactions';
+        if (nameEl) nameEl.textContent = '';
+        if (nameEl) nameEl.style.display = 'none';
+        if (clearBtn) clearBtn.style.display = 'none';
+        if (addBtn) addBtn.style.display = '';
+        if (shortcuts) shortcuts.style.display = '';
+    }
+
+    if (clearBtn) {
+        clearBtn.onclick = (event) => {
+            event.preventDefault();
+            clearWalletFilter(true);
+        };
+    }
+}
+
 // Modal Management
 const modal = document.getElementById('expenseModal');
 const btnAddExpense = document.getElementById('btnAddExpense');
@@ -87,6 +215,30 @@ const expenseForm = document.getElementById('expenseForm');
 const modalTitle = document.getElementById('modalTitle');
 
 let editingExpenseId = null;
+
+function setActiveSidebarItem() {
+    const cards = document.querySelectorAll('.side-card');
+    if (!cards.length) return;
+    const path = window.location.pathname;
+    let activeRoute = null;
+    if (path.includes('/expenses/')) activeRoute = 'expenses';
+    else if (path.includes('/shared/')) activeRoute = 'shared';
+    else if (path.includes('/dashboard/')) activeRoute = 'dashboard';
+    else if (path.includes('/spendings/')) activeRoute = 'spendings';
+    if (!activeRoute) return;
+    cards.forEach(card => {
+        card.classList.toggle('active', card.dataset.route === activeRoute);
+    });
+}
+
+setActiveSidebarItem();
+
+if (spendingsBtn) {
+    spendingsBtn.addEventListener('click', () => {
+        sessionStorage.setItem('spendingsReturn', window.location.href);
+        window.location.href = '../dashboard/index.html#spendings';
+    });
+}
 
 btnAddExpense.onclick = function() {
     editingExpenseId = null;
@@ -424,11 +576,22 @@ function getAppIcon(appName) {
 // Render Expenses
 function renderExpenses() {
     const expensesList = document.getElementById('expensesList');
+    if (!expensesList) return;
+    if (walletFilterActive && walletFilterError) {
+        expensesList.innerHTML = `
+            <div class="empty-state">
+                <i class="fa-solid fa-circle-exclamation"></i>
+                <h3>${walletFilterError}</h3>
+                <p>Try again after logging in.</p>
+            </div>
+        `;
+        return;
+    }
     const categoryFilter = document.getElementById('categoryFilter').value;
     const sortBy = document.getElementById('sortBy').value;
     const searchTerm = document.getElementById('searchExpenses').value.toLowerCase();
     
-    let filteredExpenses = [...appData.expenses];
+    let filteredExpenses = [...getBaseExpenses()];
     
     // Filter by category
     if (categoryFilter !== 'all') {
@@ -467,8 +630,8 @@ function renderExpenses() {
         expensesList.innerHTML = `
             <div class="empty-state">
                 <i class="fa-solid fa-inbox"></i>
-                <h3>No expenses found</h3>
-                <p>Start by adding your first expense!</p>
+                <h3>${walletFilterActive ? 'No wallet transactions found' : 'No expenses found'}</h3>
+                <p>${walletFilterActive ? 'There are no transactions for this wallet yet.' : 'Start by adding your first expense!'}</p>
             </div>
         `;
         return;
@@ -497,6 +660,17 @@ function renderExpenses() {
             iconContent = `<span>${getCategoryIcon(iconCategory)}</span>`;
         }
 
+        const actionButtons = walletFilterActive
+            ? ''
+            : `
+                <button class="btn-edit" onclick="editExpense(${expense.id})">
+                    <i class="fa-solid fa-pen"></i> Edit
+                </button>
+                <button class="btn-delete" onclick="deleteExpense(${expense.id})">
+                    <i class="fa-solid fa-trash"></i> Delete
+                </button>
+            `;
+
         return `
         <div class="expense-item">
             <div class="expense-info">
@@ -524,12 +698,7 @@ function renderExpenses() {
             <div class="expense-actions">
                 <div class="expense-amount">${expense.amount.toLocaleString()}${CURRENCY}</div>
                 <div class="action-buttons">
-                    <button class="btn-edit" onclick="editExpense(${expense.id})">
-                        <i class="fa-solid fa-pen"></i> Edit
-                    </button>
-                    <button class="btn-delete" onclick="deleteExpense(${expense.id})">
-                        <i class="fa-solid fa-trash"></i> Delete
-                    </button>
+                    ${actionButtons}
                 </div>
             </div>
         </div>
@@ -539,6 +708,7 @@ function renderExpenses() {
 
 // Edit Expense
 function editExpense(id) {
+    if (walletFilterActive) return;
     editingExpenseId = id;
     const expense = appData.expenses.find(e => e.id === id);
     if (!expense) return;
@@ -555,6 +725,7 @@ function editExpense(id) {
 
 // Delete Expense
 function deleteExpense(id) {
+    if (walletFilterActive) return;
     if (confirm('Are you sure you want to delete this expense?')) {
         appData.expenses = appData.expenses.filter(e => e.id !== id);
         saveData();
@@ -570,7 +741,10 @@ function updateSidebarStats() {
     const totalSpent = appData.expenses
         .filter(expense => expense.category !== 'Savings')
         .reduce((sum, expense) => sum + expense.amount, 0);
-    const remaining = appData.income - totalSpent;
+    // Use currentBalance (like Dashboard) - Balance = Current Balance - Total Spent
+    const remaining = appData.currentBalance !== undefined 
+        ? appData.currentBalance - totalSpent 
+        : appData.income - totalSpent; // Fallback za stare podatke
     
     const sidebarSpent = document.getElementById('sidebarSpent');
     const sidebarRemaining = document.getElementById('sidebarRemaining');
@@ -590,12 +764,22 @@ function populateCategoryOptions() {
     
     // Populate filter dropdown
     categoryFilter.innerHTML = '<option value="all">All Categories</option>';
-    appData.categories.forEach(category => {
-        const option = document.createElement('option');
-        option.value = category;
-        option.textContent = category;
-        categoryFilter.appendChild(option);
-    });
+    if (walletFilterActive) {
+        const walletCategories = Array.from(new Set(walletTransactions.map(txn => txn.category || 'Other')));
+        walletCategories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category;
+            option.textContent = category;
+            categoryFilter.appendChild(option);
+        });
+    } else {
+        appData.categories.forEach(category => {
+            const option = document.createElement('option');
+            option.value = category;
+            option.textContent = category;
+            categoryFilter.appendChild(option);
+        });
+    }
     
     // Populate form dropdown
     expenseCategory.innerHTML = '';
@@ -605,6 +789,11 @@ function populateCategoryOptions() {
         option.textContent = category;
         expenseCategory.appendChild(option);
     });
+    if (walletFilterActive) {
+        expenseCategory.disabled = true;
+    } else {
+        expenseCategory.disabled = false;
+    }
 }
 
 // Sticky filter bar: flatten top corners when it touches the viewport
@@ -623,12 +812,23 @@ window.addEventListener('scroll', updateFilterStickiness);
 window.addEventListener('resize', updateFilterStickiness);
 
 // Initialize
-populateCategoryOptions();
-renderExpenses();
-updateSidebarStats();
-updateFilterStickiness();
-renderShortcuts();
-updateShortcutsActive();
+async function initExpensesPage() {
+    readWalletFilterFromUrl();
+    if (walletFilterActive) {
+        await loadWalletTransactions();
+    }
+    configureWalletFilterUI();
+    populateCategoryOptions();
+    renderExpenses();
+    updateSidebarStats();
+    updateFilterStickiness();
+    if (!walletFilterActive) {
+        renderShortcuts();
+        updateShortcutsActive();
+    }
+}
+
+initExpensesPage();
 
 // ===== Quick Shortcuts =====
 function renderShortcuts() {

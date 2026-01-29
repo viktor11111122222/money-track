@@ -1,3 +1,9 @@
 {
-  "editor.tabSize": 2
+  "editor.tabSize": 2,
+  "chat.tools.terminal.autoApprove": {
+    "/^cd /Users/vica/Desktop/money-track-1/backend && node server\\.js$/": {
+      "approve": true,
+      "matchCommandLine": true
+    }
+  }
 }

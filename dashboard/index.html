@@ -125,11 +125,19 @@
                     </ul>
                 </section>
 
+                <div class="limits-backdrop" id="limitsBackdrop"></div>
                 <section class="category-limits-compact">
-                    <h3>Category Limits</h3>
-                    <div class="limits-list">
+                    <div class="limits-header">
+                        <h3>Limits</h3>
+                        <button class="edit-limits-btn" id="editLimitsBtn">Edit Limits</button>
+                    </div>
+                    <div class="limits-list" id="limitsList">
                          Dinamički će se popuniti sa JS
                     </div>
+                    <button class="limits-show-all" id="limitsShowAll">
+                        <span id="showAllText">Show all</span>
+                        <i class="fa-solid fa-chevron-down" id="showAllIcon"></i>
+                    </button>
                 </section>
 
                 <section class="chart-card">
@@ -196,7 +204,7 @@
                 
 
                 <section class="budget-progress" id="budgetProgress">
-                    <h3>Budget Progress</h3>
+                    <h3>📊 Track Limits</h3>
                     <div class="progress-list" id="progressList"></div>
                 </section>
 
@@ -218,6 +226,17 @@
                             <span class="calendar-date" id="calendarDateLabel"></span>
                         </div>
                         <div class="calendar-header-actions">
+                            <div class="calendar-nav-buttons">
+                                <button class="calendar-nav-btn" id="prevMonthBtn" title="Previous Month">
+                                    <i class="fa-solid fa-chevron-left"></i>
+                                </button>
+                                <button class="calendar-nav-btn" id="todayBtn" title="Today">
+                                    <i class="fa-solid fa-calendar-day"></i>
+                                </button>
+                                <button class="calendar-nav-btn" id="nextMonthBtn" title="Next Month">
+                                    <i class="fa-solid fa-chevron-right"></i>
+                                </button>
+                            </div>
                             <button class="calendar-open-month" id="openMonthSpendings">Open Month</button>
                         </div>
                     </div>
@@ -258,6 +277,41 @@
         </div>
     </main>
     <!-- <div class="duzina"></div> -->
+
+    <!-- Onboarding Modal -->
+    <div class="modal-overlay" id="onboardingModal" aria-hidden="true" role="dialog" aria-modal="true" style="display: none;">
+        <div class="modal-content onboarding-modal" role="document">
+            <div class="modal-header">
+                <h2>👋 Welcome to Money Tracker!</h2>
+            </div>
+            <div class="modal-body">
+                <p class="onboarding-description">Let's set up your account to start tracking your expenses effectively.</p>
+                
+                <div class="onboarding-form">
+                    <div class="form-group">
+                        <label for="onboardingName">Full Name</label>
+                        <input type="text" id="onboardingName" placeholder="Enter your full name" required>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="onboardingIncome">Monthly Income (RSD)</label>
+                        <input type="number" id="onboardingIncome" placeholder="e.g., 100000" min="0" required>
+                        <small>Your regular monthly income</small>
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="onboardingBalance">Current Balance (RSD)</label>
+                        <input type="number" id="onboardingBalance" placeholder="e.g., 50000" min="0" required>
+                        <small>How much money you have right now</small>
+                    </div>
+                    
+                    <button class="primary" id="completeOnboardingBtn">
+                        <i class="fa-solid fa-check"></i> Complete Setup
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
 
     <div class="modal-overlay" id="spendingsModal" aria-hidden="true" role="dialog" aria-modal="true">
         <div class="modal-content" role="document">

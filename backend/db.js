@@ -15,6 +15,9 @@ db.serialize(() => {
   `);
 
   db.run('ALTER TABLE users ADD COLUMN avatar TEXT', () => {});
+  db.run('ALTER TABLE users ADD COLUMN monthly_income REAL', () => {});
+  db.run('ALTER TABLE users ADD COLUMN current_balance REAL', () => {});
+  db.run('ALTER TABLE users ADD COLUMN onboarding_completed INTEGER DEFAULT 0', () => {});
 
   db.run(`
     CREATE TABLE IF NOT EXISTS invites (
@@ -67,6 +70,8 @@ db.serialize(() => {
       created_at INTEGER NOT NULL
     )
   `);
+
+  db.run('ALTER TABLE splits ADD COLUMN member_amounts TEXT', () => {});
 
   db.run(`
     CREATE TABLE IF NOT EXISTS wallet_transactions (
