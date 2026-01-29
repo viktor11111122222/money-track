@@ -150,7 +150,7 @@ const confirmUi = {
 };
 
 let currentType = 'invite';
-let splitMembers = {}; // Track split members with their amounts
+let splitMembers = {}; // Track split members with their percentages (0-100)
 let splitMemberFriendIds = {}; // Track which members are friends with their IDs
 let sharedData = { invites: [], wallets: [], splits: [], friends: [], walletTransactions: {} };
 let currentUser = null;
@@ -388,17 +388,26 @@ function setModalMode(type, wallet = null) {
       ui.sharedName.value = split.name || '';
       ui.sharedAmount.value = split.amount ?? '';
       
-      // Load members and amounts
-      splitMembers = { ...split.memberAmounts };
-      splitMemberFriendIds = {};
+      // Load members and percentages
+      // Try to use memberPercentages first (new format), fall back to calculating from memberAmounts
+      if (split.memberPercentages) {
+        splitMembers = { ...split.memberPercentages };
+      } else if (split.memberAmounts) {
+        // Calculate percentages from amounts
+        const totalAmount = split.amount || 0;
+        splitMembers = {};
+        Object.entries(split.memberAmounts).forEach(([member, amount]) => {
+          splitMembers[member] = totalAmount > 0 ? (Number(amount) / totalAmount) * 100 : 0;
+        });
+      }
       
       // Build friend IDs map
+      splitMemberFriendIds = {};
       if (split.friendIds && Array.isArray(split.friendIds)) {
-        split.friendIds.forEach(friendId => {
-          const member = split.members.find((m, idx) => {
-            // Try to match by position or find correct member
-            return true;
-          });
+        split.members.forEach((member, idx) => {
+          if (split.friendIds[idx]) {
+            splitMemberFriendIds[member] = split.friendIds[idx];
+          }
         });
       }
       
@@ -410,10 +419,10 @@ function setModalMode(type, wallet = null) {
       splitMembers = {};
       splitMemberFriendIds = {};
       
-      // Add current user as default member
+      // Add current user as default member with 100% (will be split when others added)
       if (currentUser) {
         const currentUserName = currentUser.name || currentUser.email;
-        splitMembers[currentUserName] = 0;
+        splitMembers[currentUserName] = 100;
       }
       
       if (ui.splitIsRecurring) ui.splitIsRecurring.checked = false;
@@ -1067,11 +1076,15 @@ function renderSplitMembersBreakdown() {
   const isEditing = editingSplitId !== null;
   const editingSplit = isEditing ? sharedData.splits.find(s => s.id === editingSplitId) : null;
   const isOwner = isEditing && editingSplit && currentUser && editingSplit.owner_id === currentUser.id;
+  const totalAmount = Number(ui.sharedAmount?.value || 0);
+  const totalPercent = Object.values(splitMembers).reduce((sum, pct) => sum + Number(pct), 0);
   
-  const breakdown = Object.entries(splitMembers).map(([member, amount]) => {
+  const breakdown = Object.entries(splitMembers).map(([member, percentage]) => {
     const isCurrentUser = member === currentUserName;
     const displayName = isCurrentUser ? `${member} <span class="split-you-badge">You</span>` : member;
-    const formattedAmount = Number(amount).toLocaleString();
+    const percent = Number(percentage) || 0;
+    const calculatedAmount = (totalAmount * percent) / 100;
+    const formattedAmount = Number(calculatedAmount).toLocaleString();
     
     // Show remove button based on editing mode
     let removeBtn = '';
@@ -1086,26 +1099,37 @@ function renderSplitMembersBreakdown() {
       removeBtn = `<button type="button" class="split-member-remove" data-member="${member}">✕</button>`;
     }
     
-    // Disable amount field for current user when creating, but allow when owner is editing
-    const amountDisabled = isCurrentUser && (!isEditing || !isOwner);
+    // Disable percentage field for current user when creating, but allow when owner is editing
+    const percentDisabled = isCurrentUser && (!isEditing || !isOwner);
     
     return `
       <div class="split-member-row ${isCurrentUser ? 'split-current-user' : ''}">
         <span class="split-member-name">${displayName}</span>
-        <input type="number" class="split-member-amount" min="0" step="0.01" value="${amount}" data-member="${member}" ${amountDisabled ? 'disabled' : ''}>
+        <div class="split-member-fields">
+          <div class="split-percent-input">
+            <input type="number" class="split-member-percent" min="0" max="100" step="0.01" value="${percent}" data-member="${member}" ${percentDisabled ? 'disabled' : ''}>
+            <span class="split-percent-symbol">%</span>
+          </div>
+          <span class="split-calculated-amount">${formattedAmount} RSD</span>
+        </div>
         ${removeBtn}
       </div>
     `;
   }).join('');
   
-  ui.splitMembersBreakdown.innerHTML = breakdown;
+  // Calculate remaining percentage
+  const remainingPercent = 100 - totalPercent;
+  const remainingClass = remainingPercent < -0.01 ? 'split-percent-error' : (remainingPercent > 0.01 ? 'split-percent-warning' : 'split-percent-ok');
+  const percentageStatus = `<div class="split-percentage-status ${remainingClass}">Total: ${totalPercent.toFixed(2)}% ${remainingPercent !== 0 ? `(${remainingPercent > 0 ? '+' : ''}${remainingPercent.toFixed(2)}%)` : '✓'}</div>`;
   
-  // Add event listeners for amount inputs
-  ui.splitMembersBreakdown.querySelectorAll('.split-member-amount').forEach(input => {
-    input.addEventListener('change', (e) => {
+  ui.splitMembersBreakdown.innerHTML = breakdown + percentageStatus;
+  
+  // Add event listeners for percentage inputs
+  ui.splitMembersBreakdown.querySelectorAll('.split-member-percent').forEach(input => {
+    input.addEventListener('input', (e) => {
       const member = e.target.dataset.member;
       splitMembers[member] = Number(e.target.value) || 0;
-      updateSplitTotalAmount();
+      renderSplitMembersBreakdown();
     });
   });
   
@@ -1116,6 +1140,15 @@ function renderSplitMembersBreakdown() {
       const member = btn.dataset.member;
       delete splitMembers[member];
       delete splitMemberFriendIds[member];
+      
+      // Redistribute percentages evenly among remaining members
+      const remainingMembers = Object.keys(splitMembers);
+      if (remainingMembers.length > 0) {
+        const evenPercent = 100 / remainingMembers.length;
+        remainingMembers.forEach(m => {
+          splitMembers[m] = evenPercent;
+        });
+      }
       renderSplitMembersBreakdown();
     });
   });
@@ -1123,32 +1156,21 @@ function renderSplitMembersBreakdown() {
 
 function addSplitMember(memberName, friendId = null) {
   if (memberName && !splitMembers.hasOwnProperty(memberName)) {
-    const totalAmount = Number(ui.sharedAmount?.value || 0);
-    const newMemberCount = Object.keys(splitMembers).length + 1;
+    const currentMembers = Object.keys(splitMembers).length;
+    const newMemberCount = currentMembers + 1;
     
-    // Distribute total amount equally among all members including the new one
-    if (totalAmount > 0 && newMemberCount > 0) {
-      const perMember = totalAmount / newMemberCount;
-      Object.keys(splitMembers).forEach(member => {
-        splitMembers[member] = perMember;
-      });
-      splitMembers[memberName] = perMember;
-    } else {
-      splitMembers[memberName] = 0;
-    }
+    // Distribute percentages equally among all members including the new one
+    const evenPercent = 100 / newMemberCount;
+    Object.keys(splitMembers).forEach(member => {
+      splitMembers[member] = evenPercent;
+    });
+    splitMembers[memberName] = evenPercent;
     
     // Store friend ID if provided
     if (friendId) {
       splitMemberFriendIds[memberName] = friendId;
     }
     renderSplitMembersBreakdown();
-  }
-}
-
-function updateSplitTotalAmount() {
-  const total = Object.values(splitMembers).reduce((sum, amount) => sum + Number(amount), 0);
-  if (ui.sharedAmount) {
-    ui.sharedAmount.value = total.toFixed(2);
   }
 }
 
@@ -1162,17 +1184,19 @@ function renderSplits() {
   const visibleSplits = sharedData.splits.slice(0, 3);
   ui.splitsList.innerHTML = visibleSplits.map(split => {
     const memberAmounts = split.memberAmounts || {};
+    const memberPercentages = split.memberPercentages || {};
     const isRecurring = split.is_recurring;
     const monthlyAmount = split.monthly_amount;
     const isOwner = currentUser && split.owner_id === currentUser.id;
     
-    const breakdown = Object.entries(memberAmounts)
-      .map(([member, amount]) => {
-        const displayAmount = isRecurring ? monthlyAmount || amount : amount;
-        const monthlyText = isRecurring ? ' RSD/month' : ' RSD';
-        return `<div class="breakdown-item">${member}: ${Number(displayAmount).toLocaleString()}${monthlyText}</div>`;
-      })
-      .join('');
+    const breakdown = split.members.map(member => {
+      const amount = memberAmounts[member] || 0;
+      const percentage = memberPercentages[member] || 0;
+      const displayAmount = isRecurring ? monthlyAmount || split.amount : amount;
+      const monthlyText = isRecurring ? ' RSD/month' : ' RSD';
+      const percentText = percentage > 0 ? ` (${Number(percentage).toFixed(1)}%)` : '';
+      return `<div class="breakdown-item">${member}: ${Number(displayAmount).toLocaleString()}${monthlyText}${percentText}</div>`;
+    }).join('');
     
     const membersDisplay = split.members.length ? split.members.join(', ') : 'No members';
     const totalDisplay = isRecurring ? `${Number(monthlyAmount || split.amount).toLocaleString()} RSD/month` : `${split.amount.toLocaleString()} RSD`;
@@ -1206,17 +1230,19 @@ function renderAllSplits() {
   }
   ui.allSplitsList.innerHTML = sharedData.splits.map(split => {
     const memberAmounts = split.memberAmounts || {};
+    const memberPercentages = split.memberPercentages || {};
     const isRecurring = split.is_recurring;
     const monthlyAmount = split.monthly_amount;
     const isOwner = currentUser && split.owner_id === currentUser.id;
     
-    const breakdown = Object.entries(memberAmounts)
-      .map(([member, amount]) => {
-        const displayAmount = isRecurring ? monthlyAmount || amount : amount;
-        const monthlyText = isRecurring ? ' RSD/month' : ' RSD';
-        return `<div class="breakdown-item">${member}: ${Number(displayAmount).toLocaleString()}${monthlyText}</div>`;
-      })
-      .join('');
+    const breakdown = split.members.map(member => {
+      const amount = memberAmounts[member] || 0;
+      const percentage = memberPercentages[member] || 0;
+      const displayAmount = isRecurring ? monthlyAmount || split.amount : amount;
+      const monthlyText = isRecurring ? ' RSD/month' : ' RSD';
+      const percentText = percentage > 0 ? ` (${Number(percentage).toFixed(1)}%)` : '';
+      return `<div class="breakdown-item">${member}: ${Number(displayAmount).toLocaleString()}${monthlyText}${percentText}</div>`;
+    }).join('');
     
     const membersDisplay = split.members.length ? split.members.join(', ') : 'No members';
     const totalDisplay = isRecurring ? `${Number(monthlyAmount || split.amount).toLocaleString()} RSD/month` : `${split.amount.toLocaleString()} RSD`;
@@ -1321,9 +1347,17 @@ function handleSubmit(event) {
   if (currentType === 'split') {
     const amount = Number(ui.sharedAmount.value || 0);
     const members = Object.keys(splitMembers);
-    const memberAmounts = splitMembers;
+    const memberPercentages = splitMembers; // Now storing percentages
     const isRecurring = ui.splitIsRecurring?.checked || false;
-    const monthlyAmount = isRecurring ? amount / Object.keys(splitMembers).length : null;
+    
+    // Calculate member amounts based on percentages
+    const memberAmounts = {};
+    members.forEach(member => {
+      const percentage = Number(memberPercentages[member]) || 0;
+      memberAmounts[member] = (amount * percentage) / 100;
+    });
+    
+    const monthlyAmount = isRecurring ? amount : null;
     
     // Get friend IDs for members who are friends
     const friendIds = Object.values(splitMemberFriendIds).filter(id => id != null);
@@ -1333,8 +1367,15 @@ function handleSubmit(event) {
       return;
     }
     
+    // Validate percentages
+    const totalPercent = Object.values(memberPercentages).reduce((sum, p) => sum + Number(p), 0);
+    if (Math.abs(totalPercent - 100) > 0.01) {
+      alert(`Percentages must total 100%. Current total: ${totalPercent.toFixed(2)}%`);
+      return;
+    }
+    
     const isEditing = editingSplitId !== null;
-    const payload = { name, amount, members, memberAmounts, is_recurring: isRecurring, monthly_amount: monthlyAmount, friendIds };
+    const payload = { name, amount, members, memberAmounts, memberPercentages, is_recurring: isRecurring, monthly_amount: monthlyAmount, friendIds };
     
     apiFetch(isEditing ? `/splits/${editingSplitId}` : '/splits', {
       method: isEditing ? 'PATCH' : 'POST',
@@ -1405,15 +1446,8 @@ if (addSplitMemberBtn) {
 // Update split total when amount changes - real-time calculation
 ui.sharedAmount?.addEventListener('input', () => {
   if (currentType === 'split') {
-    const manualTotal = Number(ui.sharedAmount.value) || 0;
-    const memberCount = Object.keys(splitMembers).length;
-    if (memberCount > 0 && manualTotal > 0) {
-      const perMember = manualTotal / memberCount;
-      Object.keys(splitMembers).forEach(member => {
-        splitMembers[member] = perMember;
-      });
-      renderSplitMembersBreakdown();
-    }
+    // Just re-render to update calculated amounts based on new total
+    renderSplitMembersBreakdown();
   }
 });
 
