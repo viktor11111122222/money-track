@@ -373,6 +373,13 @@ function setModalMode(type, wallet = null) {
     ui.sharedMembers.value = '';
     splitMembers = {};
     splitMemberFriendIds = {};
+    
+    // Add current user as default member
+    if (currentUser) {
+      const currentUserName = currentUser.name || currentUser.email;
+      splitMembers[currentUserName] = 0;
+    }
+    
     if (ui.splitIsRecurring) ui.splitIsRecurring.checked = false;
     renderSplitMembersBreakdown();
     
