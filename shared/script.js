@@ -1275,8 +1275,10 @@ ui.splitsList?.addEventListener('click', async (event) => {
     apiFetch(`/splits/${splitId}`, { method: 'DELETE' })
       .then(() => {
         sharedData.splits = sharedData.splits.filter(s => String(s.id) !== String(splitId));
-        renderSplits();
-        renderAllSplits();
+        preserveScrollPosition(() => {
+          renderSplits();
+          renderAllSplits();
+        });
       })
       .catch((error) => {
         alert('Failed to delete split: ' + (error.message || 'Unknown error'));
@@ -1301,8 +1303,10 @@ ui.allSplitsList?.addEventListener('click', async (event) => {
     apiFetch(`/splits/${splitId}`, { method: 'DELETE' })
       .then(() => {
         sharedData.splits = sharedData.splits.filter(s => String(s.id) !== String(splitId));
-        renderSplits();
-        renderAllSplits();
+        preserveScrollPosition(() => {
+          renderSplits();
+          renderAllSplits();
+        });
       })
       .catch((error) => {
         alert('Failed to delete split: ' + (error.message || 'Unknown error'));
