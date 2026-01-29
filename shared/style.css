@@ -1133,11 +1133,27 @@
     border: 1px solid #e2e8f0;
 }
 
+.split-member-row.split-current-user {
+    background: #f0f9ff;
+    border-color: #bfdbfe;
+}
+
 .split-member-name {
     flex: 1;
     font-weight: 500;
     color: #1e293b;
     min-width: 80px;
+}
+
+.split-you-badge {
+    display: inline-block;
+    background: #dbeafe;
+    color: #0369a1;
+    padding: 2px 6px;
+    border-radius: 4px;
+    font-size: 11px;
+    font-weight: 600;
+    margin-left: 6px;
 }
 
 .split-member-amount {
@@ -1149,10 +1165,22 @@
     background: white;
 }
 
+.split-member-amount:disabled {
+    background: #f1f5f9;
+    color: #94a3b8;
+    cursor: not-allowed;
+    border-color: #cbd5e1;
+}
+
 .split-member-amount:focus {
     outline: none;
     border-color: #3b82f6;
     box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.1);
+}
+
+.split-member-amount:disabled:focus {
+    border-color: #cbd5e1;
+    box-shadow: none;
 }
 
 .split-member-remove {

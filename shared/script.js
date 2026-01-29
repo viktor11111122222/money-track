@@ -1024,13 +1024,21 @@ function renderSplitMembersBreakdown() {
   
   ui.splitMembersBreakdown.style.display = 'block';
   
+  const currentUserName = currentUser ? (currentUser.name || currentUser.email) : '';
+  
   const breakdown = Object.entries(splitMembers).map(([member, amount]) => {
+    const isCurrentUser = member === currentUserName;
+    const displayName = isCurrentUser ? `${member} <span class="split-you-badge">You</span>` : member;
     const formattedAmount = Number(amount).toLocaleString();
+    const removeBtn = isCurrentUser 
+      ? '' 
+      : `<button type="button" class="split-member-remove" data-member="${member}">✕</button>`;
+    
     return `
-      <div class="split-member-row">
-        <span class="split-member-name">${member}</span>
-        <input type="number" class="split-member-amount" min="0" step="0.01" value="${amount}" data-member="${member}">
-        <button type="button" class="split-member-remove" data-member="${member}">✕</button>
+      <div class="split-member-row ${isCurrentUser ? 'split-current-user' : ''}">
+        <span class="split-member-name">${displayName}</span>
+        <input type="number" class="split-member-amount" min="0" step="0.01" value="${amount}" data-member="${member}" ${isCurrentUser ? 'disabled' : ''}>
+        ${removeBtn}
       </div>
     `;
   }).join('');
@@ -1051,6 +1059,13 @@ function renderSplitMembersBreakdown() {
     btn.addEventListener('click', (e) => {
       e.preventDefault();
       const member = btn.dataset.member;
+      const currentUserName = currentUser ? (currentUser.name || currentUser.email) : '';
+      
+      if (member === currentUserName) {
+        showNotification('You cannot remove yourself from the split!', 'info');
+        return;
+      }
+      
       delete splitMembers[member];
       delete splitMemberFriendIds[member];
       renderSplitMembersBreakdown();
