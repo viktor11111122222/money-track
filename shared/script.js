@@ -673,15 +673,13 @@ function renderFriends() {
             <p>${friend.email || ''}</p>
           </div>
           <div class="friend-actions">
+            <label class="friend-limit-label">
+              <span>Limit (RSD)</span>
+              <input type="number" class="friend-limit" data-id="${friend.id}" min="0" step="0.01" value="${friend.limitAmount ?? 0}">
+            </label>
             <button type="button" class="friend-edit" data-id="${friend.id}" title="Edit nickname">✏️</button>
-            <button type="button" class="friend-delete" data-id="${friend.id}" title="Delete friend">🗑️</button>
+            <button type="button" class="friend-delete" data-id="${friend.id}" title="Delete friend"><i class="fa-solid fa-trash"></i></button>
           </div>
-        </div>
-        <div class="friend-controls">
-          <label>
-            Limit (RSD)
-            <input type="number" class="friend-limit" data-id="${friend.id}" min="0" step="0.01" value="${friend.limitAmount ?? 0}">
-          </label>
         </div>
       </div>
     `;
@@ -1333,7 +1331,7 @@ function renderSplits() {
           <span class="shared-amount">${totalDisplay}</span>
           <div class="split-item-buttons">
             ${editButton}
-            <button class="ghost split-delete" data-id="${split.id}" title="Delete split">🗑️</button>
+            <button class="ghost split-delete" data-id="${split.id}" title="Delete split"><i class="fa-solid fa-trash"></i></button>
           </div>
         </div>
       </div>
@@ -1379,7 +1377,7 @@ function renderAllSplits() {
           <span class="shared-amount">${totalDisplay}</span>
           <div class="split-item-buttons">
             ${editButton}
-            <button class="ghost split-delete" data-id="${split.id}" title="Delete split">🗑️</button>
+            <button class="ghost split-delete" data-id="${split.id}" title="Delete split"><i class="fa-solid fa-trash"></i></button>
           </div>
         </div>
       </div>
@@ -1739,7 +1737,7 @@ ui.walletsList?.addEventListener('click', (event) => {
     if (!member) return;
     openConfirm({
       title: 'Remove member',
-      text: `Da li si siguran da želiš da ukloniš ${member} iz ovog wallet-a?`,
+      text: t('js.removeMemberConfirm', [member]),
       okText: 'Yes, remove'
     }).then((confirmed) => {
       if (!confirmed) return;
@@ -2005,6 +2003,11 @@ async function init() {
 }
 
 init();
+
+// Re-render when language changes
+window.addEventListener('languageChanged', () => {
+  if (typeof applyI18n === 'function') applyI18n();
+});
 
 window.addEventListener('storage', (event) => {
   if (event.key === 'walletSyncStamp') {

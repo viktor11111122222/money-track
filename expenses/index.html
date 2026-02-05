@@ -10,6 +10,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&family=Bebas+Neue&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.1/dist/chart.umd.min.js"></script>
+    <script src="/public/i18n.js"></script>
+    <script src="/public/theme-init.js"></script>
+    <link rel="stylesheet" href="/public/theme.css">
 </head>
 <body>
     <header>
@@ -45,13 +48,13 @@
 
             <div class="sidebar-footer">
                 <div class="quick-stats">
-                    <h4>This Month</h4>
+                    <h4 data-i18n="sidebar.thisMonth">This Month</h4>
                     <div class="stat-item">
-                        <span class="stat-label">Spent</span>
+                        <span class="stat-label" data-i18n="sidebar.spent">Spent</span>
                         <span class="stat-value" id="sidebarSpent">0 RSD</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-label">Remaining</span>
+                        <span class="stat-label" data-i18n="sidebar.remaining">Remaining</span>
                         <span class="stat-value remaining" id="sidebarRemaining">0 RSD</span>
                     </div>
                 </div>
@@ -61,9 +64,9 @@
 
             </div>
             <div class="settings-wrap">
-                <div class="settings-card">
+                <div class="settings-card" onclick="window.location.href='../shared/settings.html'">
                     <i class="fa-solid fa-gear"></i>
-                    <h3>Settings</h3>
+                    <h3 data-i18n="sidebar.settings">Settings</h3>
                 </div>
                 <div class="account-chip" id="accountChip">
                     <img src="/public/avatar-default.svg" alt="Account">
@@ -76,9 +79,9 @@
     <main>
         <div class="main-container">
             <div class="expenses-header">
-                <h1>Expenses Management</h1>
+                <h1 data-i18n="exp.title">Expenses Management</h1>
                 <button class="btn-add-expense" id="btnAddExpense">
-                    <i class="fa-solid fa-plus"></i> Add New Expense
+                    <i class="fa-solid fa-plus"></i> <span data-i18n="exp.addNew">Add New Expense</span>
                 </button>
             </div>
 
@@ -91,29 +94,29 @@
                     <div class="filters-section">
                     <div class="wallet-filter-banner" id="walletFilterBanner" hidden>
                         <div>
-                            <span id="walletFilterLabel">Viewing wallet transactions for</span>
+                            <span id="walletFilterLabel" data-i18n="exp.viewingWallet">Viewing wallet transactions for</span>
                             <strong id="walletFilterName">Wallet</strong>
                         </div>
-                        <button type="button" class="wallet-filter-clear" id="walletFilterClear">Clear</button>
+                        <button type="button" class="wallet-filter-clear" id="walletFilterClear" data-i18n="exp.clear">Clear</button>
                     </div>
                     <div class="filter-group">
-                        <label>Filter by Category:</label>
+                        <label data-i18n="exp.filterByCat">Filter by Category:</label>
                         <select id="categoryFilter">
-                            <option value="all">All Categories</option>
+                            <option value="all" data-i18n="exp.allCategories">All Categories</option>
                         </select>
                     </div>
                     <div class="filter-group">
-                        <label>Sort by:</label>
+                        <label data-i18n="exp.sortBy">Sort by:</label>
                         <select id="sortBy">
-                            <option value="date-desc">Date (Newest First)</option>
-                            <option value="date-asc">Date (Oldest First)</option>
-                            <option value="amount-desc">Amount (High to Low)</option>
-                            <option value="amount-asc">Amount (Low to High)</option>
+                            <option value="date-desc" data-i18n="exp.dateNewest">Date (Newest First)</option>
+                            <option value="date-asc" data-i18n="exp.dateOldest">Date (Oldest First)</option>
+                            <option value="amount-desc" data-i18n="exp.amountHigh">Amount (High to Low)</option>
+                            <option value="amount-asc" data-i18n="exp.amountLow">Amount (Low to High)</option>
                         </select>
                     </div>
                     <div class="filter-group">
-                        <label>Search:</label>
-                        <input type="text" id="searchExpenses" placeholder="Search expenses...">
+                        <label data-i18n="exp.search">Search:</label>
+                        <input type="text" id="searchExpenses" data-i18n-placeholder="exp.searchPlaceholder" placeholder="Search expenses...">
                     </div>
                     </div>
 
@@ -128,13 +131,13 @@
         <section class="kpi-bar" id="kpiBar" aria-label="Monthly Summary">
             <h2 class="kpi-title" id="kpiTitle">
                 <span class="kpi-title-icon"><i class="fa-solid fa-gauge-high"></i></span>
-                KPI Summary
+                <span data-i18n="exp.kpiSummary">KPI Summary</span>
             </h2>
             
             <!-- Budget Progress -->
             <div class="kpi-budget-progress">
                 <div class="budget-header">
-                    <h3><i class="fa-solid fa-chart-simple"></i> Monthly Budget</h3>
+                    <h3><i class="fa-solid fa-chart-simple"></i> <span data-i18n="exp.monthlyBudget">Monthly Budget</span></h3>
                     <span class="budget-amount" id="budgetAmount">0 / 100,000 RSD</span>
                 </div>
                 <div class="progress-bar-wrapper">
@@ -149,7 +152,7 @@
             <div class="kpi-analytics-grid">
                 <!-- Pie Chart -->
                 <div class="kpi-chart-card">
-                    <h3><i class="fa-solid fa-chart-pie"></i> Spending by Category</h3>
+                    <h3><i class="fa-solid fa-chart-pie"></i> <span data-i18n="exp.spendingByCat">Spending by Category</span></h3>
                     <div class="chart-container">
                         <canvas id="categoryChart"></canvas>
                     </div>
@@ -157,7 +160,7 @@
 
                 <!-- Insights -->
                 <div class="kpi-insights-card">
-                    <h3><i class="fa-solid fa-lightbulb"></i> Smart Insights</h3>
+                    <h3><i class="fa-solid fa-lightbulb"></i> <span data-i18n="exp.smartInsights">Smart Insights</span></h3>
                     <div class="insights-list" id="insightsList">
                         <!-- Populated by JS -->
                     </div>
@@ -171,10 +174,10 @@
         <!-- Export/Import Section -->
         <div class="data-actions">
             <button class="btn-export" id="btnExportCSV">
-                <i class="fa-solid fa-download"></i> Export CSV
+                <i class="fa-solid fa-download"></i> <span data-i18n="exp.exportCSV">Export CSV</span>
             </button>
             <button class="btn-import" id="btnImportCSV">
-                <i class="fa-solid fa-upload"></i> Import CSV
+                <i class="fa-solid fa-upload"></i> <span data-i18n="exp.importCSV">Import CSV</span>
             </button>
             <input type="file" id="fileInput" accept=".csv" style="display: none;">
         </div>
@@ -183,32 +186,32 @@
         <div class="modal" id="expenseModal">
             <div class="modal-content">
                 <span class="close">&times;</span>
-                <h2 id="modalTitle">Add New Expense</h2>
+                <h2 id="modalTitle" data-i18n="exp.modalTitle">Add New Expense</h2>
                 <form id="expenseForm">
                     <div class="form-group">
-                        <label for="expenseAmount">Amount (RSD):</label>
+                        <label for="expenseAmount" data-i18n="exp.amountLabel">Amount:</label>
                         <input type="number" id="expenseAmount" required min="0" step="0.01">
                     </div>
                     <div class="form-group">
-                        <label for="expenseCategory">Category:</label>
+                        <label for="expenseCategory" data-i18n="exp.categoryLabel">Category:</label>
                         <select id="expenseCategory" required>
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="expenseDescription">Description:</label>
+                        <label for="expenseDescription" data-i18n="exp.descriptionLabel">Description:</label>
                         <input type="text" id="expenseDescription" required>
                     </div>
                     <div class="form-group">
-                        <label for="expenseDate">Date:</label>
+                        <label for="expenseDate" data-i18n="exp.dateLabel">Date:</label>
                         <input type="date" id="expenseDate" required>
                     </div>
                     <div class="form-group">
-                        <label for="expenseTags">Tags (optional, comma-separated):</label>
-                        <input type="text" id="expenseTags" placeholder="e.g. urgent, work">
+                        <label for="expenseTags" data-i18n="exp.tagsLabel">Tags (optional, comma-separated):</label>
+                        <input type="text" id="expenseTags" data-i18n-placeholder="exp.tagsPlaceholder" placeholder="e.g. urgent, work">
                     </div>
                     <div class="form-actions">
-                        <button type="submit" class="btn-submit">Save Expense</button>
-                        <button type="button" class="btn-cancel" id="btnCancel">Cancel</button>
+                        <button type="submit" class="btn-submit" data-i18n="exp.saveExpense">Save Expense</button>
+                        <button type="button" class="btn-cancel" id="btnCancel" data-i18n="exp.cancel">Cancel</button>
                     </div>
                 </form>
             </div>
@@ -218,20 +221,20 @@
     <footer class="dashboard-footer">
         <div class="footer-content">
             <div class="footer-section">
-                <h4>Money Tracker</h4>
-                <p>Smart expense tracking for better financial management</p>
+                <h4 data-i18n="footer.title">Money Tracker</h4>
+                <p data-i18n="footer.desc">Smart expense tracking for better financial management</p>
             </div>
             <div class="footer-section">
-                <h4>Features</h4>
+                <h4 data-i18n="footer.features">Features</h4>
                 <ul>
-                    <li><a href="#mainChartSection" class="footer-link">📊 Budget Tracking</a></li>
-                    <li><a href="#tagsCard" class="footer-link">🏷️ Tag Management</a></li>
-                    <li><a href="#recurringCard" class="footer-link">🔄 Recurring Expenses</a></li>
-                    <li><a href="#smartSuggestions" class="footer-link">🤖 Smart Suggestions</a></li>
+                    <li><a href="#mainChartSection" class="footer-link" data-i18n="footer.budgetTracking">📊 Budget Tracking</a></li>
+                    <li><a href="#tagsCard" class="footer-link" data-i18n="footer.tagManagement">🏷️ Tag Management</a></li>
+                    <li><a href="#recurringCard" class="footer-link" data-i18n="footer.recurringExp">🔄 Recurring Expenses</a></li>
+                    <li><a href="#smartSuggestions" class="footer-link" data-i18n="footer.smartSuggestions">🤖 Smart Suggestions</a></li>
                 </ul>
             </div>
             <div class="footer-section">
-                <h4>Info</h4>
+                <h4 data-i18n="footer.info">Info</h4>
                 <p>Version 1.0.0</p>
                 <p style="font-size: 12px; color: #94a3b8; margin-top: 8px;">
                     © 2026 Money Tracker. All rights reserved.

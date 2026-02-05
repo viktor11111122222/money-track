@@ -10,6 +10,9 @@
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
     <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="/public/i18n.js"></script>
+    <script src="/public/theme-init.js"></script>
+    <link rel="stylesheet" href="/public/theme.css">
 </head>
 <body>
     <header>
@@ -45,13 +48,13 @@
 
             <div class="sidebar-footer">
                 <div class="quick-stats">
-                    <h4>This Month</h4>
+                    <h4 data-i18n="sidebar.thisMonth">This Month</h4>
                     <div class="stat-item">
-                        <span class="stat-label">Spent</span>
+                        <span class="stat-label" data-i18n="sidebar.spent">Spent</span>
                         <span class="stat-value" id="sidebarSpent">0 RSD</span>
                     </div>
                     <div class="stat-item">
-                        <span class="stat-label">Remaining</span>
+                        <span class="stat-label" data-i18n="sidebar.remaining">Remaining</span>
                         <span class="stat-value remaining" id="sidebarRemaining">0 RSD</span>
                     </div>
                 </div>
@@ -61,9 +64,9 @@
 
             </div>
             <div class="settings-wrap">
-                <div class="settings-card">
+                <div class="settings-card" onclick="window.location.href='../shared/settings.html'">
                     <i class="fa-solid fa-gear"></i>
-                    <h3>Settings</h3>
+                    <h3 data-i18n="sidebar.settings">Settings</h3>
                 </div>
                 <div class="account-chip" id="accountChip">
                     <img src="/public/avatar-default.svg" alt="Account">
@@ -77,25 +80,25 @@
         <div class="main-container">
             <div class="main-left">
                 <div class="top-row">
-                    <h1>Monthly Overview</h1>
+                    <h1 data-i18n="dash.monthlyOverview">Monthly Overview</h1>
                     <div class="summary-cards">
                         <div class="card">
-                            <h4>Total Spent</h4>
+                            <h4 data-i18n="dash.totalSpent">Total Spent</h4>
                             <p class="amount">10,234 RSD</p>
                         </div>
                         <div class="card">
-                            <h4>Income</h4>
+                            <h4 data-i18n="dash.income">Income</h4>
                             <p class="amount">15,000 RSD</p>
                         </div>
                         <div class="card">
-                            <h4>Balance</h4>
+                            <h4 data-i18n="dash.balance">Balance</h4>
                             <p class="amount">4,766 RSD</p>
                         </div>
                     </div>
                 </div>
 
                 <div class="chart-card" id="mainChartSection">
-                    <h3>Spending this month</h3>
+                    <h3 data-i18n="dash.spendingThisMonth">Spending this month</h3>
                     <div class="chart-container">
                         <canvas id="spendingChart"></canvas>
                     </div>
@@ -103,21 +106,21 @@
                 </div>
 
                 <section class="insights-card">
-                    <h3>Insights</h3>
+                    <h3 data-i18n="dash.insights">Insights</h3>
                     <ul id="insightsList" class="insights-list"></ul>
                 </section>
 
                 <section class="tags-card" id="tagsCard">
-                    <h3>🏷️ Transaction Tags</h3>
+                    <h3 data-i18n="dash.transactionTags">🏷️ Transaction Tags</h3>
                     <div class="tags-filter">
-                        <button class="tag-filter-btn active" data-tag="all">📋 All</button>
+                        <button class="tag-filter-btn active" data-tag="all" data-i18n="dash.allTags">📋 All</button>
                         <div id="popularTags"></div>
                     </div>
                     <div id="tagInsight" class="tag-insight"></div>
                 </section>
 
                 <section class="transactions">
-                    <h3>Recent Transactions</h3>
+                    <h3 data-i18n="dash.recentTx">Recent Transactions</h3>
                     <ul>
                         <li><span class="tx-name">Grocery</span><span class="tx-amount">-2,450 RSD</span></li>
                         <li><span class="tx-name">Salary</span><span class="tx-amount income">+50,000 RSD</span></li>
@@ -128,27 +131,26 @@
                 <div class="limits-backdrop" id="limitsBackdrop"></div>
                 <section class="category-limits-compact">
                     <div class="limits-header">
-                        <h3>Limits</h3>
-                        <button class="edit-limits-btn" id="editLimitsBtn">Edit Limits</button>
+                        <h3 data-i18n="dash.limits">Limits</h3>
+                        <button class="edit-limits-btn" id="editLimitsBtn" data-i18n="dash.editLimits">Edit Limits</button>
                     </div>
                     <div class="limits-list" id="limitsList">
-                         Dinamički će se popuniti sa JS
                     </div>
                     <button class="limits-show-all" id="limitsShowAll">
-                        <span id="showAllText">Show all</span>
+                        <span id="showAllText" data-i18n="dash.showAll">Show all</span>
                         <i class="fa-solid fa-chevron-down" id="showAllIcon"></i>
                     </button>
                 </section>
 
                 <section class="chart-card">
-                    <h3>Daily Spending (This Month)</h3>
+                    <h3 data-i18n="dash.dailySpending">Daily Spending (This Month)</h3>
                     <div class="chart-container">
                         <canvas id="dailyChart"></canvas>
                     </div>
                 </section>
 
                 <section class="chart-fix chart-card">
-                    <h3>Comparison: This vs Last Month</h3>
+                    <h3 data-i18n="dash.comparison">Comparison: This vs Last Month</h3>
                     <div class="chart-container">
                         <canvas id="comparisonChart"></canvas>
                     </div>
@@ -157,17 +159,15 @@
 
             <aside class="main-right">
                 <section class="add-expense">
-                    <h2>Add Expense</h2>
+                    <h2 data-i18n="dash.addExpense">Add Expense</h2>
                     
 
                     <div class="dropdown">
-                        <!-- <div class="drop-btn-container"> -->
 
-                            <!-- Amount i Category u istom redu -->
                             <div class="form-row">
-                                <input type="number" placeholder="Amount" style="flex: 1;">
+                                <input type="number" data-i18n-placeholder="dash.amount" placeholder="Amount" style="flex: 1;">
                                 <button class="dropdown-btn" id="dropdownBtn">
-                                    <span id="selectedCategory">Category</span>
+                                    <span id="selectedCategory" data-i18n="dash.category">Category</span>
                                     <span class="arrow" id="arrow">▼</span>
                                 </button>
                             </div>
@@ -177,12 +177,11 @@
                             <div class="option">Transport</div>
                             <div class="option">Rent</div>
                             <div class="option">Entertainment</div>
-                            <div class="option add-option" data-add="true">+ Add category</div>
+                            <div class="option add-option" data-add="true" data-i18n="dash.addCategory">+ Add category</div>
                         </div>
 
-                            <!-- Tags ispod -->
                             <div class="form-row" style="margin-top: 8px;">
-                                <input type="text" id="tagsInput" placeholder="Tags (npr: #kafa, #posao, #putovanje)">
+                                <input type="text" id="tagsInput" data-i18n-placeholder="dash.tagsPlaceholder" placeholder="Tags (e.g. #coffee, #work, #travel)">
                             </div>
 
                         </div>
@@ -190,39 +189,38 @@
                         
                     <!-- </div> -->
 
-                    <button class="primary">Add Expense</button>
+                    <button class="primary" data-i18n="dash.addExpenseBtn">Add Expense</button>
                 </section>
 
                 <section class="add-savings">
-                    <h2>Add Savings</h2>
+                    <h2 data-i18n="dash.addSavings">Add Savings</h2>
                     <div class="form-row">
-                        <input type="number" id="savingsInput" placeholder="Amount">
+                        <input type="number" id="savingsInput" data-i18n-placeholder="dash.amount" placeholder="Amount">
                     </div>
-                    <button class="primary primary-success">Add Money</button>
+                    <button class="primary primary-success" data-i18n="dash.addMoney">Add Money</button>
                 </section>
 
                 
 
                 <section class="budget-progress" id="budgetProgress">
-                    <h3>📊 Track Limits</h3>
+                    <h3 data-i18n="dash.trackLimits">📊 Track Limits</h3>
                     <div class="progress-list" id="progressList"></div>
                 </section>
 
                 <section class="reset-section">
-                    <button class="primary primary-danger" id="resetBtn">🔄 Reset All</button>
+                    <button class="primary primary-danger" id="resetBtn" data-i18n="dash.resetAll">🔄 Reset All</button>
                 </section>
 
                 <section class="spending-by-category">
-                    <h3>Spending by Category</h3>
+                    <h3 data-i18n="dash.spendingByCat">Spending by Category</h3>
                     <div class="chart-stats">
-                        <!-- Dinamički će se popuniti sa JS -->
                     </div>
                 </section>
 
                 <section class="calendar-card">
                     <div class="calendar-header">
                         <div class="calendar-title-wrap">
-                            <h3>Spending Calendar</h3>
+                            <h3 data-i18n="dash.spendingCalendar">Spending Calendar</h3>
                             <span class="calendar-date" id="calendarDateLabel"></span>
                         </div>
                         <div class="calendar-header-actions">
@@ -237,7 +235,7 @@
                                     <i class="fa-solid fa-chevron-right"></i>
                                 </button>
                             </div>
-                            <button class="calendar-open-month" id="openMonthSpendings">Open Month</button>
+                            <button class="calendar-open-month" id="openMonthSpendings" data-i18n="dash.openMonth">Open Month</button>
                         </div>
                     </div>
                     <div class="calendar-grid" id="calendarGrid"></div>
@@ -245,32 +243,32 @@
                 </section>
 
                 <section class="top-spending-days-card">
-                    <h3>Top Spending Days</h3>
+                    <h3 data-i18n="dash.topSpendingDays">Top Spending Days</h3>
                     <div class="top-days-list" id="topDaysList"></div>
                 </section>
 
                 <section class="recurring-expenses-card" id="recurringCard">
-                    <h3>🔄 Recurring Expenses</h3>
-                    <p class="recurring-description">Automatski se dodaju svakog meseca</p>
+                    <h3 data-i18n="dash.recurringExpenses">🔄 Recurring Expenses</h3>
+                    <p class="recurring-description" data-i18n="dash.recurringDesc">Automatically added every month</p>
                     <div class="recurring-add-form">
-                        <input type="text" id="recurringName" placeholder="Naziv (Rent, Netflix, Internet...)">
-                        <input type="number" id="recurringAmount" placeholder="Iznos (RSD)">
+                        <input type="text" id="recurringName" data-i18n-placeholder="dash.recurringName" placeholder="Name (Rent, Netflix, Internet...)">
+                        <input type="number" id="recurringAmount" data-i18n-placeholder="dash.recurringAmount" placeholder="Amount">
                         <button class="primary" id="addRecurringBtn">
-                            <i class="fa-solid fa-plus"></i> Dodaj Recurring
+                            <i class="fa-solid fa-plus"></i> <span data-i18n="dash.addRecurring">Add Recurring</span>
                         </button>
                     </div>
                     <div class="recurring-list" id="recurringList"></div>
                     <div class="recurring-insight" id="recurringInsight"></div>
-                    <button class="recurring-manual-add" id="manualAddRecurringBtn" style="display:none;">
-                        <i class="fa-solid fa-rotate"></i> Dodaj sve recurring za novi mesec
+                    <button class="recurring-manual-add" id="manualAddRecurringBtn" style="display:none;" data-i18n="js.addAllRecurring">
+                        <i class="fa-solid fa-rotate"></i> Add all recurring for new month
                     </button>
                 </section>
 
                 <section class="smart-suggestions-card" id="smartSuggestions">
-                    <h3>🤖 Smart Suggestions</h3>
-                    <p class="smart-description">We recommend:</p>
+                    <h3 data-i18n="dash.smartSuggestions">🤖 Smart Suggestions</h3>
+                    <p class="smart-description" data-i18n="dash.weRecommend">We recommend:</p>
                     <div class="suggestions-list" id="suggestionsList">
-                        <div class="suggestion-placeholder">Analyzing your spending...</div>
+                        <div class="suggestion-placeholder" data-i18n="dash.analyzingSpending">Analyzing your spending...</div>
                     </div>
                 </section>
             </aside>
@@ -282,31 +280,31 @@
     <div class="modal-overlay" id="onboardingModal" aria-hidden="true" role="dialog" aria-modal="true" style="display: none;">
         <div class="modal-content onboarding-modal" role="document">
             <div class="modal-header">
-                <h2>👋 Welcome to Money Tracker!</h2>
+                <h2 data-i18n="dash.welcomeTitle">👋 Welcome to Money Tracker!</h2>
             </div>
             <div class="modal-body">
-                <p class="onboarding-description">Let's set up your account to start tracking your expenses effectively.</p>
+                <p class="onboarding-description" data-i18n="dash.welcomeDesc">Let's set up your account to start tracking your expenses effectively.</p>
                 
                 <div class="onboarding-form">
                     <div class="form-group">
-                        <label for="onboardingName">Full Name</label>
+                        <label for="onboardingName" data-i18n="dash.fullName">Full Name</label>
                         <input type="text" id="onboardingName" placeholder="Enter your full name" required>
                     </div>
                     
                     <div class="form-group">
-                        <label for="onboardingIncome">Monthly Income (RSD)</label>
-                        <input type="number" id="onboardingIncome" placeholder="e.g., 100000" min="0" required>
-                        <small>Your regular monthly income</small>
+                        <label for="onboardingIncome" data-i18n="dash.monthlyIncome">Monthly Income</label>
+                        <input type="number" id="onboardingIncome" data-i18n-placeholder="dash.monthlyIncomePlc" placeholder="e.g., 100000" min="0" required>
+                        <small data-i18n="dash.yourIncome">Your regular monthly income</small>
                     </div>
                     
                     <div class="form-group">
-                        <label for="onboardingBalance">Current Balance (RSD)</label>
-                        <input type="number" id="onboardingBalance" placeholder="e.g., 50000" min="0" required>
-                        <small>How much money you have right now</small>
+                        <label for="onboardingBalance" data-i18n="dash.currentBalance">Current Balance</label>
+                        <input type="number" id="onboardingBalance" data-i18n-placeholder="dash.currentBalancePlc" placeholder="e.g., 50000" min="0" required>
+                        <small data-i18n="dash.howMuchNow">How much money you have right now</small>
                     </div>
                     
                     <button class="primary" id="completeOnboardingBtn">
-                        <i class="fa-solid fa-check"></i> Complete Setup
+                        <i class="fa-solid fa-check"></i> <span data-i18n="dash.completeSetup">Complete Setup</span>
                     </button>
                 </div>
             </div>
@@ -316,49 +314,49 @@
     <div class="modal-overlay" id="spendingsModal" aria-hidden="true" role="dialog" aria-modal="true">
         <div class="modal-content" role="document">
             <div class="modal-header">
-                <h2>Spendings</h2>
+                <h2 data-i18n="dash.spendingsTitle">Spendings</h2>
                 <button class="modal-close" id="spendingsClose" aria-label="Close">✕</button>
             </div>
             <div class="modal-body">
                 <div class="spendings-summary">
                     <div class="summary-box">
-                        <span>Total</span>
+                        <span data-i18n="dash.total">Total</span>
                         <strong id="spendingsTotal">0 RSD</strong>
                     </div>
                     <div class="summary-box">
-                        <span>Top Category</span>
+                        <span data-i18n="dash.topCategory">Top Category</span>
                         <strong id="spendingsTopCategory">—</strong>
                     </div>
                     <div class="summary-box">
-                        <span>Transactions</span>
+                        <span data-i18n="dash.transactions">Transactions</span>
                         <strong id="spendingsCount">0</strong>
                     </div>
                 </div>
 
                 <div class="spendings-filters simple">
                     <div class="filter-group">
-                        <label for="spendingsFrom">From</label>
+                        <label for="spendingsFrom" data-i18n="dash.from">From</label>
                         <input type="date" id="spendingsFrom">
                     </div>
                     <div class="filter-group">
-                        <label for="spendingsTo">To</label>
+                        <label for="spendingsTo" data-i18n="dash.to">To</label>
                         <input type="date" id="spendingsTo">
                     </div>
                     <div class="filter-group">
-                        <label for="spendingsCategory">Category</label>
+                        <label for="spendingsCategory" data-i18n="dash.category">Category</label>
                         <select id="spendingsCategory">
-                            <option value="all">All</option>
+                            <option value="all" data-i18n="dash.all">All</option>
                         </select>
                     </div>
                 </div>
 
                 <div class="spendings-content simple">
                     <section class="spendings-card">
-                        <h3>Categories</h3>
+                        <h3 data-i18n="dash.categories">Categories</h3>
                         <div class="spendings-categories" id="spendingsCategories"></div>
                     </section>
                     <section class="spendings-card">
-                        <h3>Latest Transactions</h3>
+                        <h3 data-i18n="dash.latestTx">Latest Transactions</h3>
                         <ul class="spendings-transactions" id="spendingsTransactions"></ul>
                     </section>
                 </div>
@@ -369,20 +367,20 @@
     <footer class="dashboard-footer">
         <div class="footer-content">
             <div class="footer-section">
-                <h4>Money Tracker</h4>
-                <p>Smart expense tracking for better financial management</p>
+                <h4 data-i18n="footer.title">Money Tracker</h4>
+                <p data-i18n="footer.desc">Smart expense tracking for better financial management</p>
             </div>
             <div class="footer-section">
-                <h4>Features</h4>
+                <h4 data-i18n="footer.features">Features</h4>
                 <ul>
-                    <li><a href="#mainChartSection" class="footer-link">📊 Budget Tracking</a></li>
-                    <li><a href="#tagsCard" class="footer-link">🏷️ Tag Management</a></li>
-                    <li><a href="#recurringCard" class="footer-link">🔄 Recurring Expenses</a></li>
-                    <li><a href="#smartSuggestions" class="footer-link">🤖 Smart Suggestions</a></li>
+                    <li><a href="#mainChartSection" class="footer-link" data-i18n="footer.budgetTracking">📊 Budget Tracking</a></li>
+                    <li><a href="#tagsCard" class="footer-link" data-i18n="footer.tagManagement">🏷️ Tag Management</a></li>
+                    <li><a href="#recurringCard" class="footer-link" data-i18n="footer.recurringExp">🔄 Recurring Expenses</a></li>
+                    <li><a href="#smartSuggestions" class="footer-link" data-i18n="footer.smartSuggestions">🤖 Smart Suggestions</a></li>
                 </ul>
             </div>
             <div class="footer-section">
-                <h4>Info</h4>
+                <h4 data-i18n="footer.info">Info</h4>
                 <p>Version 1.0.0</p>
                 <p style="font-size: 12px; color: #94a3b8; margin-top: 8px;">
                     © 2026 Money Tracker. All rights reserved.

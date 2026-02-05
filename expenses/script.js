@@ -1,6 +1,7 @@
 // Data Management
 const DEFAULT_MONTHLY_INCOME = 100000;
-const CURRENCY = " RSD";
+function getCurrency(){ try { var s = JSON.parse(localStorage.getItem('mt_settings_v1')); var c = s && s.preferences && s.preferences.currency; var m = { RSD:' RSD', USD:' $', EUR:' €', GBP:' £', JPY:' ¥', AUD:' A$', CAD:' C$', CNY:' ¥', INR:' ₹', BRL:' R$', CHF:' CHF', SEK:' kr', NOK:' kr' }; return m[c] || ' RSD'; } catch(e){ return ' RSD'; } }
+const CURRENCY = getCurrency();
 const API_BASE = 'http://localhost:4000/api';
 const TOKEN_KEY = 'sharedBudgetToken';
 
@@ -750,10 +751,10 @@ function updateSidebarStats() {
     const sidebarRemaining = document.getElementById('sidebarRemaining');
     
     if (sidebarSpent) {
-        sidebarSpent.textContent = totalSpent.toLocaleString() + CURRENCY;
+        sidebarSpent.textContent = totalSpent.toLocaleString() + getCurrency();
     }
     if (sidebarRemaining) {
-        sidebarRemaining.textContent = remaining.toLocaleString() + CURRENCY;
+        sidebarRemaining.textContent = remaining.toLocaleString() + getCurrency();
     }
 }
 
@@ -830,6 +831,12 @@ async function initExpensesPage() {
 
 initExpensesPage();
 
+// Re-render when language changes
+window.addEventListener('languageChanged', () => {
+  renderExpenses();
+  if (typeof applyI18n === 'function') applyI18n();
+});
+
 // ===== Quick Shortcuts =====
 function renderShortcuts() {
     const container = document.getElementById('quickShortcuts');
@@ -904,7 +911,7 @@ function renderKPI() {
         const biggest = expensesThisMonth.reduce((max, e) => Math.max(max, e.amount || 0), 0);
         const txCount = expensesThisMonth.length;
 
-        const formatMoney = v => (v || 0).toLocaleString() + CURRENCY;
+        const formatMoney = v => (v || 0).toLocaleString() + getCurrency();
 
         // Build KPI metrics HTML separately
         const metricsHTML = `

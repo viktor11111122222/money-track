@@ -1,10 +1,164 @@
+@import url('../public/theme.css');
+
 .shared-container {
     display: flex;
     flex-direction: column;
-    gap: 28px;
-    max-width: 1100px;
+    gap: 1rem; /* 16px */
+    max-width: 1280px;
     margin: 0 auto;
 }
+
+/* Settings page styles */
+.settings-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    margin: 22px 0;
+}
+.settings-header h1 {
+    margin: 0;
+    font-size: 34px;
+    color: #0f1724;
+}
+.settings-header .muted {
+    margin: 6px 0 0 0;
+    color: #64748b;
+    font-size: 14px;
+}
+.settings-actions .btn.primary {
+    background: #2563eb;
+    color: #fff;
+    border: none;
+    padding: 10px 16px;
+    border-radius: 10px;
+    cursor: pointer;
+    box-shadow: 0 8px 18px rgba(37,99,235,0.12);
+    width: auto; /* override global full-width button.primary */
+}
+.settings-grid {
+    /* Use column layout so each column stacks independently in DOM order */
+    column-count: 3;
+    column-gap: 1rem;
+    max-width: 1280px;
+    margin: 0 auto;
+}
+
+/* ensure cards don't break across columns and have consistent 1rem spacing */
+.setting-card {
+    display: inline-block;
+    width: 100%;
+    margin-bottom: 1rem;
+}
+.setting-card {
+    background: #fff;
+    border-radius: 14px;
+    padding: 16px;
+    box-shadow: 0 10px 30px rgba(15, 23, 36, 0.06);
+    align-self: start;
+}
+.setting-card h3 {
+    margin: 0 0 10px 0;
+    font-size: 16px;
+    color: #0f1724;
+}
+.profile-card { grid-column: 1 / 2; }
+.account-card { grid-column: 2 / 3; }
+.notifications-card { grid-column: 3 / 4; }
+.prefs-card { grid-column: 2 / 3; }
+.appearance-card { grid-column: 3 / 4; }
+.danger-card { grid-column: 1 / 2; }
+
+.profile-top { display: flex; align-items: center; gap: 16px; margin-bottom: 16px; }
+.profile-avatar { width: 96px; height: 96px; border-radius: 999px; overflow: hidden; background: #f8fafc; display: grid; place-items: center; border: 1px solid #e6eefc; }
+.profile-avatar img { width: 80px; height: 80px; object-fit: cover; }
+.profile-actions { margin-left: auto; }
+
+.form-row { display: flex; flex-direction: column; gap: 8px; margin-bottom: 12px; }
+.form-row.small { flex-direction: row; align-items: center; justify-content: space-between; }
+.form-row label { font-weight: 600; color: #475569; font-size: 13px; }
+.form-input { border: 1px solid #e6eefc; border-radius: 12px; padding: 12px 14px; background: #fff; font-family: inherit; width: 100%; box-sizing: border-box; }
+.form-input:focus { outline: none; box-shadow: 0 8px 22px rgba(96,165,250,0.12); border-color: #60a5fa; }
+
+/* Slightly move the dropdown arrow in Preferences selects to the left */
+.prefs-card select.form-input {
+    -webkit-appearance: none;
+    -moz-appearance: none;
+    appearance: none;
+    /* small chevron SVG as background so we can control position */
+    background-image: url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'><path fill='%2364748b' d='M6 8L0 0h12z'/></svg>");
+    background-repeat: no-repeat;
+    background-position: calc(100% - 18px) center; /* push the arrow 18px left from the right edge */
+    background-size: 12px 8px;
+    padding-right: 42px; /* ensure room so text doesn't overlap arrow */
+}
+
+.notif-list { display: flex; flex-direction: column; gap: 12px; }
+.notif-item { display: flex; align-items: center; justify-content: space-between; padding: 12px 14px; border-radius: 10px; background: #f8fafc; border: 1px solid #e6eefc; }
+
+.toggle { display: inline-flex; align-items: center; }
+.toggle input { display: none; }
+.toggle-switch { width: 44px; height: 26px; background: #e6eefc; border-radius: 999px; position: relative; transition: background .2s ease; }
+.toggle-switch::after { content: ''; position: absolute; left: 4px; top: 5px; width: 16px; height: 16px; border-radius: 999px; background: #fff; box-shadow: 0 2px 6px rgba(2,6,23,0.08); transition: transform .18s ease; }
+.toggle input:checked + .toggle-switch { background: linear-gradient(90deg,#2563eb 0%,#7c3aed 100%); }
+.toggle input:checked + .toggle-switch::after { transform: translateX(18px); }
+
+.theme-options { display: flex; gap: 12px; align-items: center; }
+.theme-options .radio { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; color: #475569; }
+.theme-options input { margin-right: 6px; }
+
+.accent-palette { display: flex; gap: 8px; align-items: center; }
+.color-swatch { width: 28px; height: 28px; border-radius: 999px; border: 2px solid transparent; cursor: pointer; }
+.color-swatch.blue { background: #2563eb; }
+.color-swatch.green { background: #10b981; }
+.color-swatch.purple { background: #7c3aed; }
+.color-swatch.pink { background: #ec4899; }
+.color-swatch.gray { background: #64748b; }
+
+.btn { padding: 8px 12px; border-radius: 10px; border: 1px solid #e2e8f0; background: #fff; cursor: pointer; }
+.btn.ghost { background: transparent; }
+.btn.danger { color: #ef4444; border-color: rgba(239,68,68,0.12); }
+
+/* avoid global .button.primary full-width inside settings/profile */
+.profile-card .btn.primary { width: auto; display: inline-block; }
+
+.link { color: #2563eb; font-weight: 600; text-decoration: none; }
+
+@media (max-width: 1100px) {
+    .settings-grid { grid-template-columns: 1fr 360px; }
+    /* reset explicit placement so cards reflow naturally on smaller screens */
+    .profile-card,
+    .account-card,
+    .notifications-card,
+    .prefs-card,
+    .appearance-card,
+    .danger-card {
+        grid-column: auto;
+        grid-row: auto;
+    }
+}
+@media (max-width: 720px) {
+    .settings-grid { grid-template-columns: 1fr; }
+    .settings-actions { margin-top: 12px; }
+}
+
+/* Override dashboard centering for settings page so content starts after sidebar */
+.main-container.settings-full {
+    /* stack settings content vertically so cards don't run off the right edge */
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    max-width: 1280px;
+    width: 100%;
+    margin: 0 auto;
+    padding-right: 0.5rem;
+    overflow-x: hidden;
+}
+
+@media (max-width: 1100px) {
+    .main-container.settings-full { padding: 0 16px; }
+}
+
 
 #sharedApp.is-hidden {
     display: none;
@@ -112,7 +266,7 @@
 .shared-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
-    gap: 20px;
+    gap: 1rem;
 }
 
 .shared-card {
@@ -235,7 +389,7 @@
 .shared-list {
     display: flex;
     flex-direction: column;
-    gap: 12px;
+    gap: 1rem;
 }
 
 .shared-item {
@@ -757,6 +911,8 @@
     border-radius: 16px;
     padding: 20px;
     width: min(520px, 100%);
+    max-height: 90vh;
+    overflow-y: auto;
     box-shadow: 0 20px 40px rgba(15, 23, 36, 0.2);
 }
 
@@ -808,6 +964,25 @@
     padding: 10px 12px;
     font-size: 14px;
     font-family: inherit;
+    background: #f8fafc !important;
+}
+
+.modal-form input:focus,
+.modal-form input:active {
+    background: #f8fafc !important;
+    outline: none;
+    border-color: #60a5fa;
+    box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+}
+
+.modal-form input:-webkit-autofill,
+.modal-form input:-webkit-autofill:hover,
+.modal-form input:-webkit-autofill:focus,
+.modal-form input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px #f8fafc inset !important;
+    box-shadow: 0 0 0 30px #f8fafc inset !important;
+    -webkit-text-fill-color: #0f1724 !important;
+    background-color: #f8fafc !important;
 }
 
 .member-picker {
@@ -839,6 +1014,11 @@
 .input-with-addon input {
     width: 100%;
     padding-right: 52px;
+}
+.input-with-addon input::after,
+.input-with-addon input::before,
+.input-with-addon input:active {
+    background: transparent;
 }
 
 .input-addon {
@@ -1056,16 +1236,56 @@
 
 .friend-header {
     display: flex;
-    justify-content: space-between;
-    align-items: flex-start;
+    flex-direction: row;
+    align-items: center;
     width: 100%;
-    gap: 12px;
+    justify-content: space-between;
 }
 
 .friend-actions {
     display: flex;
     align-items: center;
     gap: 8px;
+    justify-content: flex-end;
+}
+
+
+
+.friend-limit-label {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    margin-right: 8px;
+    margin-bottom: 12px;
+}
+
+
+.friend-limit-label span {
+    font-size: 11px;
+    color: #64748b;
+    margin-bottom: 2px;
+    max-width: 80px;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: normal;
+    word-break: break-word;
+    pointer-events: none;
+}
+
+
+.friend-item {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 16px;
+    box-shadow: 0 2px 8px rgba(15, 23, 36, 0.04);
+    margin-bottom: 16px;
+    padding: 28px 24px 18px 24px;
+    min-height: 90px;
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    transition: box-shadow 0.2s;
+    position: relative;
 }
 
 .friend-display-name {
@@ -1139,16 +1359,22 @@
 
 .friend-delete {
     background: transparent;
-    border: none;
-    font-size: 18px;
+    border: 1px solid #e2e8f0;
+    font-size: 16px;
     cursor: pointer;
-    padding: 4px;
-    opacity: 0.6;
-    transition: opacity 0.2s ease;
+    padding: 6px 10px;
+    border-radius: 8px;
+    opacity: 0.7;
+    transition: all 0.2s ease;
+    color: #ef4444;
 }
 
 .friend-delete:hover {
     opacity: 1;
+    background: #f1f5f9;
+    border-color: #cbd5e1;
+    transform: scale(1.05);
+    color: #dc2626;
 }
 
 .prompt-input {
@@ -1169,6 +1395,100 @@
     box-shadow: 0 0 0 3px rgba(59, 130, 246, 0.2);
     background: #ffffff;
 }
+/* Theme overrides: light (default) and dark mode. Placed at end so they can override earlier rules. */
+:root {
+    --bg: #f1f5f9; /* page background */
+    --card-bg: #ffffff;
+    --muted: #64748b;
+    --text: #0f1724;
+    --surface: #f8fafc;
+    --border: #e6eefc;
+    --accent: #2563eb;
+}
+
+.dark-theme {
+    --bg: #0b1220;
+    --card-bg: #0f1724;
+    --muted: #9aa6b2;
+    --text: #e6eefc;
+    --surface: #0b1220;
+    --border: rgba(255,255,255,0.06);
+    --accent: #7c3aed;
+}
+
+/* Apply the variables to common elements */
+body, .main-container, .shared-hero, .shared-card, .setting-card, .auth-card, .modal-card, .confirm-card {
+    background-color: var(--bg);
+    color: var(--text);
+}
+
+.setting-card, .shared-card, .auth-card, .modal-card, .confirm-card, .shared-section, .shared-card, .friend-item, .wallet-panel {
+    background: var(--card-bg);
+    border-color: var(--border);
+    box-shadow: 0 8px 20px rgba(2,6,23,0.06);
+}
+
+.profile-avatar { background: var(--surface); }
+.form-row label, .shared-hero p, .shared-item p, .wallet-meta, .shared-card p { color: var(--muted); }
+.form-input, .wallet-transaction-form input, .wallet-transaction-form select, .friend-controls input, .friend-controls select, .prompt-input, .split-member-row {
+    background: var(--card-bg);
+    color: var(--text);
+    border-color: var(--border);
+}
+
+.notif-item, .wallet-panel, .shared-empty { background: var(--surface); border-color: var(--border); }
+
+.link, .chip, .shared-card-icon, .wallet-chip { color: var(--accent); }
+
+/* Toggle switch dark appearance */
+.dark-theme .toggle-switch { background: rgba(255,255,255,0.08); }
+.dark-theme .toggle input:checked + .toggle-switch { background: linear-gradient(90deg,var(--accent) 0%, #7c3aed 100%); }
+
+/* Footer and sidebar adjustments (only in dark theme) */
+.dark-theme .sidebar, .dark-theme .sidebar-footer, .dark-theme .dashboard-footer {
+    background: var(--card-bg);
+    color: var(--muted);
+    border-color: var(--border);
+}
+
+/* Ensure inputs and small UI pieces remain legible in dark */
+.dark-theme .wallet-txn-amount { color: #fb7185; }
+.dark-theme .wallet-txn-amount--savings { color: #4ade80; }
+
+/* Force lighter text colors for dark theme across common elements */
+.dark-theme h1, .dark-theme h2, .dark-theme h3, .dark-theme h4, .dark-theme h5, .dark-theme h6,
+.dark-theme p, .dark-theme label, .dark-theme span, .dark-theme a, .dark-theme li,
+.dark-theme button, .dark-theme input, .dark-theme select, .dark-theme textarea,
+.dark-theme .muted, .dark-theme .stat-label, .dark-theme .stat-value, .dark-theme .shared-item p,
+.dark-theme .shared-card p, .dark-theme .wallet-meta, .dark-theme .friend-display-name,
+.dark-theme .friend-real-name, .dark-theme .shared-hero p, .dark-theme .section-header h2,
+.dark-theme .shared-card h2, .dark-theme .shared-item h4, .dark-theme .profile-top,
+.dark-theme .form-row label, .dark-theme .confirm-text {
+    color: var(--text) !important;
+}
+
+.dark-theme ::placeholder { color: rgba(230,238,252,0.65) !important; }
+
+/* Override modal form input backgrounds for both light and dark themes */
+.dark-theme .modal-form input,
+.dark-theme .modal-form input:focus,
+.dark-theme .modal-form input:active {
+    background: #0b1220 !important;
+}
+
+.dark-theme .modal-form input:-webkit-autofill,
+.dark-theme .modal-form input:-webkit-autofill:hover,
+.dark-theme .modal-form input:-webkit-autofill:focus,
+.dark-theme .modal-form input:-webkit-autofill:active {
+    -webkit-box-shadow: 0 0 0 30px #0b1220 inset !important;
+    box-shadow: 0 0 0 30px #0b1220 inset !important;
+    -webkit-text-fill-color: #e6eefc !important;
+    background-color: #0b1220 !important;
+}
+
+/* Minimal accent outline for selected accent */
+.color-swatch[style*="outline"] { box-shadow: 0 4px 18px rgba(2,6,23,0.12); }
+
 /* Split Expenses Styles */
 #splitMembersBreakdownRow {
     flex-direction: column;
@@ -1439,12 +1759,14 @@
     border: none !important;
     font-size: 16px;
     cursor: pointer;
-    opacity: 0.6;
+    opacity: 0.7;
     transition: opacity 0.2s;
+    color: #ef4444;
 }
 
 .split-delete:hover {
     opacity: 1;
+    color: #dc2626;
 }
 
 .section-header-buttons {

@@ -174,6 +174,71 @@ app.patch('/api/me/avatar', authMiddleware, async (req, res) => {
   res.json({ ok: true });
 });
 
+// ── Update profile (name, email, username) ──
+app.patch('/api/me/profile', authMiddleware, async (req, res) => {
+  const { name, email } = req.body || {};
+  if (!name && !email) return res.status(400).json({ message: 'Nothing to update.' });
+  const fields = [];
+  const params = [];
+  if (name) { fields.push('name = ?'); params.push(name.trim()); }
+  if (email) {
+    const existing = await get('SELECT id FROM users WHERE email = ? AND id != ?', [email.trim().toLowerCase(), req.userId]);
+    if (existing) return res.status(409).json({ message: 'Email already taken.' });
+    fields.push('email = ?'); params.push(email.trim().toLowerCase());
+  }
+  params.push(req.userId);
+  await run(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`, params);
+  res.json({ ok: true });
+});
+
+// ── Update finances (income, balance) ──
+app.patch('/api/me/finances', authMiddleware, async (req, res) => {
+  const { monthlyIncome, currentBalance } = req.body || {};
+  const fields = [];
+  const params = [];
+  if (typeof monthlyIncome === 'number') { fields.push('monthly_income = ?'); params.push(monthlyIncome); }
+  if (typeof currentBalance === 'number') { fields.push('current_balance = ?'); params.push(currentBalance); }
+  if (fields.length === 0) return res.status(400).json({ message: 'Nothing to update.' });
+  params.push(req.userId);
+  await run(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`, params);
+  res.json({ ok: true });
+});
+
+// ── Change password ──
+app.patch('/api/me/password', authMiddleware, async (req, res) => {
+  const { currentPassword, newPassword } = req.body || {};
+  if (!currentPassword || !newPassword) return res.status(400).json({ message: 'Missing fields.' });
+  if (newPassword.length < 6) return res.status(400).json({ message: 'Password must be at least 6 characters.' });
+  const user = await get('SELECT id, password_hash FROM users WHERE id = ?', [req.userId]);
+  if (!user) return res.status(404).json({ message: 'User not found.' });
+  const valid = await bcrypt.compare(currentPassword, user.password_hash);
+  if (!valid) return res.status(403).json({ message: 'Current password is incorrect.' });
+  const hash = await bcrypt.hash(newPassword, 10);
+  await run('UPDATE users SET password_hash = ? WHERE id = ?', [hash, req.userId]);
+  res.json({ ok: true });
+});
+
+// ── Delete account ──
+app.delete('/api/me', authMiddleware, async (req, res) => {
+  const userId = req.userId;
+  await run('DELETE FROM splits WHERE owner_id = ?', [userId]);
+  await run('DELETE FROM wallets WHERE owner_id = ?', [userId]);
+  await run('DELETE FROM friends WHERE owner_id = ?', [userId]);
+  await run('DELETE FROM invites WHERE owner_id = ?', [userId]);
+  await run('DELETE FROM users WHERE id = ?', [userId]);
+  res.json({ ok: true });
+});
+
+// ── Leave family budget (remove all shared data, keep user) ──
+app.post('/api/me/leave-family', authMiddleware, async (req, res) => {
+  const userId = req.userId;
+  await run('DELETE FROM splits WHERE owner_id = ?', [userId]);
+  await run('DELETE FROM wallets WHERE owner_id = ?', [userId]);
+  await run('DELETE FROM friends WHERE owner_id = ?', [userId]);
+  await run('DELETE FROM invites WHERE owner_id = ?', [userId]);
+  res.json({ ok: true });
+});
+
 app.get('/api/invites', authMiddleware, async (req, res) => {
   const rows = await all('SELECT id, name, email, status, created_at FROM invites WHERE owner_id = ? ORDER BY created_at DESC', [req.userId]);
   res.json(rows);

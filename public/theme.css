@@ -1,0 +1,715 @@
+:root {
+    --bg: #f1f5f9;
+    --card-bg: #ffffff;
+    --muted: #64748b;
+    --text: #0f1724;
+    --surface: #f8fafc;
+    --border: #e6eefc;
+    --accent: #2563eb;
+}
+
+.dark-theme {
+    --bg: #0b1220;
+    --card-bg: #0f1724;
+    --muted: #b0bac4;
+    --text: #f0f5fb;
+    --surface: #0b1220;
+    --border: rgba(255,255,255,0.02);
+    --accent: #8b5cf6;
+}
+
+/* Apply variables */
+body, .main-container, .shared-hero, .shared-card, .setting-card, .auth-card, .modal-card, .confirm-card {
+    background-color: var(--bg);
+    color: var(--text);
+}
+
+.setting-card, .shared-card, .auth-card, .modal-card, .confirm-card, .shared-section, .shared-card, .friend-item, .wallet-panel {
+    background: var(--card-bg);
+    border-color: var(--border);
+}
+
+.profile-avatar { background: var(--surface); }
+.form-row label, .shared-hero p, .shared-item p, .wallet-meta, .shared-card p { color: var(--muted); }
+.form-input, .wallet-transaction-form input, .wallet-transaction-form select, .friend-controls input, .friend-controls select, .prompt-input, .split-member-row {
+    background: var(--card-bg);
+    color: var(--text);
+    border-color: var(--border);
+}
+
+.notif-item, .wallet-panel, .shared-empty { background: var(--surface); border-color: var(--border); }
+
+.link, .chip, .shared-card-icon, .wallet-chip { color: var(--accent); }
+.wallet-chip {
+    background: rgba(37,99,235,0.1);
+    border-color: rgba(37,99,235,0.2);
+}
+
+.dark-theme .toggle-switch { background: rgba(255,255,255,0.08); }
+.dark-theme .toggle input:checked + .toggle-switch { background: linear-gradient(90deg,var(--accent) 0%, #7c3aed 100%); }
+
+.dark-theme .sidebar, .dark-theme .sidebar-footer, .dark-theme .dashboard-footer {
+    background: var(--card-bg);
+    color: var(--muted);
+    border-color: var(--border);
+}
+
+.dark-theme .wallet-txn-amount { color: #fb7185; }
+.dark-theme .wallet-txn-amount--savings { color: #4ade80; }
+
+.dark-theme h1, .dark-theme h2, .dark-theme h3, .dark-theme h4, .dark-theme h5, .dark-theme h6,
+.dark-theme p, .dark-theme label, .dark-theme span, .dark-theme a, .dark-theme li,
+.dark-theme button, .dark-theme input, .dark-theme select, .dark-theme textarea,
+.dark-theme .muted, .dark-theme .stat-label, .dark-theme .stat-value, .dark-theme .shared-item p,
+.dark-theme .shared-card p, .dark-theme .wallet-meta, .dark-theme .friend-display-name,
+.dark-theme .friend-real-name, .dark-theme .shared-hero p, .dark-theme .section-header h2,
+.dark-theme .shared-card h2, .dark-theme .shared-item h4, .dark-theme .profile-top,
+.dark-theme .form-row label, .dark-theme .confirm-text {
+    color: var(--text) !important;
+}
+
+.dark-theme ::placeholder { color: rgba(230,238,252,0.65) !important; }
+
+/* Dashboard / shared card overrides to ensure card backgrounds and shadows change in dark mode */
+.card, .summary-box, .chart-card, .spendings-card, .spendings-content .spendings-card,
+.modal-content, .modal-card, .shared-card, .shared-section, .shared-hero, .shared-card-icon,
+.setting-card, .auth-card, .confirm-card, .wallet-panel, .friend-item {
+    background: var(--card-bg) !important;
+    color: var(--text) !important;
+}
+
+.card, .summary-box, .chart-card, .spendings-card, .modal-content, .modal-card, .confirm-card {
+    box-shadow: none !important;
+    border: none !important;
+}
+
+/* Lighter subtle elements in dark mode */
+.dark-theme .summary-box strong, .dark-theme .card h4, .dark-theme .spendings-card h3 {
+    color: var(--text) !important;
+}
+
+/* Ensure buttons and inputs are visible */
+.dark-theme .btn, .dark-theme .primary, .dark-theme .ghost, .dark-theme .btn-add-expense {
+    color: var(--text) !important;
+}
+
+/* Strong overrides for dashboard-specific cards, borders, shadows and list dividers */
+.card,
+.summary-box,
+.chart-card,
+.spendings-card,
+.transactions,
+.calendar-card,
+.top-spending-days-card,
+.recurring-expenses-card,
+.smart-suggestions-card,
+.monthly-summary-card,
+.tags-card,
+.insights-card,
+.transactions ul,
+.transactions li,
+.spendings-transactions,
+.top-spending-days-card,
+.wallet-panel,
+.modal-content,
+.modal-card,
+.confirm-card,
+.shared-card,
+.shared-section,
+.friend-item,
+.summary-box,
+.card {
+    background: var(--card-bg) !important;
+    color: var(--text) !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* show all fix */
+.limits-show-all {
+    background: var(--card-bg) !important;
+    color: var(--text) !important;
+    border: 1px solid rgba(255,255,255,0.05) !important;
+}
+
+/* List dividers and subtle borders */
+.dark-theme .transactions li,
+.dark-theme .transactions ul li,
+.dark-theme .spendings-transactions li {
+    border-bottom: 1px solid rgba(255,255,255,0.03) !important;
+}
+
+/* Ensure inputs/selects inside cards use card-bg */
+.dark-theme .filter-group input,
+.dark-theme .filter-group select,
+.dark-theme .form-row input,
+.dark-theme .form-input,
+.dark-theme input,
+.dark-theme input::after,
+.dark-theme input::before,
+.dark-theme input:active,
+.dark-theme input:focus,
+.dark-theme select,
+.dark-theme textarea {
+    background: var(--card-bg) !important;
+    color: var(--text) !important;
+    border: 1px solid var(--border) !important;
+}
+
+/* Very broad selectors to catch remaining "card-like" elements */
+.dark-theme [class*="card"],
+.dark-theme [class*="Card"],
+.dark-theme [class*="box"],
+.dark-theme [class*="Box"],
+.dark-theme [class*="panel"],
+.dark-theme [class*="Panel"],
+.dark-theme [class*="summary"],
+.dark-theme [class*="Summary"],
+.dark-theme [class*="item"],
+.dark-theme [class*="Item"] {
+    background: var(--card-bg) !important;
+    color: var(--text) !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Catch recurring small panels and list items */
+.dark-theme .top-day-item,
+.dark-theme .recurring-item,
+.dark-theme .recurring-list > *,
+.dark-theme .top-days-list > * {
+    background: var(--card-bg) !important;
+    border: none !important;
+    color: var(--text) !important;
+}
+
+/* Specific right-column sections in dashboard */
+.dark-theme .add-expense,
+.dark-theme .add-savings,
+.dark-theme .budget-progress,
+.dark-theme .reset-section,
+.dark-theme .spending-by-category,
+.dark-theme .category-limits-compact,
+.dark-theme .limits-list,
+.dark-theme .dropdown,
+.dark-theme .dropdown-menu,
+.dark-theme .chart-stats,
+.dark-theme .progress-list,
+.dark-theme .chart-container {
+    background: var(--card-bg) !important;
+    color: var(--text) !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+    /* Remove border for budget progress when there are no limits */
+    .dark-theme .budget-progress.no-limits {
+        border: none !important;
+        box-shadow: none !important;
+    }
+
+.dark-theme .add-expense h2,
+.dark-theme .add-savings h2,
+.dark-theme .budget-progress h3,
+.dark-theme .spending-by-category h3,
+.dark-theme .category-limits-compact h3,
+.dark-theme .calendar-card h3 {
+    color: var(--text) !important;
+}
+
+/* Dropdown and small inputs inside right column */
+.dark-theme .dropdown input,
+.dark-theme .dropdown .form-row input,
+.dark-theme #tagsInput,
+.dark-theme .dropdown-btn,
+.dark-theme .dropdown-menu .option {
+    background: var(--card-bg) !important;
+    color: var(--text) !important;
+    border: 1px solid rgba(255,255,255,0.05) !important;
+}
+
+/* Remove border/shadow from dropdown card and menu in dark theme */
+.dark-theme .dropdown,
+.dark-theme .dropdown-menu {
+    border: none !important;
+    box-shadow: none !important;
+    background: var(--card-bg) !important;
+}
+
+.dark-theme .primary.primary-success { background: #059669 !important; color: #fff !important; }
+.dark-theme .primary.primary-danger { background: #ef4444 !important; color: #fff !important; }
+
+/* Calendar day card color in dark theme */
+.dark-theme .calendar-day {
+    background: rgba(255,255,255,0.03) !important; /* subtle light tile on dark bg */
+    color: var(--text) !important;
+    box-shadow: none !important;
+}
+.dark-theme .calendar-day .day-label { color: rgba(230,238,252,0.7) !important; }
+.dark-theme .calendar-day.today { outline-color: rgba(255,255,255,0.12) !important; }
+
+
+/* Make small card headings visible */
+.dark-theme .card h4,
+.dark-theme .spendings-card h3,
+.dark-theme .tags-card h3,
+.dark-theme .insights-card h3,
+.dark-theme .monthly-summary-card h3 {
+    color: var(--text) !important;
+}
+
+/* Remove unnecessary borders/shadows in dark theme to reduce visual noise,
+   but keep `.chart-card` subtle border so it reads as a card. */
+.dark-theme .sidebar,
+.dark-theme .summary-box,
+.dark-theme .spendings-card,
+.dark-theme .modal-content,
+.dark-theme .modal-card,
+.dark-theme .shared-card,
+.dark-theme .shared-section,
+.dark-theme .top-spending-days-card,
+.dark-theme .recurring-expenses-card,
+.dark-theme .smart-suggestions-card,
+.dark-theme .monthly-summary-card,
+.dark-theme .tags-card,
+.dark-theme .insights-card,
+.dark-theme .transactions,
+.dark-theme .transactions ul,
+.dark-theme .spendings-transactions,
+.dark-theme .top-days-list > *,
+.dark-theme .recurring-list > *,
+.dark-theme .wallet-panel,
+.dark-theme .friend-item,
+.dark-theme .summary-grid,
+.dark-theme .card:not(.chart-card) {
+    border: none !important;
+    box-shadow: none !important;
+    /* keep card background so sections remain distinct */
+    background: var(--card-bg) !important;
+}
+
+/* Slightly reduce divider contrast for lists in dark mode */
+.dark-theme .transactions li,
+.dark-theme .spendings-transactions li,
+.dark-theme .top-day-item {
+    border-bottom: 1px solid rgba(255,255,255,0.02) !important;
+}
+
+/* Add consistent border-radius to card-like elements in dark mode */
+.dark-theme .sidebar,
+.dark-theme .sidebar-footer,
+.dark-theme .settings-wrap,
+.dark-theme .settings-card,
+.dark-theme .account-chip,
+.dark-theme .summary-box,
+.dark-theme .summary-grid,
+.dark-theme .card,
+.dark-theme .shared-card,
+.dark-theme .top-spending-days-card,
+.dark-theme .recurring-expenses-card,
+.dark-theme .smart-suggestions-card,
+.dark-theme .monthly-summary-card,
+.dark-theme .tags-card,
+.dark-theme .insights-card,
+.dark-theme .transactions,
+.dark-theme .wallet-panel,
+.dark-theme .friend-item,
+.dark-theme .top-day-item,
+.dark-theme .recurring-item {
+    border-radius: 12px !important;
+}
+
+/* Ensure top summary cards have rounded corners in dark mode */
+.dark-theme .summary-cards .card {
+    border-radius: 12px !important;
+}
+
+/* Make sure summary cards are visually rounded and separated in dark mode */
+.dark-theme .summary-cards .card {
+    background: var(--card-bg) !important;
+    border: none !important;
+    box-shadow: none !important;
+    overflow: hidden !important;
+    border-radius: 14px !important;
+    -webkit-backface-visibility: hidden !important;
+    backface-visibility: hidden !important;
+    transform: translateZ(0) !important;
+}
+
+.dark-theme .summary-cards {
+    gap: 16px !important;
+}
+
+/* Remove background from sidebar quick-stats in dark mode */
+.dark-theme .quick-stats {
+    background: transparent !important;
+    border: none !important;
+}
+
+/* Dark theme for expenses and shared pages */
+.dark-theme .expense-card,
+.dark-theme .expense-item,
+.dark-theme .expense-header,
+.dark-theme .expense-list,
+.dark-theme .filter-section,
+.dark-theme .analytics-card,
+.dark-theme .shared-container,
+.dark-theme .shared-section,
+.dark-theme .wallet-card,
+.dark-theme .friend-card,
+.dark-theme .split-card {
+    background: var(--card-bg) !important;
+    color: var(--text) !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+/* Expenses page specific */
+/* .dark-theme .expenses-header, */
+.dark-theme .expenses-content,
+.dark-theme .expenses-main,
+.dark-theme .expenses-list,
+.dark-theme .filters-section,
+.dark-theme .filter-group,
+.dark-theme .kpi-bar,
+.dark-theme .kpi-chart-card,
+.dark-theme .kpi-insights-card,
+.dark-theme .kpi-metrics,
+.dark-theme .kpi-budget-progress,
+.dark-theme .quick-shortcuts,
+.dark-theme .wallet-filter-banner {
+    background: var(--card-bg) !important;
+    color: var(--text) !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.dark-theme .filter-group label,
+.dark-theme .kpi-bar h2,
+.dark-theme .kpi-bar h3,
+.dark-theme .budget-header h3,
+.dark-theme .insights-list {
+    color: var(--text) !important;
+}
+
+.dark-theme .filter-group select,
+.dark-theme .filter-group input {
+    background: rgba(255,255,255,0.03) !important;
+    color: var(--text) !important;
+    border: 1px solid rgba(255,255,255,0.05) !important;
+}
+
+/* Family Budget / Shared page specific */
+.dark-theme .auth-card,
+.dark-theme .auth-form,
+.dark-theme .shared-hero,
+.dark-theme .shared-card,
+.dark-theme .shared-section,
+.dark-theme .friend-item,
+.dark-theme .wallet-panel,
+.dark-theme .split-section,
+.dark-theme .invite-section {
+    background: var(--card-bg) !important;
+    color: var(--text) !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+.dark-theme .friend-item,
+.dark-theme .wallet-item,
+.dark-theme .split-item {
+    background: rgba(255,255,255,0.02) !important;
+    border: 1px solid rgba(255,255,255,0.03) !important;
+    border-radius: 12px !important;
+}
+
+.dark-theme .friend-display-name,
+.dark-theme .friend-real-name,
+.dark-theme .wallet-name,
+.dark-theme .split-title {
+    color: var(--text) !important;
+}
+
+.dark-theme hr,
+.dark-theme .divider,
+.dark-theme .section-divider {
+    border-color: rgba(255,255,255,0.05) !important;
+    background: rgba(255,255,255,0.05) !important;
+}
+
+.dark-theme .btn-add-expense,
+.dark-theme .btn-export,
+.dark-theme .btn-import,
+.dark-theme .primary {
+    background: var(--accent) !important;
+    color: #fff !important;
+    border: none !important;
+}
+
+/* Wallet and transaction borders in dark theme */
+.dark-theme .wallet-contrib-item,
+.dark-theme .wallet-txn-item {
+    border-bottom-color: rgba(255,255,255,0.05) !important;
+}
+
+.dark-theme .split-picker-item {
+    border-bottom-color: rgba(255,255,255,0.05) !important;
+    color: var(--text) !important;
+}
+
+.dark-theme .split-picker-item:hover {
+    background-color: rgba(255,255,255,0.05) !important;
+}
+
+/* Split member rows in dark theme */
+.dark-theme .split-member-row {
+    background: rgba(255,255,255,0.02) !important;
+    border-color: rgba(255,255,255,0.05) !important;
+}
+
+.dark-theme .split-member-row.split-current-user {
+    background: rgba(139,92,246,0.1) !important;
+    border-color: rgba(139,92,246,0.3) !important;
+}
+
+.dark-theme .split-member-name {
+    color: var(--text) !important;
+}
+
+/* Modal dark theme */
+.dark-theme .modal-content {
+    background: var(--card-bg) !important;
+    color: var(--text) !important;
+    border: none !important;
+}
+
+/* Reinforce removal of non-essential borders/shadows for many cards, keep chart-card visible */
+.dark-theme .sidebar,
+.dark-theme .summary-box,
+.dark-theme .spendings-card,
+.dark-theme .modal-content,
+.dark-theme .modal-card,
+.dark-theme .shared-card,
+.dark-theme .shared-section,
+.dark-theme .top-spending-days-card,
+.dark-theme .recurring-expenses-card,
+.dark-theme .smart-suggestions-card,
+.dark-theme .monthly-summary-card,
+.dark-theme .tags-card,
+.dark-theme .insights-card,
+.dark-theme .transactions,
+.dark-theme .transactions ul,
+.dark-theme .spendings-transactions,
+.dark-theme .top-days-list > *,
+.dark-theme .recurring-list > *,
+.dark-theme .wallet-panel,
+.dark-theme .friend-item,
+.dark-theme .summary-grid,
+.dark-theme .card:not(.chart-card) {
+    border: none !important;
+    box-shadow: none !important;
+    background: var(--card-bg) !important;
+}
+/* Keep chart card visibly a card in dark theme, but remove border/shadow from inner container */
+.dark-theme .chart-card {
+    border: none !important;
+    box-shadow: none !important;
+    background: var(--card-bg) !important;
+}
+
+.dark-theme .chart-container {
+    border: none !important;
+    box-shadow: none !important;
+    background: transparent !important;
+}
+
+/* ─── Family Budget / Shared page: section top gradient lines ─── */
+.dark-theme #invitesSection::before {
+    background: linear-gradient(90deg, rgba(99,102,241,0.35) 0%, rgba(139,92,246,0.25) 50%, rgba(99,102,241,0.1) 100%) !important;
+}
+.dark-theme #friendsSection::before {
+    background: linear-gradient(90deg, rgba(96,165,250,0.35) 0%, rgba(139,92,246,0.25) 50%, rgba(96,165,250,0.1) 100%) !important;
+}
+.dark-theme #walletsSection::before {
+    background: linear-gradient(90deg, rgba(74,222,128,0.35) 0%, rgba(52,211,153,0.25) 50%, rgba(74,222,128,0.1) 100%) !important;
+}
+.dark-theme #splitsSection::before {
+    background: linear-gradient(90deg, rgba(251,191,36,0.35) 0%, rgba(251,146,60,0.25) 50%, rgba(251,191,36,0.1) 100%) !important;
+}
+
+/* edit friend and delete fix */
+.friend-edit,
+.friend-delete {
+    border: none !important;
+}
+
+/* ─── Family Budget: shared-item cards per section ─── */
+.dark-theme #invitesSection .shared-item,
+.dark-theme #walletsSection .shared-item,
+.dark-theme #splitsSection .shared-item,
+.dark-theme #friendsSection .shared-item,
+.dark-theme .shared-item {
+    background: var(--card-bg) !important;
+    border: 1px solid rgba(255,255,255,0.04) !important;
+    box-shadow: none !important;
+}
+
+/* ─── Split members breakdown container ─── */
+.dark-theme .split-members-breakdown {
+    background: rgba(255,255,255,0.02) !important;
+    border: 1px solid rgba(255,255,255,0.05) !important;
+}
+
+/* ─── Split member inputs ─── */
+.dark-theme .split-member-percent,
+.dark-theme .split-member-amount {
+    background: var(--card-bg) !important;
+    color: var(--text) !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+}
+.dark-theme .split-member-percent:disabled,
+.dark-theme .split-member-amount:disabled {
+    background: rgba(255,255,255,0.03) !important;
+    color: var(--muted) !important;
+    border-color: rgba(255,255,255,0.04) !important;
+}
+.dark-theme .split-member-percent:focus,
+.dark-theme .split-member-amount:focus {
+    border-color: var(--accent) !important;
+    box-shadow: 0 0 0 2px rgba(139,92,246,0.15) !important;
+}
+
+/* ─── Split calculated amount + percent symbol ─── */
+.dark-theme .split-calculated-amount {
+    color: var(--muted) !important;
+}
+.dark-theme .split-percent-symbol {
+    color: var(--muted) !important;
+}
+
+/* ─── Split percentage status indicators ─── */
+.dark-theme .split-percentage-status.split-percent-ok {
+    background: rgba(74,222,128,0.1) !important;
+    color: #4ade80 !important;
+    border: 1px solid rgba(74,222,128,0.2) !important;
+}
+.dark-theme .split-percentage-status.split-percent-warning {
+    background: rgba(251,191,36,0.1) !important;
+    color: #fbbf24 !important;
+    border: 1px solid rgba(251,191,36,0.2) !important;
+}
+.dark-theme .split-percentage-status.split-percent-error {
+    background: rgba(248,113,113,0.1) !important;
+    color: #f87171 !important;
+    border: 1px solid rgba(248,113,113,0.2) !important;
+}
+
+/* ─── Split breakdown (green left-border summary) ─── */
+.dark-theme .split-breakdown {
+    background: rgba(74,222,128,0.06) !important;
+    border-left: 3px solid rgba(74,222,128,0.4) !important;
+}
+.dark-theme .breakdown-item {
+    color: #4ade80 !important;
+}
+
+/* ─── Split badges ─── */
+.dark-theme .split-you-badge {
+    background: rgba(139,92,246,0.15) !important;
+    color: #a78bfa !important;
+}
+.dark-theme .split-recurring-badge {
+    background: rgba(96,165,250,0.15) !important;
+    color: #93c5fd !important;
+}
+
+/* ─── Split member remove button ─── */
+.dark-theme .split-member-remove {
+    background: rgba(239,68,68,0.12) !important;
+    border-color: rgba(239,68,68,0.2) !important;
+    color: #f87171 !important;
+}
+.dark-theme .split-member-remove:hover {
+    background: rgba(239,68,68,0.2) !important;
+}
+
+/* ─── Split member picker menu ─── */
+.dark-theme .split-member-picker-menu {
+    background: var(--card-bg) !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4) !important;
+}
+.dark-theme .split-picker-item {
+    color: var(--text) !important;
+    border-bottom-color: rgba(255,255,255,0.05) !important;
+}
+.dark-theme .split-picker-item:hover {
+    background-color: rgba(255,255,255,0.06) !important;
+}
+
+/* ─── Notifications in dark theme ─── */
+.dark-theme .notification {
+    background: var(--card-bg) !important;
+    border-color: rgba(255,255,255,0.08) !important;
+    color: var(--text) !important;
+    box-shadow: 0 8px 24px rgba(0,0,0,0.4) !important;
+}
+.dark-theme .notification.error {
+    background: rgba(239,68,68,0.12) !important;
+    border-color: rgba(239,68,68,0.25) !important;
+    color: #f87171 !important;
+}
+.dark-theme .notification.success {
+    background: rgba(74,222,128,0.1) !important;
+    border-color: rgba(74,222,128,0.25) !important;
+    color: #4ade80 !important;
+}
+.dark-theme .notification.info {
+    background: rgba(96,165,250,0.1) !important;
+    border-color: rgba(96,165,250,0.25) !important;
+    color: #93c5fd !important;
+}
+
+/* fixing */
+
+.modal-close {
+    background: transparent !important;
+}
+
+.suggestion-placeholder {
+    background: rgba(255,255,255,0.03) !important;
+    border: 1px solid rgba(255,255,255,0.05) !important;
+    color: var(--muted) !important;
+}
+
+.member-chip {
+    background: rgba(255,255,255,0.06) !important;
+    color: var(--text) !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+}
+
+.input-addon {
+    background: rgba(255,255,255,0.06) !important;
+    color: var(--text) !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+}
+
+.label-info {
+    background: rgba(255,255,255,0.06) !important;
+    color: var(--text) !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+}
+
+.modal-header {
+    border-bottom: 1px solid rgba(255,255,255,0.05) !important;
+}
+
+.wallet-info {
+    background: rgba(255,255,255,0.06) !important;
+    color: var(--text) !important;
+    border: 1px solid rgba(255,255,255,0.08) !important;
+}
+
+.shared-categories:active {
+    background: transparent !important;
+}

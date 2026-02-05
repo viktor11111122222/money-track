@@ -1,6 +1,7 @@
 // ===== DATA MANAGEMENT =====
 const DEFAULT_MONTHLY_INCOME = 100000;
-const CURRENCY = " RSD";
+function getCurrency(){ try { var s = JSON.parse(localStorage.getItem('mt_settings_v1')); var c = s && s.preferences && s.preferences.currency; var m = { RSD:' RSD', USD:' $', EUR:' €', GBP:' £', JPY:' ¥', AUD:' A$', CAD:' C$', CNY:' ¥', INR:' ₹', BRL:' R$', CHF:' CHF', SEK:' kr', NOK:' kr' }; return m[c] || ' RSD'; } catch(e){ return ' RSD'; } }
+const CURRENCY = getCurrency();
 const API_BASE = 'http://localhost:4000/api';
 const TOKEN_KEY = 'sharedBudgetToken';
 const WALLET_SYNC_QUEUE_KEY = 'walletSyncQueue';
@@ -196,6 +197,7 @@ function initializeData() {
       savingsTotal: 0,
       recurringExpenses: [],
       lastMonthCheck: new Date().getMonth(),
+      lastPayDayMonth: '',
       _cleared: true
     };
     localStorage.setItem('expenseTrackerData', JSON.stringify(data));
@@ -252,6 +254,7 @@ function resetAllData() {
       savingsTotal: 0,
       recurringExpenses: [],
       lastMonthCheck: new Date().getMonth(),
+      lastPayDayMonth: '',
       _cleared: true
     };
     saveData();
@@ -308,12 +311,12 @@ function getTotalSpent() {
 }
 
 function getSavings() {
-  // Balance = Current Balance - Total Spent this month
+  // Balance = Current Balance - Total Spent this month + Savings
   const totalSpent = getTotalSpent();
   if (appData.currentBalance !== undefined) {
-    return appData.currentBalance - totalSpent;
+    return appData.currentBalance - totalSpent + (appData.savingsTotal || 0);
   }
-  // Fallback untuk stare podatke
+  // Fallback za stare podatke
   return appData.income - totalSpent + (appData.savingsTotal || 0);
 }
 
@@ -413,7 +416,7 @@ function renderSpendingsCategories(expenses) {
   });
   const entries = Object.entries(totals).sort((a, b) => b[1] - a[1]);
   if (entries.length === 0) {
-    spendingsCategories.innerHTML = '<div class="spendings-empty">Nema podataka za izabrane filtere.</div>';
+    spendingsCategories.innerHTML = '<div class="spendings-empty">' + t('js.noDataForFilters') + '</div>';
     return;
   }
   spendingsCategories.innerHTML = entries.map(([name, amount]) => {
@@ -429,12 +432,12 @@ function renderSpendingsCategories(expenses) {
 function renderSpendingsTransactions(expenses) {
   if (!spendingsTransactions) return;
   if (expenses.length === 0) {
-    spendingsTransactions.innerHTML = '<li class="spendings-empty">Nema transakcija za izabrane filtere.</li>';
+    spendingsTransactions.innerHTML = '<li class="spendings-empty">' + t('js.noTxForFilters') + '</li>';
     return;
   }
   spendingsTransactions.innerHTML = expenses.map(exp => {
-    const date = exp.date || new Date(exp.timestamp).toLocaleDateString('sr-RS');
-    const time = exp.time || new Date(exp.timestamp).toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' });
+    const date = exp.date || new Date(exp.timestamp).toLocaleDateString(getLocale());
+    const time = exp.time || new Date(exp.timestamp).toLocaleTimeString(getLocale(), { hour: '2-digit', minute: '2-digit' });
     return `
       <li class="spendings-transaction-item">
         <div class="spendings-transaction-meta">
@@ -806,8 +809,8 @@ addExpenseBtn.addEventListener('click', async () => {
     id: Date.now(),
     amount: amount,
     category: category,
-    date: now.toLocaleDateString('sr-RS'),
-    time: now.toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' }),
+    date: now.toLocaleDateString(getLocale()),
+    time: now.toLocaleTimeString(getLocale(), { hour: '2-digit', minute: '2-digit' }),
     timestamp: now.getTime(),
     tags: tags
   };
@@ -852,8 +855,8 @@ addSavingsBtn.addEventListener('click', async () => {
     id: Date.now(),
     amount: amount,
     category: 'Savings',
-    date: now.toLocaleDateString('sr-RS'),
-    time: now.toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' }),
+    date: now.toLocaleDateString(getLocale()),
+    time: now.toLocaleTimeString(getLocale(), { hour: '2-digit', minute: '2-digit' }),
     timestamp: now.getTime(),
     type: 'savings'
   };
@@ -869,7 +872,7 @@ addSavingsBtn.addEventListener('click', async () => {
   });
 
   // Show notification about added savings
-  alert('✅ Ušteda dodana: ' + amount.toLocaleString() + CURRENCY);
+  alert(t('js.savingsAdded') + amount.toLocaleString() + getCurrency());
 
   // Reset form
   savingsInput.value = '';
@@ -893,10 +896,10 @@ function updateSidebarStats() {
   const sidebarRemaining = document.getElementById('sidebarRemaining');
   
   if (sidebarSpent) {
-    sidebarSpent.textContent = totalSpent.toLocaleString() + CURRENCY;
+    sidebarSpent.textContent = totalSpent.toLocaleString() + getCurrency();
   }
   if (sidebarRemaining) {
-    sidebarRemaining.textContent = remaining.toLocaleString() + CURRENCY;
+    sidebarRemaining.textContent = remaining.toLocaleString() + getCurrency();
   }
 }
 
@@ -904,15 +907,15 @@ function updateSidebarStats() {
 function updateDashboard() {
   // Update Total Spent
   document.querySelectorAll('.summary-cards .card:nth-child(1) .amount')[0].textContent = 
-    getTotalSpent().toLocaleString() + CURRENCY;
+    getTotalSpent().toLocaleString() + getCurrency();
 
   // Update Income
   document.querySelectorAll('.summary-cards .card:nth-child(2) .amount')[0].textContent = 
-    appData.income.toLocaleString() + CURRENCY;
+    appData.income.toLocaleString() + getCurrency();
 
   // Update Savings
   document.querySelectorAll('.summary-cards .card:nth-child(3) .amount')[0].textContent = 
-    getSavings().toLocaleString() + CURRENCY;
+    getSavings().toLocaleString() + getCurrency();
 
   // Update sidebar stats
   updateSidebarStats();
@@ -1021,14 +1024,14 @@ function updateRecentTransactions() {
     amountSpan.className = 'tx-amount';
     if (exp.type === 'income') {
       amountSpan.classList.add('income');
-      amountSpan.textContent = '+' + exp.amount.toLocaleString() + CURRENCY;
+      amountSpan.textContent = '+' + exp.amount.toLocaleString() + getCurrency();
       nameSpan.textContent = exp.category || 'Income';
     } else if (exp.type === 'savings') {
       amountSpan.classList.add('income');
-      amountSpan.textContent = '+' + exp.amount.toLocaleString() + CURRENCY;
+      amountSpan.textContent = '+' + exp.amount.toLocaleString() + getCurrency();
       nameSpan.textContent = exp.category || 'Savings';
     } else {
-      amountSpan.textContent = '-' + exp.amount.toLocaleString() + CURRENCY;
+      amountSpan.textContent = '-' + exp.amount.toLocaleString() + getCurrency();
     }
 
     const deleteBtn = document.createElement('button');
@@ -1083,7 +1086,7 @@ function updateChartStats() {
 
     const amountSpan = document.createElement('span');
     amountSpan.className = 'stat-amount';
-    amountSpan.textContent = amount.toLocaleString() + CURRENCY;
+    amountSpan.textContent = amount.toLocaleString() + getCurrency();
 
     const percentSpan = document.createElement('span');
     percentSpan.className = 'stat-percent';
@@ -1155,7 +1158,7 @@ function updateCategoryLimits() {
     limitValue.className = 'limit-value';
     
     if (appData.categoryLimits[cat]) {
-      limitValue.textContent = appData.categoryLimits[cat].toLocaleString() + CURRENCY;
+      limitValue.textContent = appData.categoryLimits[cat].toLocaleString() + getCurrency();
       
       // Add delete button for existing limits (only visible in edit mode)
       const deleteBtn = document.createElement('button');
@@ -1555,8 +1558,8 @@ function updateInsights() {
   const weekend = (dayTotals[6] + dayTotals[0]);
   const weekdays = dayTotals[1]+dayTotals[2]+dayTotals[3]+dayTotals[4]+dayTotals[5];
   const weekendMsg = weekend > weekdays
-    ? 'Najviše trošiš vikendom'
-    : 'Najviše trošiš radnim danima';
+    ? t('js.spendMostWeekends')
+    : t('js.spendMostWeekdays');
   addInsight(list, weekendMsg);
 
   // Insight 2: Entertainment MoM change
@@ -1564,13 +1567,13 @@ function updateInsights() {
   const prevCat = getMonthSpendingByCategory(prevM, prevY);
   const currEnt = currCat['Entertainment'] || 0;
   const prevEnt = prevCat['Entertainment'] || 0;
-  let entMsg = 'Entertainment ti je isti kao prošli mesec';
+  let entMsg = t('js.entertainmentSame');
   if (prevEnt > 0) {
     const diffPct = ((currEnt - prevEnt) / prevEnt) * 100;
     const sign = diffPct >= 0 ? '+' : '';
-    entMsg = `Entertainment ti je ${sign}${Math.round(diffPct)}% u odnosu na prošli mesec`;
+    entMsg = t('js.entertainmentChange', [`${sign}${Math.round(diffPct)}%`]);
   } else if (currEnt > 0) {
-    entMsg = 'Entertainment ti je novi trošak ovog meseca';
+    entMsg = t('js.entertainmentNew');
   }
   addInsight(list, entMsg);
 
@@ -1586,12 +1589,12 @@ function updateInsights() {
     const icon = document.createElement('i');
     icon.className = 'fa-solid fa-brain insight-icon';
     const span = document.createElement('span');
-    span.innerHTML = 'Top 3 najveće transakcije – ' + items.join(' • ');
+    span.innerHTML = t('js.top3Transactions') + items.join(' • ');
     insightLi.appendChild(icon);
     insightLi.appendChild(span);
     list.appendChild(insightLi);
   } else {
-    addInsight(list, 'Nema troškova ovaj mesec');
+    addInsight(list, t('js.noExpensesThisMonth'));
   }
 
   // Insight 4: Predikcija uštede
@@ -1600,7 +1603,7 @@ function updateInsights() {
   const dailyRate = dayOfMonth > 0 ? (totalThisMonth / dayOfMonth) : 0;
   const projectedSpent = Math.round(dailyRate * daysInMonth);
   const predictedSavings = appData.income - projectedSpent + (appData.savingsTotal || 0);
-  addInsight(list, `Ako nastaviš ovim tempom, uštedećeš ~${Math.round(predictedSavings).toLocaleString()} RSD`);
+  addInsight(list, t('js.savingsPrediction', [Math.round(predictedSavings).toLocaleString() + ' ' + getCurrency()]));
 }
 
 function addInsight(listEl, text) {
@@ -1655,7 +1658,7 @@ function initChart() {
       datasets: [{
         data: data,
         backgroundColor: colors,
-        borderColor: '#fff',
+        borderColor: 'rgba(255,255,255,0.06)',
         borderWidth: 3,
         hoverOffset: 10
       }]
@@ -1802,21 +1805,21 @@ function showCalendarTooltip(dayNum, x, y) {
   }).reduce((sum, e) => sum + e.amount, 0);
 
   if (total === 0 && dayIncome === 0) {
-    tooltip.innerHTML = `<div class="tooltip-day">${dayNum}. dan</div><div class="tooltip-empty">Nema troškova</div>`;
+    tooltip.innerHTML = `<div class="tooltip-day">${t('js.dayLabel', [dayNum])}</div><div class="tooltip-empty">${t('js.noExpenses')}</div>`;
   } else {
-    let html = `<div class="tooltip-day">${dayNum}. dan</div>`;
+    let html = `<div class="tooltip-day">${t('js.dayLabel', [dayNum])}</div>`;
     
     // Show savings only if there's income that day
     if (dayIncome > 0) {
       const savedAmount = dayIncome - total;
       if (savedAmount >= 0) {
-        html += `<div class="tooltip-savings">💰 Uštedeo: ${savedAmount.toLocaleString()}${CURRENCY}</div>`;
+        html += `<div class="tooltip-savings">${t('js.saved', [savedAmount.toLocaleString() + CURRENCY])}</div>`;
       } else {
-        html += `<div class="tooltip-savings-negative">💸 Potrošio više: ${Math.abs(savedAmount).toLocaleString()}${CURRENCY}</div>`;
+        html += `<div class="tooltip-savings-negative">${t('js.overspent', [Math.abs(savedAmount).toLocaleString() + CURRENCY])}</div>`;
       }
     }
     
-    html += `<div class="tooltip-total">Ukupno potrošeno: ${total.toLocaleString()}${CURRENCY}</div>`;
+    html += `<div class="tooltip-total">${t('js.totalSpent', [total.toLocaleString() + CURRENCY])}</div>`;
     html += '<div class="tooltip-breakdown">';
     Object.keys(categorySpend).forEach(cat => {
       html += `<div class="tooltip-category"><span>${cat}</span><span>${categorySpend[cat].toLocaleString()}${CURRENCY}</span></div>`;
@@ -1847,7 +1850,7 @@ function updateSpendingCalendar() {
   // Create date for display
   const displayDate = new Date(year, month, 1);
   if (calendarDateLabel) {
-    calendarDateLabel.textContent = displayDate.toLocaleDateString('sr-RS', {
+    calendarDateLabel.textContent = displayDate.toLocaleDateString(getLocale(), {
       month: 'long',
       year: 'numeric'
     });
@@ -1949,7 +1952,7 @@ function updateTopSpendingDays() {
   if (topDays.length === 0) {
     const empty = document.createElement('p');
     empty.style.opacity = '0.6';
-    empty.textContent = 'Nema troškova još uvek';
+    empty.textContent = t('js.noExpensesYet');
     list.appendChild(empty);
     return;
   }
@@ -1960,13 +1963,13 @@ function updateTopSpendingDays() {
 
     const dateEl = document.createElement('span');
     dateEl.className = 'top-day-date';
-    dateEl.textContent = d.date.toLocaleDateString('sr-RS', { weekday: 'short', day: 'numeric', month: 'short' });
+    dateEl.textContent = d.date.toLocaleDateString(getLocale(), { weekday: 'short', day: 'numeric', month: 'short' });
 
     const infoEl = document.createElement('span');
     infoEl.className = 'top-day-info';
     
     const categoryColor = getCategoryColor(d.topCategory);
-    infoEl.innerHTML = `Ukupno: ${d.amount.toLocaleString()}${CURRENCY} - Najviše: <span style="display: inline-block; padding: 2px 8px; border-radius: 4px; background: ${categoryColor}; color: white; font-weight: 500; font-size: 12px;">${d.topCategory}</span>`;
+    infoEl.innerHTML = `${t('js.totalMost', [d.amount.toLocaleString() + CURRENCY])}<span style="display: inline-block; padding: 2px 8px; border-radius: 4px; background: ${categoryColor}; color: white; font-weight: 500; font-size: 12px;">${d.topCategory}</span>`;
 
     item.appendChild(dateEl);
     item.appendChild(infoEl);
@@ -2043,8 +2046,8 @@ function initComparisonChart() {
     data: {
       labels,
       datasets: [
-        { label: 'Ovaj mesec', data: currentData, backgroundColor: '#34d399', borderRadius: 6, maxBarThickness: 18 },
-        { label: 'Prošli mesec', data: prevData, backgroundColor: '#9ca3af', borderRadius: 6, maxBarThickness: 18 }
+        { label: t('js.thisMonth'), data: currentData, backgroundColor: '#34d399', borderRadius: 6, maxBarThickness: 18 },
+        { label: t('js.lastMonth'), data: prevData, backgroundColor: '#9ca3af', borderRadius: 6, maxBarThickness: 18 }
       ]
     },
     options: {
@@ -2076,10 +2079,14 @@ function updateBudgetProgress() {
   const catsWithLimit = Object.keys(appData.categoryLimits || {});
   if (catsWithLimit.length === 0) {
     container.innerHTML = '<p data-empty="true" style="opacity:0.6">No limits set</p>';
+    const card = container.closest('.budget-progress');
+    if (card) card.classList.add('no-limits');
     return;
   }
   const emptyMessage = container.querySelector('[data-empty="true"]');
   if (emptyMessage) emptyMessage.remove();
+  const card = container.closest('.budget-progress');
+  if (card) card.classList.remove('no-limits');
   const existingItems = new Map(
     Array.from(container.querySelectorAll('.progress-item')).map(item => [item.dataset.category, item])
   );
@@ -2140,7 +2147,7 @@ function updateBudgetProgress() {
     }
 
     if (text) {
-      text.textContent = `Potrošio si ${safePercent}% ${cat} budžeta`;
+      text.textContent = t('js.spentPercent', [safePercent, cat]);
     }
 
     seen.add(cat);
@@ -2151,6 +2158,66 @@ function updateBudgetProgress() {
       item.remove();
     }
   });
+}
+
+// ===== PAYDAY AUTO-INCOME =====
+function checkPayDay() {
+  const now = new Date();
+  const today = now.getDate();
+  const currentMonth = now.getMonth();
+  const currentYear = now.getFullYear();
+
+  // Read payday setting
+  let payDay = 1;
+  try {
+    const settings = JSON.parse(localStorage.getItem('mt_settings_v1'));
+    const raw = settings && settings.preferences && settings.preferences.startMonth;
+    if (raw === 'last') {
+      // Last day of current month
+      payDay = new Date(currentYear, currentMonth + 1, 0).getDate();
+    } else if (raw) {
+      payDay = parseInt(raw, 10) || 1;
+    }
+  } catch(e) { /* use default 1 */ }
+
+  // Key to track which month we last added income
+  const lastPayDayMonth = appData.lastPayDayMonth || '';
+  const thisMonthKey = currentYear + '-' + currentMonth;
+
+  // If today >= payday and we haven't added income this month yet
+  if (today >= payDay && lastPayDayMonth !== thisMonthKey) {
+    const incomeAmount = appData.income || 0;
+    if (incomeAmount > 0) {
+      // Add income to current balance
+      appData.currentBalance = (appData.currentBalance || 0) + incomeAmount;
+
+      // Add as income transaction so it shows in recent transactions
+      const incomeTransaction = {
+        id: Date.now(),
+        amount: incomeAmount,
+        category: 'Income',
+        date: now.toLocaleDateString(getLocale()),
+        time: now.toLocaleTimeString(getLocale(), { hour: '2-digit', minute: '2-digit' }),
+        timestamp: now.getTime(),
+        type: 'income',
+        note: 'Monthly Income (PayDay)'
+      };
+      appData.expenses.push(incomeTransaction);
+
+      appData.lastPayDayMonth = thisMonthKey;
+      saveData();
+
+      // Sync to server
+      const token = localStorage.getItem(TOKEN_KEY);
+      if (token) {
+        fetch(`${API_BASE}/me/finances`, {
+          method: 'PATCH',
+          headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+          body: JSON.stringify({ currentBalance: appData.currentBalance })
+        }).catch(() => {});
+      }
+    }
+  }
 }
 
 // ===== RECURRING EXPENSES =====
@@ -2166,8 +2233,8 @@ function checkAndAddRecurringExpenses() {
           id: Date.now() + Math.random(),
           amount: recurring.amount,
           category: recurring.name,
-          date: new Date().toLocaleDateString('sr-RS'),
-          time: new Date().toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' }),
+          date: new Date().toLocaleDateString(getLocale()),
+          time: new Date().toLocaleTimeString(getLocale(), { hour: '2-digit', minute: '2-digit' }),
           timestamp: Date.now(),
           type: 'recurring'
         };
@@ -2182,7 +2249,7 @@ function checkAndAddRecurringExpenses() {
 
 function addRecurringExpense(name, amount) {
   if (!name || !amount) {
-    alert('Popuni naziv i iznos!');
+    alert(t('js.fillNameAmount'));
     return;
   }
 
@@ -2200,8 +2267,8 @@ function addRecurringExpense(name, amount) {
     id: Date.now() + Math.random(),
     amount: parseFloat(amount),
     category: name,
-    date: new Date().toLocaleDateString('sr-RS'),
-    time: new Date().toLocaleTimeString('sr-RS', { hour: '2-digit', minute: '2-digit' }),
+    date: new Date().toLocaleDateString(getLocale()),
+    time: new Date().toLocaleTimeString(getLocale(), { hour: '2-digit', minute: '2-digit' }),
     timestamp: Date.now(),
     type: 'recurring'
   };
@@ -2231,7 +2298,7 @@ function toggleRecurringExpense(id) {
 }
 
 function deleteRecurringExpense(id) {
-  if (confirm('Obrisati ovaj recurring trošak?')) {
+  if (confirm(t('js.deleteRecurring'))) {
     appData.recurringExpenses = appData.recurringExpenses.filter(r => r.id !== id);
     saveData();
     updateRecurringExpensesList();
@@ -2252,7 +2319,7 @@ function updateRecurringExpensesList() {
     empty.style.textAlign = 'center';
     empty.style.padding = '20px';
     empty.style.color = '#6b7280';
-    empty.textContent = 'Nema recurring troškova';
+    empty.textContent = t('js.noRecurring');
     list.appendChild(empty);
     return;
   }
@@ -2315,7 +2382,7 @@ function updateRecurringInsight() {
 
   const percentage = Math.round((totalRecurring / totalSpent) * 100);
   insight.style.display = 'block';
-  insight.textContent = `Recurring troškovi čine ${percentage}% mesečne potrošnje`;
+  insight.textContent = t('js.recurringPercent', [percentage]);
 }
 
 function initRecurringExpenses() {
@@ -2331,6 +2398,7 @@ function initRecurringExpenses() {
   }
 
   // Check and add recurring expenses on load
+  checkPayDay();
   checkAndAddRecurringExpenses();
   updateRecurringExpensesList();
   updateRecurringInsight();
@@ -2436,7 +2504,7 @@ function filterByTag(tag) {
             bodyFont: { size: 13, family: 'Inter' },
             callbacks: {
               label: function(context) {
-                return context.label + ': ' + context.parsed.toLocaleString() + CURRENCY;
+                return context.label + ': ' + context.parsed.toLocaleString() + getCurrency();
               }
             }
           }
@@ -2518,7 +2586,7 @@ function updateChartWithTagFilter(tag) {
           bodyFont: { size: 13, family: 'Inter' },
           callbacks: {
             label: function(context) {
-              return context.label + ': ' + context.parsed.toLocaleString() + CURRENCY;
+              return context.label + ': ' + context.parsed.toLocaleString() + getCurrency();
             }
           }
         }
@@ -2547,7 +2615,7 @@ function updateTagInsight(tag) {
                 tag.includes('putovanje') || tag.includes('travel') ? '✈️' : '💰';
 
   insight.style.display = 'block';
-  insight.textContent = `${tag} te košta ${spending.toLocaleString()}${CURRENCY} mesečno ${emoji}`;
+  insight.textContent = t('js.tagCosts', [tag, spending.toLocaleString() + CURRENCY, emoji]);
 }
 
 function updateTagsUI() {
@@ -2571,7 +2639,7 @@ function updateSmartSuggestions() {
   const suggestions = generateSmartSuggestions();
   
   if (suggestions.length === 0) {
-    suggestionsList.innerHTML = '<div class="suggestion-placeholder">Nema dovoljno podataka za sugestije</div>';
+    suggestionsList.innerHTML = '<div class="suggestion-placeholder">' + t('js.noDataForSuggestions') + '</div>';
     return;
   }
 
@@ -2619,7 +2687,7 @@ function generateSmartSuggestions() {
     if (categoryAmount > 1000) {
       suggestions.push({
         type: 'normal',
-        text: `Ako smanjiš ${categoryName} za 20%, uštedećeš ~${savings.toLocaleString()} RSD`
+        text: t('js.reduceSuggestion', [categoryName, savings.toLocaleString() + ' ' + getCurrency()])
       });
     }
   }
@@ -2630,7 +2698,7 @@ function generateSmartSuggestions() {
     if (percentage > 30) {
       suggestions.push({
         type: 'warning',
-        text: `${category} ti je iznad preporučenih 30% prihoda (${percentage.toFixed(0)}%)`
+        text: t('js.aboveRecommended', [category, percentage.toFixed(0)])
       });
     }
   });
@@ -2640,7 +2708,7 @@ function generateSmartSuggestions() {
   if (spendingPercentage > 80) {
     suggestions.push({
       type: 'warning',
-      text: `Trošiš ${spendingPercentage.toFixed(0)}% svojih prihoda - pokušaj da smanjiš na 70%`
+      text: t('js.spendingTooHigh', [spendingPercentage.toFixed(0)])
     });
   }
 
@@ -2651,7 +2719,7 @@ function generateSmartSuggestions() {
     const difference = recommendedSavings - currentSavings;
     suggestions.push({
       type: 'normal',
-      text: `Pokušaj da uštediš još ${difference.toLocaleString()} RSD da dostigneš 20% prihoda`
+      text: t('js.savingsGoal', [difference.toLocaleString() + ' ' + getCurrency()])
     });
   }
 
@@ -2665,7 +2733,7 @@ function generateSmartSuggestions() {
     if (recurringPercentage > 60) {
       suggestions.push({
         type: 'warning',
-        text: `${recurringPercentage.toFixed(0)}% troškova su recurring - razmisli o smanjenju pretplata`
+        text: t('js.recurringTooHigh', [recurringPercentage.toFixed(0)])
       });
     }
   }
@@ -2679,9 +2747,9 @@ function updateMonthlySummary() {
   const savings = getSavings();
   const saveRate = income > 0 ? Math.round((savings / income) * 100) : 0;
 
-  document.getElementById('summarySpent').textContent = totalSpent.toLocaleString() + CURRENCY;
-  document.getElementById('summaryIncome').textContent = income.toLocaleString() + CURRENCY;
-  document.getElementById('summarySavings').textContent = savings.toLocaleString() + CURRENCY;
+  document.getElementById('summarySpent').textContent = totalSpent.toLocaleString() + getCurrency();
+  document.getElementById('summaryIncome').textContent = income.toLocaleString() + getCurrency();
+  document.getElementById('summarySavings').textContent = savings.toLocaleString() + getCurrency();
   document.getElementById('summarySaveRate').textContent = saveRate + '%';
 }
 
@@ -2689,6 +2757,21 @@ function updateMonthlySummary() {
 loadCalendarState(); // Load saved calendar state
 checkOnboarding(); // Check if user needs onboarding
 updateDashboard();
+
+// Re-render dynamic JS content when language changes
+window.addEventListener('languageChanged', () => {
+  updateDashboard();
+  updateInsights();
+  updateSpendingCalendar();
+  updateTopSpendingDays();
+  updateRecurringExpensesList();
+  updateRecurringInsight();
+  updateCategoryLimits();
+  updateTagsUI();
+  updateSmartSuggestions();
+  if (typeof updateChart === 'function') updateChart();
+  if (typeof initComparisonChart === 'function') initComparisonChart();
+});
 
 enqueueMissingWalletSync();
 flushWalletSyncQueue();
@@ -2826,6 +2909,7 @@ function showOnboardingModal(user) {
         savingsTotal: 0,
         recurringExpenses: [],
         lastMonthCheck: new Date().getMonth(),
+        lastPayDayMonth: '',
         _cleared: true
       };
       saveData();
