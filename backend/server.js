@@ -583,25 +583,15 @@ app.delete('/api/splits/:id', authMiddleware, async (req, res) => {
   res.json({ ok: true });
 });
 
-// chat gpt is trying this 
-const path = require("path");
-
 // servira statičke fajlove iz frontend foldera
-app.use(express.static(path.join(__dirname, "../dashboard")));
+// app.use(express.static(path.join(__dirname, "../dashboard")));
 
 // početna ruta → otvara index.html
-app.get("/", (req, res) => {
-  res.sendFile(path.join(__dirname, "../dashboard/index.html"));
-});
+// app.get("/", (req, res) => {
+//   res.sendFile(path.join(__dirname, "../dashboard/index.html"));
+// });
 
 
 app.listen(PORT, () => {
   console.log(`Backend running on http://localhost:${PORT}`);
-});
-
-
-/* chat gps is tryings this */
-
-app.get("/", (req, res) => {
-  res.send("Backend radi 🚀");
 });
