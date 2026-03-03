@@ -4,10 +4,16 @@ import cors from 'cors';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import nodemailer from 'nodemailer';
+import path from 'path';
+import { fileURLToPath } from 'url';
 import { all, get, run } from './db.js';
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const PROJECT_ROOT = path.join(__dirname, '..');
+
 const app = express();
-const PORT = process.env.PORT || 4000;
+const PORT = process.env.PORT || 8080;
 const JWT_SECRET = process.env.JWT_SECRET || 'change_me_secret';
 const APP_BASE_URL = process.env.APP_BASE_URL || 'http://127.0.0.1:5500';
 
@@ -59,6 +65,15 @@ async function sendInviteEmail(invite) {
 
 app.use(cors({ origin: true }));
 app.use(express.json());
+
+// Serve frontend static files
+app.use('/dashboard', express.static(path.join(PROJECT_ROOT, 'dashboard')));
+app.use('/expenses', express.static(path.join(PROJECT_ROOT, 'expenses')));
+app.use('/shared', express.static(path.join(PROJECT_ROOT, 'shared')));
+app.use('/public', express.static(path.join(PROJECT_ROOT, 'public')));
+
+// Root redirect to dashboard
+app.get('/', (req, res) => res.redirect('/dashboard/index.html'));
 
 function createToken(user) {
   return jwt.sign({ userId: user.id, email: user.email }, JWT_SECRET, { expiresIn: '7d' });

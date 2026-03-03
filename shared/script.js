@@ -1,4 +1,4 @@
-const API_BASE = 'http://localhost:4000/api';
+const API_BASE = (window.location.port === '5500' || window.location.port === '5501') ? 'http://localhost:8080/api' : '/api';
 const TOKEN_KEY = 'sharedBudgetToken';
 const WALLET_PROGRESS_CACHE_KEY = 'walletProgressCache';
 const DEFAULT_MONTHLY_INCOME = 100000;
@@ -75,7 +75,7 @@ if (spendingsBtn) {
 
 function getApiBaseUrl() {
   if (API_BASE.startsWith('http')) return API_BASE;
-  return `http://localhost:4000${API_BASE.startsWith('/') ? '' : '/'}${API_BASE}`;
+  return `${window.location.origin}${API_BASE.startsWith('/') ? '' : '/'}${API_BASE}`;
 }
 
 const ui = {
@@ -272,7 +272,7 @@ async function apiFetch(path, options = {}, withAuth = true) {
       headers
     });
   } catch {
-    const error = new Error('Backend is not reachable. Start the server on http://localhost:4000.');
+    const error = new Error('Backend is not reachable. Start the server on http://localhost:8080.');
     error.status = 0;
     throw error;
   }
@@ -1941,9 +1941,7 @@ async function handleLogin(event) {
       })
     }, false);
     setToken(payload.token);
-    setLoggedIn(true);
-    currentUser = await apiFetch('/me');
-    await loadAll();
+    window.location.href = '../dashboard/index.html';
   } catch (error) {
     if (ui.authError) ui.authError.textContent = error.message || 'Login failed.';
   }
@@ -1962,9 +1960,7 @@ async function handleRegister(event) {
       })
     }, false);
     setToken(payload.token);
-    setLoggedIn(true);
-    currentUser = await apiFetch('/me');
-    await loadAll();
+    window.location.href = '../dashboard/index.html';
   } catch (error) {
     if (ui.authError) ui.authError.textContent = error.message || 'Registration failed.';
   }

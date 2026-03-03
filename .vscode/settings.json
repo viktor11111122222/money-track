@@ -6,5 +6,6 @@
       "matchCommandLine": true
     },
     "pkill": true
-  }
+  },
+  "liveServer.settings.port": 5501
 }
