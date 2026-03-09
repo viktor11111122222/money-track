@@ -72,6 +72,13 @@ app.use('/expenses', express.static(path.join(PROJECT_ROOT, 'expenses')));
 app.use('/shared', express.static(path.join(PROJECT_ROOT, 'shared')));
 app.use('/public', express.static(path.join(PROJECT_ROOT, 'public')));
 
+// Serve PWA files from root
+app.get('/manifest.json', (req, res) => res.sendFile(path.join(PROJECT_ROOT, 'manifest.json')));
+app.get('/sw.js', (req, res) => {
+  res.setHeader('Content-Type', 'application/javascript');
+  res.sendFile(path.join(PROJECT_ROOT, 'sw.js'));
+});
+
 // Root redirect to dashboard
 app.get('/', (req, res) => res.redirect('/dashboard/index.html'));
 
