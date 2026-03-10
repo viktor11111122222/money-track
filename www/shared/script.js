@@ -314,6 +314,8 @@ function setAuthView(mode) {
 function setLoggedIn(isLoggedIn) {
   if (ui.authCard) ui.authCard.classList.toggle('is-hidden', isLoggedIn);
   if (ui.sharedApp) ui.sharedApp.classList.toggle('is-hidden', !isLoggedIn);
+  const header = document.querySelector('header');
+  if (header) header.classList.toggle('is-hidden', !isLoggedIn);
 }
 
 function setModalMode(type, wallet = null) {
@@ -1940,7 +1942,12 @@ async function handleLogin(event) {
         password: ui.loginPassword.value
       })
     }, false);
-    setToken(payload.token);
+    const remember = document.getElementById('rememberMe');
+    if (remember && !remember.checked) {
+      sessionStorage.setItem(TOKEN_KEY, payload.token);
+    } else {
+      setToken(payload.token);
+    }
     window.location.href = '../dashboard/index.html';
   } catch (error) {
     if (ui.authError) ui.authError.textContent = error.message || 'Login failed.';
@@ -1979,6 +1986,14 @@ async function init() {
 
   const token = getToken();
   if (!token) {
+    // First time visitor → show Create account tab
+    const hasVisited = localStorage.getItem('mt_has_visited');
+    if (!hasVisited) {
+      setAuthView('register');
+      localStorage.setItem('mt_has_visited', '1');
+    } else {
+      setAuthView('login');
+    }
     setLoggedIn(false);
     return;
   }
@@ -1988,13 +2003,14 @@ async function init() {
     await loadAll();
   } catch (error) {
     if (error.status === 401) {
+      // Only log out on explicit auth failure
       setToken(null);
       setLoggedIn(false);
       return;
     }
-    setToken(null);
-    setLoggedIn(false);
-    showNotification(error.message || 'Failed to load profile. Please log in again.', 'error');
+    // Network error - keep user logged in, show warning
+    setLoggedIn(true);
+    showNotification('No connection to server. Some data may be outdated.', 'error');
   }
 }
 

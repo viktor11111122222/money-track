@@ -1,0 +1,322 @@
+/* ============================================
+   MOBILE APP - Bottom Navigation Bar
+   ============================================ */
+
+:root {
+  --sidebar-width: 0px !important;
+}
+
+/* Header → fixed bottom bar, slim */
+header {
+  position: fixed !important;
+  left: 0 !important;
+  top: auto !important;
+  bottom: 0 !important;
+  width: 100% !important;
+  height: auto !important;
+  z-index: 100 !important;
+  box-shadow: 0 -1px 0 rgba(255,255,255,0.08);
+}
+
+/* Nav → compact horizontal row */
+nav.sidebar {
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-around !important;
+  padding: 4px 2px calc(4px + env(safe-area-inset-bottom)) 2px !important;
+  height: auto !important;
+  gap: 0 !important;
+}
+
+/* Hide desktop-only elements */
+.top-title-wrap,
+.sidebar-spacer,
+.sidebar-footer,
+.sidebar-info,
+nav.sidebar > hr {
+  display: none !important;
+}
+
+/* Nav tab items */
+.side-card {
+  flex-direction: column !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 2px !important;
+  padding: 4px 6px !important;
+  margin-bottom: 0 !important;
+  min-width: 0 !important;
+  flex: 1 !important;
+  transform: none !important;
+  border-radius: 8px !important;
+  transition: background 0.15s ease !important;
+}
+
+.side-card:hover { transform: none !important; }
+
+.side-card.active {
+  background: rgba(108, 99, 255, 0.15) !important;
+}
+
+.side-card i {
+  font-size: 17px !important;
+  line-height: 1 !important;
+}
+
+.side-card h3 {
+  font-size: 9px !important;
+  font-weight: 500 !important;
+  text-align: center !important;
+  margin: 0 !important;
+  white-space: nowrap !important;
+  overflow: hidden !important;
+  text-overflow: ellipsis !important;
+  max-width: 56px !important;
+}
+
+/* Settings wrap */
+.settings-wrap {
+  flex: 1 !important;
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 2px !important;
+  padding: 4px 6px !important;
+  border-radius: 8px !important;
+  cursor: pointer !important;
+  min-width: 0 !important;
+}
+
+.settings-card {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: center !important;
+  gap: 2px !important;
+  padding: 0 !important;
+  background: none !important;
+}
+
+.settings-card i {
+  font-size: 17px !important;
+  line-height: 1 !important;
+  color: #e6eef8 !important;
+}
+
+.settings-card h3 {
+  font-size: 9px !important;
+  font-weight: 500 !important;
+  margin: 0 !important;
+  color: #e6eef8 !important;
+  white-space: nowrap !important;
+}
+
+/* Hide avatar in bottom nav */
+.account-chip { display: none !important; }
+
+/* Main content */
+main {
+  margin-left: 0 !important;
+  width: 100% !important;
+  padding-bottom: 58px !important;
+  padding-left: 16px !important;
+  padding-right: 16px !important;
+  padding-top: 20px !important;
+}
+
+/* Auth card */
+.auth-card {
+  margin: 0 auto !important;
+  max-width: 420px !important;
+  width: 100% !important;
+}
+
+/* ============================================
+   SETTINGS PAGE
+   ============================================ */
+
+.settings-grid { column-count: 1 !important; padding: 0 !important; }
+.main-container.settings-full { padding: 16px 0 58px 0 !important; }
+.settings-header { padding: 0 0 16px 0 !important; flex-wrap: wrap !important; }
+
+/* ============================================
+   ACTIVE STATE
+   ============================================ */
+
+.settings-wrap:has(.settings-card.active) {
+  background: rgba(108, 99, 255, 0.15) !important;
+}
+
+.settings-card.active i,
+.settings-card.active h3 { color: #a89fff !important; }
+
+.side-card.active i,
+.side-card.active h3 { color: #a89fff !important; }
+
+/* ============================================
+   GENERAL MOBILE FIXES
+   ============================================ */
+
+body { overflow-x: hidden !important; }
+
+.shared-card,
+.wallet-panel,
+.setting-card {
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+.top-row h1,
+.shared-hero h1 { font-size: 1.4rem !important; }
+
+/* Footer - single line centered */
+footer.dashboard-footer,
+.dashboard-footer {
+  padding: 8px 16px 68px !important;
+  text-align: center !important;
+}
+.footer-copyright {
+  font-size: 9px !important;
+  opacity: 0.35 !important;
+  margin: 0 !important;
+  color: inherit !important;
+}
+/* ============================================
+   MOBILE CARDS - Full responsive overrides
+   ============================================ */
+
+/* ---- DASHBOARD layout ---- */
+.main-container {
+  grid-template-columns: 1fr !important;
+  gap: 0 !important;
+}
+
+.main-left, .main-right {
+  width: 100% !important;
+}
+
+/* ---- DASHBOARD summary cards ---- */
+.summary-cards {
+  display: grid !important;
+  grid-template-columns: 1fr 1fr !important;
+  gap: 10px !important;
+}
+
+.summary-cards .card:nth-child(3) {
+  grid-column: 1 / -1 !important;
+}
+
+.card {
+  min-width: 0 !important;
+  width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* ---- DASHBOARD spendings grids ---- */
+.spendings-summary {
+  grid-template-columns: 1fr 1fr !important;
+  gap: 8px !important;
+}
+
+.spendings-filters,
+.spendings-filters.simple {
+  grid-template-columns: 1fr !important;
+  gap: 8px !important;
+}
+
+.spendings-content,
+.spendings-content.simple {
+  grid-template-columns: 1fr !important;
+  gap: 10px !important;
+}
+
+/* ---- SHARED / Family Budget ---- */
+.shared-grid {
+  grid-template-columns: 1fr !important;
+  gap: 10px !important;
+}
+
+.wallet-grid {
+  grid-template-columns: 1fr !important;
+  gap: 8px !important;
+}
+
+/* ---- EXPENSES grids ---- */
+.kpi-analytics-grid {
+  grid-template-columns: 1fr 1fr !important;
+  gap: 8px !important;
+}
+
+/* Any other auto-fit grid → single column */
+[style*="minmax"],
+.main-container > *:not(.settings-full) {
+  max-width: 100% !important;
+  box-sizing: border-box !important;
+}
+
+/* Generic grid override - catch remaining grids */
+.transactions-grid,
+.expense-grid,
+.analytics-grid,
+.recurring-grid,
+.tags-grid {
+  grid-template-columns: 1fr !important;
+}
+
+/* Prevent any element from overflowing */
+* {
+  max-width: 100vw !important;
+  box-sizing: border-box !important;
+}
+
+img, video, svg {
+  max-width: 100% !important;
+  height: auto !important;
+}
+
+/* canvas - ne postavljati height: auto, ne ograničavati max-width (Chart.js kontroliše dimenzije) */
+canvas {
+  max-width: 100% !important;
+}
+
+.chart-container {
+  position: relative !important;
+  width: 100% !important;
+  display: block !important;
+}
+
+.chart-container canvas {
+  max-width: 100% !important;
+  max-height: none !important;
+}
+
+/* Charts toggle button */
+.charts-toggle-btn {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  width: 100% !important;
+  padding: 12px 16px !important;
+  background: #1e2235 !important;
+  border: 1px solid rgba(255,255,255,0.08) !important;
+  border-radius: 12px !important;
+  color: #e6eef8 !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  cursor: pointer !important;
+  margin: 8px 0 !important;
+}
+
+.charts-toggle-btn i:last-child {
+  margin-left: auto !important;
+  transition: transform 0.2s !important;
+}
+
+/* Charts modal close on tap outside */
+#chartsModal {
+  padding: 12px !important;
+}
+.charts-modal-content {
+  width: 100% !important;
+  height: auto !important;
+  max-height: 90vh !important;
+}

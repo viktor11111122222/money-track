@@ -499,23 +499,19 @@ main {
 }
 
 /* Top row: title and summary cards */
-.top-row { display: flex; flex-direction: column; gap: 14px; }
-.top-row h1 { margin: 0 0 0.25rem 0; font-size: 1.9rem; color: #0f1724; }
+.top-row { display: flex; align-items: center; gap: 1rem; }
+.top-row h1 { margin: 0; font-size: 1.9rem; color: #0f1724; }
 
-.summary-cards { display:flex; gap: 16px; flex-wrap: wrap; align-items: center; }
-.card { background: #fff; padding: 14px 16px; border-radius: 12px; box-shadow: 0 6px 18px rgba(16,24,40,0.06); min-width: 180px; }
 .card h4 { margin: 0; color: #667085; font-size: 0.9rem; }
 .card .amount { font-weight: 700; margin-top: 6px; }
 
 /* Chart and transactions */
 .chart-card, .transactions { background: #fff; padding: 18px; border-radius: 12px; box-shadow: 0 6px 18px rgba(16,24,40,0.06); }
-.chart-container { 
-  position: relative; 
-  height: 250px; 
+.chart-container {
+  position: relative;
+  height: 250px;
   margin-top: 16px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  width: 100%;
 }
 .chart-warning {
   display: none;
@@ -1648,19 +1644,15 @@ button.primary-danger:hover { background: #b91c1c; }
 .top-row {
   display: flex;
   align-items: center;
-  justify-content: space-between;
   gap: 1rem;
 }
 
-.top-row h1 { flex: 0 0 auto; color: #111827; }
+.top-row h1 { margin: 0; color: #111827; }
 
 .summary-cards {
-  display: flex;
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 1rem;
-  align-items: center;
-  flex-wrap: nowrap; /* keep cards inline on laptop */
-  justify-content: flex-end;
-  border-radius: 12px;
 }
 .summary-cards { max-width: 100%; }
 
@@ -1669,8 +1661,7 @@ button.primary-danger:hover { background: #b91c1c; }
   padding: 1rem 1.2rem;
   border-radius: 12px;
   box-shadow: 0 6px 18px rgba(16,24,40,0.06);
-  min-width: 160px;
-  flex: 0 0 220px; /* fixed card width to keep layout consistent */
+  min-width: 0;
 }
 
 .card h4 {
@@ -2050,9 +2041,13 @@ button.primary-danger {
 }
 
 @media (max-width: 1100px) {
-  /* allow summary cards to wrap when there's not enough horizontal space */
-  .summary-cards { flex-wrap: wrap; justify-content: flex-start; }
-  .card { flex: 1 1 160px; }
+  .summary-cards { grid-template-columns: repeat(3, 1fr); gap: 0.75rem; }
+}
+
+@media (max-width: 700px) {
+  .summary-cards { grid-template-columns: 1fr 1fr; }
+  .summary-cards .card:nth-child(3) { grid-column: 1 / -1; }
+  .main-container { grid-template-columns: 1fr; }
 }
 
 /* Onboarding Modal Styles */
@@ -2110,4 +2105,55 @@ button.primary-danger {
   padding: 12px 16px;
   font-size: 15px;
   font-weight: 600;
+}
+
+/* Charts Toggle Button */
+.charts-toggle-btn {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  padding: 12px 16px;
+  background: #1e2235;
+  border: 1px solid rgba(255,255,255,0.08);
+  border-radius: 12px;
+  color: #e6eef8;
+  font-size: 14px;
+  font-weight: 500;
+  cursor: pointer;
+  transition: background 0.15s ease;
+}
+.charts-toggle-btn:hover {
+  background: #252b42;
+}
+
+/* Charts Popup Modal */
+.charts-modal-content {
+  background: #0f1724;
+  width: min(900px, 92vw);
+}
+.charts-modal-content .modal-header {
+  border-color: rgba(255,255,255,0.08);
+}
+.charts-modal-content .modal-header h2 {
+  color: #e6eef8;
+  font-size: 1.2rem;
+}
+.charts-modal-content .modal-close {
+  background: rgba(255,255,255,0.08);
+  color: #e6eef8;
+}
+.charts-modal-content .modal-close:hover {
+  background: rgba(255,255,255,0.15);
+}
+.charts-modal-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+}
+.charts-modal-body .chart-container {
+  height: 260px;
+}
+.charts-modal-body .chart-card {
+  margin-top: 0;
 }

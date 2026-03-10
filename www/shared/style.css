@@ -160,6 +160,10 @@
 }
 
 
+header.is-hidden {
+    display: none !important;
+}
+
 #sharedApp.is-hidden {
     display: none;
 }
@@ -220,6 +224,26 @@
 
 .auth-form.is-hidden {
     display: none;
+}
+
+.remember-row {
+    margin-top: -4px;
+}
+
+.remember-label {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.875rem;
+    cursor: pointer;
+    color: var(--text-secondary, #9ca3af);
+}
+
+.remember-label input[type="checkbox"] {
+    width: 16px;
+    height: 16px;
+    accent-color: var(--accent, #6c63ff);
+    cursor: pointer;
 }
 
 .shared-hero {

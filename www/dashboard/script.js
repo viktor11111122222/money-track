@@ -2786,7 +2786,11 @@ setTimeout(() => {
   initComparisonChart();
   initRecurringExpenses();
   updateTagsUI();
-}, 100);
+  // Force resize for Android WebView after layout settles
+  requestAnimationFrame(() => {
+    if (chartInstance) chartInstance.resize();
+  });
+}, 400);
 // Footer navigation - smooth scroll
 document.querySelectorAll('.footer-link').forEach(link => {
   link.addEventListener('click', function(e) {
@@ -2937,3 +2941,29 @@ function showOnboardingModal(user) {
     }
   };
 }
+
+function toggleCharts() {
+  const modal = document.getElementById('chartsModal');
+  if (!modal) return;
+  modal.style.display = 'flex';
+  setTimeout(() => {
+    if (typeof initDailyChart === 'function') initDailyChart();
+    if (typeof initComparisonChart === 'function') initComparisonChart();
+  }, 50);
+}
+
+document.addEventListener('DOMContentLoaded', () => {
+  const closeBtn = document.getElementById('chartsModalClose');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', () => {
+      const modal = document.getElementById('chartsModal');
+      if (modal) modal.style.display = 'none';
+    });
+  }
+  const chartsModal = document.getElementById('chartsModal');
+  if (chartsModal) {
+    chartsModal.addEventListener('click', (e) => {
+      if (e.target === chartsModal) chartsModal.style.display = 'none';
+    });
+  }
+});

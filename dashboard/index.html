@@ -20,12 +20,13 @@
     <script src="/public/i18n.js"></script>
     <script src="/public/theme-init.js"></script>
     <link rel="stylesheet" href="/public/theme.css">
+    <link rel="stylesheet" href="/public/mobile-nav.css">
 </head>
 <body>
     <header>
         <nav class="sidebar">
             <div class="top-title-wrap">
-                <img src="/public/Ikona novčanika u jednostavnom dizajnu.png" alt="logo">
+                <img src="/public/wallet-logo.jpg" alt="logo">
                 <h2>Expense Tracker</h2>
             </div>
 
@@ -88,25 +89,25 @@
             <div class="main-left">
                 <div class="top-row">
                     <h1 data-i18n="dash.monthlyOverview">Monthly Overview</h1>
-                    <div class="summary-cards">
-                        <div class="card">
-                            <h4 data-i18n="dash.totalSpent">Total Spent</h4>
-                            <p class="amount">10,234 RSD</p>
-                        </div>
-                        <div class="card">
-                            <h4 data-i18n="dash.income">Income</h4>
-                            <p class="amount">15,000 RSD</p>
-                        </div>
-                        <div class="card">
-                            <h4 data-i18n="dash.balance">Balance</h4>
-                            <p class="amount">4,766 RSD</p>
-                        </div>
+                </div>
+                <div class="summary-cards">
+                    <div class="card">
+                        <h4 data-i18n="dash.totalSpent">Total Spent</h4>
+                        <p class="amount">10,234 RSD</p>
+                    </div>
+                    <div class="card">
+                        <h4 data-i18n="dash.income">Income</h4>
+                        <p class="amount">15,000 RSD</p>
+                    </div>
+                    <div class="card">
+                        <h4 data-i18n="dash.balance">Balance</h4>
+                        <p class="amount">4,766 RSD</p>
                     </div>
                 </div>
 
                 <div class="chart-card" id="mainChartSection">
                     <h3 data-i18n="dash.spendingThisMonth">Spending this month</h3>
-                    <div class="chart-container">
+                    <div class="chart-container" style="position:relative;height:250px;width:100%;">
                         <canvas id="spendingChart"></canvas>
                     </div>
                     <div class="chart-warning" id="chartWarning" aria-live="polite"></div>
@@ -126,15 +127,6 @@
                     <div id="tagInsight" class="tag-insight"></div>
                 </section>
 
-                <section class="transactions">
-                    <h3 data-i18n="dash.recentTx">Recent Transactions</h3>
-                    <ul>
-                        <li><span class="tx-name">Grocery</span><span class="tx-amount">-2,450 RSD</span></li>
-                        <li><span class="tx-name">Salary</span><span class="tx-amount income">+50,000 RSD</span></li>
-                        <li><span class="tx-name">Transport</span><span class="tx-amount">-320 RSD</span></li>
-                    </ul>
-                </section>
-
                 <div class="limits-backdrop" id="limitsBackdrop"></div>
                 <section class="category-limits-compact">
                     <div class="limits-header">
@@ -149,19 +141,11 @@
                     </button>
                 </section>
 
-                <section class="chart-card">
-                    <h3 data-i18n="dash.dailySpending">Daily Spending (This Month)</h3>
-                    <div class="chart-container">
-                        <canvas id="dailyChart"></canvas>
-                    </div>
-                </section>
-
-                <section class="chart-fix chart-card">
-                    <h3 data-i18n="dash.comparison">Comparison: This vs Last Month</h3>
-                    <div class="chart-container">
-                        <canvas id="comparisonChart"></canvas>
-                    </div>
-                </section>
+                <button class="charts-toggle-btn" id="chartsToggleBtn" onclick="toggleCharts()">
+                    <i class="fa-solid fa-chart-bar"></i>
+                    <span data-i18n="dash.showCharts">Show Charts</span>
+                    <i class="fa-solid fa-up-right-from-square" style="margin-left:auto;font-size:13px;"></i>
+                </button>
             </div>
 
             <aside class="main-right">
@@ -372,29 +356,32 @@
     </div>
 
     <footer class="dashboard-footer">
-        <div class="footer-content">
-            <div class="footer-section">
-                <h4 data-i18n="footer.title">Money Tracker</h4>
-                <p data-i18n="footer.desc">Smart expense tracking for better financial management</p>
+        <p class="footer-copyright">© 2026 Money Tracker · Smart expense tracking for better financial management</p>
+    </footer>
+
+    <!-- Charts Popup Modal -->
+    <div class="modal-overlay" id="chartsModal" style="display:none;" role="dialog" aria-modal="true">
+        <div class="modal-content charts-modal-content" role="document">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-chart-bar" style="margin-right:8px;"></i><span data-i18n="dash.showCharts">Charts</span></h2>
+                <button class="modal-close" id="chartsModalClose" aria-label="Close">✕</button>
             </div>
-            <div class="footer-section">
-                <h4 data-i18n="footer.features">Features</h4>
-                <ul>
-                    <li><a href="#mainChartSection" class="footer-link" data-i18n="footer.budgetTracking">📊 Budget Tracking</a></li>
-                    <li><a href="#tagsCard" class="footer-link" data-i18n="footer.tagManagement">🏷️ Tag Management</a></li>
-                    <li><a href="#recurringCard" class="footer-link" data-i18n="footer.recurringExp">🔄 Recurring Expenses</a></li>
-                    <li><a href="#smartSuggestions" class="footer-link" data-i18n="footer.smartSuggestions">🤖 Smart Suggestions</a></li>
-                </ul>
-            </div>
-            <div class="footer-section">
-                <h4 data-i18n="footer.info">Info</h4>
-                <p>Version 1.0.0</p>
-                <p style="font-size: 12px; color: #94a3b8; margin-top: 8px;">
-                    © 2026 Money Tracker. All rights reserved.
-                </p>
+            <div class="modal-body charts-modal-body">
+                <section class="chart-card">
+                    <h3 data-i18n="dash.dailySpending">Daily Spending (This Month)</h3>
+                    <div class="chart-container">
+                        <canvas id="dailyChart"></canvas>
+                    </div>
+                </section>
+                <section class="chart-card">
+                    <h3 data-i18n="dash.comparison">Comparison: This vs Last Month</h3>
+                    <div class="chart-container">
+                        <canvas id="comparisonChart"></canvas>
+                    </div>
+                </section>
             </div>
         </div>
-    </footer>
+    </div>
 
     <script src="/public/auth-guard.js"></script>
     <script src="/public/account-avatar.js"></script>
