@@ -947,6 +947,7 @@ function updateDashboard() {
 
 function updateRecentTransactions() {
   const txList = document.querySelector('.transactions ul');
+  if (!txList) return;
   txList.innerHTML = '';
 
   // Filter based on active tag filter
@@ -1646,11 +1647,29 @@ function initChart() {
 
   const { labels, data, colors, isEmpty } = buildChartData();
 
+  if (isEmpty) {
+    const container = ctx.closest('.chart-container') || ctx.parentElement;
+    ctx.style.display = 'none';
+    if (!container.querySelector('.chart-no-data')) {
+      const msg = document.createElement('p');
+      msg.className = 'chart-no-data';
+      msg.style.cssText = 'text-align:center;color:#9ca3af;padding:60px 0;margin:0;font-size:14px;';
+      msg.textContent = 'Nema troškova ovog meseca';
+      container.appendChild(msg);
+    }
+    return;
+  }
+  ctx.style.display = '';
+  const existing = ctx.parentElement && ctx.parentElement.querySelector('.chart-no-data');
+  if (existing) existing.remove();
+
   // Destroy old chart if exists
   if (chartInstance) {
     chartInstance.destroy();
+    chartInstance = null;
   }
 
+  try {
   chartInstance = new Chart(ctx, {
     type: 'doughnut',
     data: {
@@ -1711,6 +1730,12 @@ function initChart() {
       }
     }
   });
+  } catch(e) {
+    const container = ctx.closest('.chart-container') || ctx.parentElement;
+    if (container) {
+      container.innerHTML = '<p style="text-align:center;color:#ef4444;padding:20px;font-size:12px;">Chart error: ' + e.message + '</p>';
+    }
+  }
 }
 
 function updateChart() {
@@ -2773,24 +2798,26 @@ window.addEventListener('languageChanged', () => {
   if (typeof initComparisonChart === 'function') initComparisonChart();
 });
 
-enqueueMissingWalletSync();
-flushWalletSyncQueue();
-setInterval(() => {
-  flushWalletSyncQueue();
-}, 8000);
-
 // Initialize chart after a small delay to ensure DOM is ready
-setTimeout(() => {
+function initAllCharts() {
   initChart();
-  initDailyChart();
-  initComparisonChart();
+  if (typeof Chart !== 'undefined') {
+    initDailyChart();
+    initComparisonChart();
+  }
   initRecurringExpenses();
   updateTagsUI();
-  // Force resize for Android WebView after layout settles
   requestAnimationFrame(() => {
     if (chartInstance) chartInstance.resize();
   });
-}, 400);
+}
+setTimeout(initAllCharts, 400);
+
+try { enqueueMissingWalletSync(); } catch(e) {}
+try { flushWalletSyncQueue(); } catch(e) {}
+setInterval(() => {
+  try { flushWalletSyncQueue(); } catch(e) {}
+}, 8000);
 // Footer navigation - smooth scroll
 document.querySelectorAll('.footer-link').forEach(link => {
   link.addEventListener('click', function(e) {

@@ -15,7 +15,7 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+    <script src="chart.min.js"></script>
     <script src="/public/app-config.js"></script>
     <script src="/public/i18n.js"></script>
     <script src="/public/theme-init.js"></script>
@@ -379,6 +379,9 @@
                         <canvas id="comparisonChart"></canvas>
                     </div>
                 </section>
+            </div>
+            <div style="padding:16px 20px 20px;text-align:center;">
+                <button onclick="document.getElementById('chartsModal').style.display='none'" style="background:#6c63ff;color:#fff;border:none;border-radius:12px;padding:12px 40px;font-size:1rem;font-weight:600;cursor:pointer;width:100%;max-width:320px;">Zatvori</button>
             </div>
         </div>
     </div>

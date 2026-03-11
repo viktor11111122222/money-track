@@ -324,6 +324,7 @@ function getSpendingByCategory() {
   const categorySpending = {};
   appData.expenses.forEach(exp => {
     if (exp.type === 'income' || exp.type === 'savings') return;
+    if (!isExpenseInCurrentMonth(exp)) return;
     if (!categorySpending[exp.category]) {
       categorySpending[exp.category] = 0;
     }
@@ -1644,67 +1645,45 @@ function initChart() {
   const ctx = document.getElementById('spendingChart');
   if (!ctx) return;
 
-  const { labels, data, colors, isEmpty } = buildChartData();
+  const { labels, data, isEmpty } = buildChartData();
 
-  // Destroy old chart if exists
-  if (chartInstance) {
-    chartInstance.destroy();
-  }
+  const solidColors = [
+    'rgba(239,68,68,0.85)', 'rgba(249,115,22,0.85)', 'rgba(245,158,11,0.85)',
+    'rgba(34,197,94,0.85)', 'rgba(59,130,246,0.85)', 'rgba(139,92,246,0.85)',
+    'rgba(236,72,153,0.85)', 'rgba(20,184,166,0.85)', 'rgba(14,165,233,0.85)',
+    'rgba(132,204,22,0.85)'
+  ];
+
+  if (chartInstance) chartInstance.destroy();
 
   chartInstance = new Chart(ctx, {
     type: 'doughnut',
     data: {
-      labels: labels,
+      labels,
       datasets: [{
-        data: data,
-        backgroundColor: colors,
-        borderColor: 'rgba(255,255,255,0.06)',
-        borderWidth: 3,
-        hoverOffset: 10
+        data,
+        backgroundColor: labels.map((_, i) => solidColors[i % solidColors.length]),
+        borderColor: '#ffffff',
+        borderWidth: 2
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      animation: { duration: 600 },
       plugins: {
         legend: {
           display: !isEmpty,
           position: 'bottom',
-          labels: {
-            font: {
-              family: "'Inter', sans-serif",
-              size: 13,
-              weight: '500'
-            },
-            color: '#0f1724',
-            padding: 20,
-            boxWidth: 12,
-            boxHeight: 12,
-            borderRadius: 3
-          }
+          labels: { color: '#374151', font: { size: 12 }, padding: 12, boxWidth: 12 }
         },
         tooltip: {
           enabled: !isEmpty,
-          backgroundColor: 'rgba(15, 23, 36, 0.8)',
-          padding: 12,
-          titleFont: {
-            family: "'Inter', sans-serif",
-            size: 14,
-            weight: '600'
-          },
-          bodyFont: {
-            family: "'Inter', sans-serif",
-            size: 13
-          },
-          borderColor: 'rgba(255, 255, 255, 0.1)',
-          borderWidth: 1,
-          borderRadius: 8,
           callbacks: {
             label: function(context) {
-              const value = context.parsed;
+              const val = context.parsed;
               const total = context.dataset.data.reduce((a, b) => a + b, 0);
-              const percentage = ((value / total) * 100).toFixed(1);
-              return value.toLocaleString() + ' RSD (' + percentage + '%)';
+              return context.label + ': ' + val.toLocaleString() + ' RSD (' + ((val/total)*100).toFixed(1) + '%)';
             }
           }
         }
@@ -1715,11 +1694,16 @@ function initChart() {
 
 function updateChart() {
   if (chartInstance) {
-    const { labels, data, colors, isEmpty } = buildChartData();
-
+    const { labels, data, isEmpty } = buildChartData();
+    const solidColors = [
+      'rgba(239,68,68,0.85)', 'rgba(249,115,22,0.85)', 'rgba(245,158,11,0.85)',
+      'rgba(34,197,94,0.85)', 'rgba(59,130,246,0.85)', 'rgba(139,92,246,0.85)',
+      'rgba(236,72,153,0.85)', 'rgba(20,184,166,0.85)', 'rgba(14,165,233,0.85)',
+      'rgba(132,204,22,0.85)'
+    ];
     chartInstance.data.labels = labels;
     chartInstance.data.datasets[0].data = data;
-    chartInstance.data.datasets[0].backgroundColor = colors;
+    chartInstance.data.datasets[0].backgroundColor = labels.map((_, i) => solidColors[i % solidColors.length]);
     chartInstance.options.plugins.legend.display = !isEmpty;
     chartInstance.options.plugins.tooltip.enabled = !isEmpty;
     chartInstance.update();
@@ -2780,17 +2764,22 @@ setInterval(() => {
 }, 8000);
 
 // Initialize chart after a small delay to ensure DOM is ready
-setTimeout(() => {
+function initAllCharts() {
+  if (typeof Chart === 'undefined') {
+    setTimeout(initAllCharts, 200);
+    return;
+  }
   initChart();
   initDailyChart();
   initComparisonChart();
   initRecurringExpenses();
   updateTagsUI();
   // Force resize for Android WebView after layout settles
-  requestAnimationFrame(() => {
+  setTimeout(() => {
     if (chartInstance) chartInstance.resize();
-  });
-}, 400);
+  }, 300);
+}
+setTimeout(initAllCharts, 400);
 // Footer navigation - smooth scroll
 document.querySelectorAll('.footer-link').forEach(link => {
   link.addEventListener('click', function(e) {
