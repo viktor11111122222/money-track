@@ -500,7 +500,7 @@ main {
 
 /* Top row: title and summary cards */
 .top-row { display: flex; align-items: center; gap: 1rem; }
-.top-row h1 { margin: 0; font-size: 1.9rem; color: #0f1724; }
+.top-row h1 { margin: 0; font-size: 1.9rem; color: #0f1724; text-align: center; width: 100%; }
 
 .card h4 { margin: 0; color: #667085; font-size: 0.9rem; }
 .card .amount { font-weight: 700; margin-top: 6px; }
@@ -1647,7 +1647,7 @@ button.primary-danger:hover { background: #b91c1c; }
   gap: 1rem;
 }
 
-.top-row h1 { margin: 0; color: #111827; }
+.top-row h1 { margin: 0; color: #111827; text-align: center; width: 100%; }
 
 .summary-cards {
   display: grid;

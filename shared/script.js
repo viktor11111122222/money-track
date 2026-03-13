@@ -68,8 +68,7 @@ function updateSidebarStats() {
 
 if (spendingsBtn) {
   spendingsBtn.addEventListener('click', () => {
-    sessionStorage.setItem('spendingsReturn', window.location.href);
-    window.location.href = '../dashboard/index.html#spendings';
+    window.openSpendingsModal();
   });
 }
 

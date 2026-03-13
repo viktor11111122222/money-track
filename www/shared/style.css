@@ -247,7 +247,7 @@ header.is-hidden {
 }
 
 .shared-hero {
-    background: #ffffff;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.06) 0%, rgba(118, 75, 162, 0.04) 100%);
     border-radius: 18px;
     padding: 28px;
     display: flex;
@@ -255,15 +255,16 @@ header.is-hidden {
     align-items: center;
     justify-content: space-between;
     gap: 16px;
-    box-shadow: 0 10px 30px rgba(15, 23, 36, 0.08);
+    box-shadow: 0 10px 30px rgba(102, 126, 234, 0.1);
+    border: 1px solid rgba(102, 126, 234, 0.12);
 }
 
 .shared-kicker {
     display: inline-block;
     padding: 6px 12px;
     border-radius: 999px;
-    background: rgba(59, 130, 246, 0.12);
-    color: #1d4ed8;
+    background: rgba(102, 126, 234, 0.12);
+    color: #667eea;
     font-weight: 600;
     font-size: 12px;
     margin-bottom: 10px;
@@ -287,6 +288,29 @@ header.is-hidden {
     flex-wrap: wrap;
 }
 
+/* Purple primary buttons for shared/family budget section */
+.shared-hero button.primary,
+.shared-grid button.primary,
+.shared-hero-actions button.primary {
+    background: linear-gradient(135deg, #667eea, #764ba2);
+    color: #ffffff;
+    border: none;
+    padding: 11px 20px;
+    border-radius: 12px;
+    font-weight: 600;
+    font-size: 15px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+}
+
+.shared-hero button.primary:hover,
+.shared-grid button.primary:hover,
+.shared-hero-actions button.primary:hover {
+    box-shadow: 0 6px 18px rgba(102, 126, 234, 0.45);
+    transform: translateY(-1px);
+}
+
 .shared-grid {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
@@ -300,7 +324,9 @@ header.is-hidden {
     display: flex;
     flex-direction: column;
     gap: 12px;
-    box-shadow: 0 8px 20px rgba(15, 23, 36, 0.06);
+    box-shadow: 0 8px 20px rgba(102, 126, 234, 0.08);
+    border: 1px solid rgba(102, 126, 234, 0.1);
+    border-top: 3px solid rgba(102, 126, 234, 0.3);
 }
 
 .shared-card-icon {
@@ -309,8 +335,8 @@ header.is-hidden {
     border-radius: 12px;
     display: grid;
     place-items: center;
-    background: rgba(59, 130, 246, 0.12);
-    color: #1d4ed8;
+    background: linear-gradient(135deg, rgba(102, 126, 234, 0.15), rgba(118, 75, 162, 0.1));
+    color: #667eea;
     font-size: 18px;
 }
 
@@ -334,20 +360,26 @@ header.is-hidden {
 .chip {
     padding: 6px 12px;
     border-radius: 999px;
-    background: #eef2ff;
-    color: #4338ca;
+    background: rgba(102, 126, 234, 0.1);
+    color: #667eea;
     font-size: 12px;
     font-weight: 600;
 }
 
 .ghost {
     background: transparent;
-    border: 1px solid #cbd5f5;
-    color: #1e293b;
+    border: 1px solid rgba(102, 126, 234, 0.35);
+    color: #667eea;
     border-radius: 12px;
     padding: 10px 16px;
     font-weight: 600;
     cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.ghost:hover {
+    background: rgba(102, 126, 234, 0.06);
+    border-color: rgba(102, 126, 234, 0.5);
 }
 
 .ghost.small {

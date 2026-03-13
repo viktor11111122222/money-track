@@ -239,26 +239,30 @@ main {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 12px;
     margin-bottom: 30px;
 }
 
 .expenses-header h1 {
     color: #333;
-    font-size: 32px;
+    font-size: 24px;
+    flex: 1;
 }
 
 .btn-add-expense {
     background: linear-gradient(135deg, #667eea, #764ba2);
     color: white;
     border: none;
-    padding: 12px 24px;
+    padding: 10px 18px;
     border-radius: 12px;
-    font-size: 16px;
+    font-size: 14px;
     font-weight: 600;
     cursor: pointer;
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 6px;
+    flex-shrink: 0;
+    white-space: nowrap;
     transition: all 0.3s ease;
 }
 
@@ -305,11 +309,7 @@ main {
     background: rgba(255, 255, 255, 0.97);
     border-radius: 12px;
     border: 1px solid rgba(102, 126, 234, 0.1);
-    position: sticky;
-    top: 0;
-    z-index: 10;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
-    transition: box-shadow 0.2s ease;
 }
 
 /* wallet banner spans full width */
@@ -1131,11 +1131,6 @@ main {
 
 
 /* ===== STICKY FILTER BAR ===== */
-.filters-section.is-stuck {
-    border-radius: 0 0 12px 12px;
-    box-shadow: 0 4px 16px rgba(102, 126, 234, 0.1);
-    border-color: rgba(102, 126, 234, 0.15);
-}
 
 /* ===== COLOR-CODED CATEGORIES ===== */
 .category-color-food { background: linear-gradient(135deg, #FF9500, #FF6B00); }

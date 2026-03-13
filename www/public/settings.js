@@ -620,6 +620,7 @@
             localStorage.removeItem(TOKEN_KEY);
             localStorage.removeItem(STORAGE_KEY);
             localStorage.removeItem('appData');
+            localStorage.removeItem('expenseTrackerData');
             showToast('Account deleted');
             setTimeout(function() { window.location.href = '../shared/index.html'; }, 1500);
           };

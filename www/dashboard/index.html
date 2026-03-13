@@ -11,10 +11,7 @@
     <meta name="apple-mobile-web-app-title" content="MoneyTrack">
     <link rel="apple-touch-icon" href="/public/wallet-logo.jpg">
     <link rel="stylesheet" href="style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" integrity="sha512-2SwdPD6INVrV/lHTZbO2nodKhrnDdJK9/kg2XD1r9uGqPo1cUbujc+IYdlYdEErWNu69gVcYgdxlmVmzTWnetw==" crossorigin="anonymous" referrerpolicy="no-referrer" />
+    <link rel="stylesheet" href="/public/fontawesome/css/all.min.css">
     <script src="chart.min.js"></script>
     <script src="/public/app-config.js"></script>
     <script src="/public/i18n.js"></script>
@@ -105,12 +102,11 @@
                     </div>
                 </div>
 
-                <div class="chart-card" id="mainChartSection">
+                <div class="chart-card" id="mainChartSection" style="position:relative;z-index:1;">
                     <h3 data-i18n="dash.spendingThisMonth">Spending this month</h3>
-                    <div class="chart-container" style="position:relative;height:250px;width:100%;">
-                        <canvas id="spendingChart"></canvas>
+                    <div style="position:relative;height:260px;width:100%;margin-top:12px;z-index:2;">
+                        <canvas id="spendingChart" style="display:block;position:relative;z-index:3;"></canvas>
                     </div>
-                    <div class="chart-warning" id="chartWarning" aria-live="polite"></div>
                 </div>
 
                 <section class="insights-card">
@@ -379,9 +375,6 @@
                         <canvas id="comparisonChart"></canvas>
                     </div>
                 </section>
-            </div>
-            <div style="padding:16px 20px 20px;text-align:center;">
-                <button onclick="document.getElementById('chartsModal').style.display='none'" style="background:#6c63ff;color:#fff;border:none;border-radius:12px;padding:12px 40px;font-size:1rem;font-weight:600;cursor:pointer;width:100%;max-width:320px;">Zatvori</button>
             </div>
         </div>
     </div>

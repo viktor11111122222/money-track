@@ -16,10 +16,30 @@ android {
             ignoreAssetsPattern '!.svn:!.git:!.ds_store:!*.scc:.*:!CVS:!thumbs.db:!picasa.ini:!*~'
         }
     }
+    signingConfigs {
+        release {
+            // Set these via environment variables or a local keystore.properties file
+            // To generate keystore: keytool -genkey -v -keystore money-tracker.jks -keyalg RSA -keysize 2048 -validity 10000 -alias money-tracker
+            def keystoreFile = System.getenv("KEYSTORE_PATH") ?: file("../../money-tracker.jks")
+            def keystorePass = System.getenv("KEYSTORE_PASSWORD") ?: ""
+            def keyAlias = System.getenv("KEY_ALIAS") ?: "money-tracker"
+            def keyPass = System.getenv("KEY_PASSWORD") ?: ""
+            if (keystoreFile.exists() && keystorePass) {
+                storeFile keystoreFile
+                storePassword keystorePass
+                keyAlias keyAlias
+                keyPassword keyPass
+            }
+        }
+    }
     buildTypes {
         release {
             minifyEnabled false
             proguardFiles getDefaultProguardFile('proguard-android.txt'), 'proguard-rules.pro'
+            signingConfig signingConfigs.release
+        }
+        debug {
+            signingConfig signingConfigs.debug
         }
     }
 }

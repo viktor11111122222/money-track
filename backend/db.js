@@ -1,6 +1,7 @@
 import sqlite3 from 'sqlite3';
 
-const db = new sqlite3.Database('data.sqlite');
+const DB_PATH = process.env.DATABASE_PATH || 'data.sqlite';
+const db = new sqlite3.Database(DB_PATH);
 
 db.serialize(() => {
   db.run(`

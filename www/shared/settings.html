@@ -12,10 +12,7 @@
     <link rel="apple-touch-icon" href="/public/wallet-logo.jpg">
     <link rel="stylesheet" href="../dashboard/style.css">
     <link rel="stylesheet" href="style.css">
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/7.0.1/css/all.min.css" crossorigin="anonymous" />
+    <link rel="stylesheet" href="/public/fontawesome/css/all.min.css">
     <link rel="stylesheet" href="/public/mobile-nav.css">
     <script src="/public/app-config.js"></script>
     <script src="/public/i18n.js"></script>
@@ -36,7 +33,7 @@
                 <i class="fa-solid fa-money-check-dollar"></i>
                 <h3 data-i18n="sidebar.expenses">Expenses</h3>
             </div>
-            <div class="side-card" id="spendingsBtn" onclick="window.location.href='../dashboard/index.html#spendings'">
+            <div class="side-card" id="spendingsBtn" onclick="window.openSpendingsModal()">
                 <i class="fa-solid fa-chart-line"></i>
                 <h3 data-i18n="sidebar.spendings">Spendings</h3>
             </div>
@@ -262,6 +259,7 @@
     <script src="/public/theme-init.js"></script>
     <script src="/public/auth-guard.js"></script>
     <script src="/public/account-avatar.js"></script>
+    <script src="/public/spendings-modal.js"></script>
     <script src="/public/settings.js"></script>
     <script>
         // Reorder settings cards so columns stack vertically as intended

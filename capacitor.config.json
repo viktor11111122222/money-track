@@ -3,7 +3,7 @@
   "appName": "Money Tracker",
   "webDir": "www",
   "server": {
-    "androidScheme": "http"
+    "androidScheme": "https"
   },
   "plugins": {
     "SplashScreen": {

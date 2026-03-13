@@ -236,8 +236,7 @@ setActiveSidebarItem();
 
 if (spendingsBtn) {
     spendingsBtn.addEventListener('click', () => {
-        sessionStorage.setItem('spendingsReturn', window.location.href);
-        window.location.href = '../dashboard/index.html#spendings';
+        window.openSpendingsModal();
     });
 }
 
@@ -821,13 +820,6 @@ function populateCategoryOptions() {
     }
 }
 
-// Sticky filter bar: flatten top corners when it touches the viewport
-function updateFilterStickiness() {
-    const filtersSection = document.querySelector('.filters-section');
-    if (!filtersSection) return;
-    const isStuck = filtersSection.getBoundingClientRect().top <= 8;
-    filtersSection.classList.toggle('is-stuck', isStuck);
-}
 
 // Event Listeners
 function resetAndRender() {
@@ -838,8 +830,6 @@ function resetAndRender() {
 document.getElementById('categoryFilter').addEventListener('change', resetAndRender);
 document.getElementById('sortBy').addEventListener('change', resetAndRender);
 document.getElementById('searchExpenses').addEventListener('input', resetAndRender);
-window.addEventListener('scroll', updateFilterStickiness);
-window.addEventListener('resize', updateFilterStickiness);
 
 // Initialize
 async function initExpensesPage() {
@@ -851,7 +841,6 @@ async function initExpensesPage() {
     populateCategoryOptions();
     renderExpenses();
     updateSidebarStats();
-    updateFilterStickiness();
     if (!walletFilterActive) {
         renderShortcuts();
         updateShortcutsActive();
