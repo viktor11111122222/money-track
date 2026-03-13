@@ -1703,7 +1703,7 @@ button.primary-danger:hover { background: #b91c1c; }
 .chart-card h3 {
   margin: 0;
   font-size: 1.3rem;
-  color: #111827;
+  color: #e6eef8;
 }
 
 .chart-placeholder {
@@ -2127,24 +2127,25 @@ button.primary-danger {
   background: #252b42;
 }
 
-/* Charts Popup Modal */
+/* Charts Popup Modal - always dark regardless of theme */
 .charts-modal-content {
-  background: #0f1724;
+  background: #0f1724 !important;
   width: min(900px, 92vw);
+  color: #e6eef8 !important;
 }
 .charts-modal-content .modal-header {
-  border-color: rgba(255,255,255,0.08);
+  border-color: rgba(255,255,255,0.08) !important;
 }
 .charts-modal-content .modal-header h2 {
-  color: #e6eef8;
+  color: #e6eef8 !important;
   font-size: 1.2rem;
 }
 .charts-modal-content .modal-close {
-  background: rgba(255,255,255,0.08);
-  color: #e6eef8;
+  background: rgba(255,255,255,0.08) !important;
+  color: #e6eef8 !important;
 }
 .charts-modal-content .modal-close:hover {
-  background: rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.15) !important;
 }
 .charts-modal-body {
   display: flex;

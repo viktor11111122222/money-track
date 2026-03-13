@@ -239,6 +239,42 @@ body, .main-container, .shared-hero, .shared-card, .setting-card, .auth-card, .m
 .dark-theme .primary.primary-success { background: #059669 !important; color: #fff !important; }
 .dark-theme .primary.primary-danger { background: #ef4444 !important; color: #fff !important; }
 
+/* ─── Chart card light-mode overrides ─── */
+html:not(.dark-theme) .chart-card h3 {
+    color: var(--text) !important;
+}
+
+/* ─── Calendar light-mode overrides ─── */
+html:not(.dark-theme) .calendar-title-wrap h3,
+html:not(.dark-theme) .calendar-card h3 {
+    color: var(--text) !important;
+}
+html:not(.dark-theme) .calendar-nav-btn {
+    color: var(--text) !important;
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+}
+html:not(.dark-theme) .calendar-nav-btn:hover {
+    color: var(--text) !important;
+    background: var(--bg) !important;
+}
+html:not(.dark-theme) .calendar-open-month {
+    color: var(--text) !important;
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+}
+html:not(.dark-theme) .calendar-date {
+    color: var(--muted) !important;
+}
+html:not(.dark-theme) .calendar-day {
+    color: var(--text) !important;
+    background: var(--surface) !important;
+    border-color: var(--border) !important;
+}
+html:not(.dark-theme) .calendar-day .day-label {
+    color: var(--muted) !important;
+}
+
 /* Calendar day card color in dark theme */
 .dark-theme .calendar-day {
     background: rgba(255,255,255,0.03) !important; /* subtle light tile on dark bg */
@@ -676,35 +712,35 @@ body, .main-container, .shared-hero, .shared-card, .setting-card, .auth-card, .m
     background: transparent !important;
 }
 
-.suggestion-placeholder {
+.dark-theme .suggestion-placeholder {
     background: rgba(255,255,255,0.03) !important;
     border: 1px solid rgba(255,255,255,0.05) !important;
     color: var(--muted) !important;
 }
 
-.member-chip {
+.dark-theme .member-chip {
     background: rgba(255,255,255,0.06) !important;
     color: var(--text) !important;
     border: 1px solid rgba(255,255,255,0.08) !important;
 }
 
-.input-addon {
+.dark-theme .input-addon {
     background: rgba(255,255,255,0.06) !important;
     color: var(--text) !important;
     border: 1px solid rgba(255,255,255,0.08) !important;
 }
 
-.label-info {
+.dark-theme .label-info {
     background: rgba(255,255,255,0.06) !important;
     color: var(--text) !important;
     border: 1px solid rgba(255,255,255,0.08) !important;
 }
 
-.modal-header {
+.dark-theme .modal-header {
     border-bottom: 1px solid rgba(255,255,255,0.05) !important;
 }
 
-.wallet-info {
+.dark-theme .wallet-info {
     background: rgba(255,255,255,0.06) !important;
     color: var(--text) !important;
     border: 1px solid rgba(255,255,255,0.08) !important;

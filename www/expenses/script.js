@@ -638,25 +638,23 @@ function renderExpenses() {
         return;
     }
     
-    expensesList.innerHTML = filteredExpenses.map(expense => {
+    const INITIAL_COUNT = 4;
+    const isExpanded = expensesList.dataset.expanded === 'true';
+    const visibleExpenses = isExpanded ? filteredExpenses : filteredExpenses.slice(0, INITIAL_COUNT);
+    const hasMore = filteredExpenses.length > INITIAL_COUNT;
+
+    function buildItem(expense) {
         const description = expense.description && expense.description.trim()
             ? expense.description.trim()
             : (expense.category || 'Expense');
         const categoryLabel = expense.category || 'Uncategorized';
         const dateLabel = formatExpenseDate(expense);
         const iconCategory = expense.category || 'Other';
-        
-        // Try to get app icon first, fallback to category icon
+
         const appIcon = getAppIcon(description);
         let iconContent;
-        
         if (appIcon) {
-            // If it's HTML (contains <), render as is; otherwise treat as emoji/text
-            if (appIcon.includes('<')) {
-                iconContent = appIcon;
-            } else {
-                iconContent = `<span>${appIcon}</span>`;
-            }
+            iconContent = appIcon.includes('<') ? appIcon : `<span>${appIcon}</span>`;
         } else {
             iconContent = `<span>${getCategoryIcon(iconCategory)}</span>`;
         }
@@ -704,7 +702,33 @@ function renderExpenses() {
             </div>
         </div>
     `;
-    }).join('');
+    }
+
+    expensesList.innerHTML = visibleExpenses.map(buildItem).join('');
+
+    // Show more / collapse button
+    const existing = document.getElementById('expensesShowMoreBtn');
+    if (existing) existing.remove();
+
+    if (hasMore) {
+        const remaining = filteredExpenses.length - INITIAL_COUNT;
+        const btn = document.createElement('button');
+        btn.id = 'expensesShowMoreBtn';
+        btn.className = 'expenses-show-more-btn';
+        if (isExpanded) {
+            btn.innerHTML = `<i class="fa-solid fa-chevron-up"></i> Show less`;
+        } else {
+            btn.innerHTML = `<i class="fa-solid fa-chevron-down"></i> Show ${remaining} more`;
+        }
+        btn.onclick = () => {
+            expensesList.dataset.expanded = isExpanded ? 'false' : 'true';
+            renderExpenses();
+            if (isExpanded) {
+                expensesList.scrollIntoView({ behavior: 'smooth', block: 'start' });
+            }
+        };
+        expensesList.after(btn);
+    }
 }
 
 // Edit Expense
@@ -806,9 +830,14 @@ function updateFilterStickiness() {
 }
 
 // Event Listeners
-document.getElementById('categoryFilter').addEventListener('change', renderExpenses);
-document.getElementById('sortBy').addEventListener('change', renderExpenses);
-document.getElementById('searchExpenses').addEventListener('input', renderExpenses);
+function resetAndRender() {
+    const list = document.getElementById('expensesList');
+    if (list) list.dataset.expanded = 'false';
+    renderExpenses();
+}
+document.getElementById('categoryFilter').addEventListener('change', resetAndRender);
+document.getElementById('sortBy').addEventListener('change', resetAndRender);
+document.getElementById('searchExpenses').addEventListener('input', resetAndRender);
 window.addEventListener('scroll', updateFilterStickiness);
 window.addEventListener('resize', updateFilterStickiness);
 

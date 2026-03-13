@@ -188,9 +188,23 @@ footer.dashboard-footer,
 .main-container {
   grid-template-columns: 1fr !important;
   gap: 0 !important;
+  padding-right: 0 !important;
+  padding-left: 0 !important;
 }
 
 .main-left, .main-right {
+  width: 100% !important;
+}
+
+/* Center "Monthly Overview" heading */
+.top-row {
+  display: flex !important;
+  justify-content: center !important;
+  width: 100% !important;
+}
+
+.top-row h1 {
+  text-align: center !important;
   width: 100% !important;
 }
 
