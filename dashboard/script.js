@@ -1,3 +1,11 @@
+// Set Chart.js global defaults for dark mode
+if (typeof Chart !== 'undefined') {
+  Chart.defaults.color = '#e5e7eb';
+}
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof Chart !== 'undefined') Chart.defaults.color = '#e5e7eb';
+});
+
 // ===== DATA MANAGEMENT =====
 const DEFAULT_MONTHLY_INCOME = 100000;
 function getCurrency(){ try { var s = JSON.parse(localStorage.getItem('mt_settings_v1')); var c = s && s.preferences && s.preferences.currency; var m = { RSD:' RSD', USD:' $', EUR:' €', GBP:' £', JPY:' ¥', AUD:' A$', CAD:' C$', CNY:' ¥', INR:' ₹', BRL:' R$', CHF:' CHF', SEK:' kr', NOK:' kr' }; return m[c] || ' RSD'; } catch(e){ return ' RSD'; } }
@@ -1675,7 +1683,7 @@ function initChart() {
         legend: {
           display: !isEmpty,
           position: 'bottom',
-          labels: { color: '#374151', font: { size: 12 }, padding: 12, boxWidth: 12 }
+          labels: { color: '#e5e7eb', font: { size: 12 }, padding: 12, boxWidth: 12 }
         },
         tooltip: {
           enabled: !isEmpty,
@@ -2478,7 +2486,7 @@ function filterByTag(tag) {
             labels: {
               padding: 15,
               font: { size: 12, family: 'Inter' },
-              color: '#374151'
+              color: '#e5e7eb'
             }
           },
           tooltip: {
@@ -2560,7 +2568,7 @@ function updateChartWithTagFilter(tag) {
           labels: {
             padding: 15,
             font: { size: 12, family: 'Inter' },
-            color: '#374151'
+            color: '#e5e7eb'
           }
         },
         tooltip: {

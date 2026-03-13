@@ -1,0 +1,41 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <defs>
+    <linearGradient id="bg" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#1a1d2e"/>
+      <stop offset="100%" style="stop-color:#16213e"/>
+    </linearGradient>
+    <linearGradient id="accent" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#667eea"/>
+      <stop offset="100%" style="stop-color:#764ba2"/>
+    </linearGradient>
+    <linearGradient id="coin" x1="0%" y1="0%" x2="100%" y2="100%">
+      <stop offset="0%" style="stop-color:#f6d365"/>
+      <stop offset="100%" style="stop-color:#fda085"/>
+    </linearGradient>
+    <clipPath id="round">
+      <rect width="1024" height="1024" rx="220" ry="220"/>
+    </clipPath>
+  </defs>
+
+  <!-- Background -->
+  <rect width="1024" height="1024" rx="220" ry="220" fill="url(#bg)"/>
+
+  <!-- Bar chart bars -->
+  <rect x="180" y="580" width="120" height="220" rx="20" fill="url(#accent)" opacity="0.7"/>
+  <rect x="340" y="440" width="120" height="360" rx="20" fill="url(#accent)" opacity="0.85"/>
+  <rect x="500" y="320" width="120" height="480" rx="20" fill="url(#accent)"/>
+  <rect x="660" y="200" width="120" height="600" rx="20" fill="url(#accent)"/>
+
+  <!-- Upward trend line -->
+  <polyline points="240,570 400,430 560,310 720,190"
+    fill="none" stroke="#ffffff" stroke-width="28" stroke-linecap="round" stroke-linejoin="round" opacity="0.9"/>
+
+  <!-- Dot on top of trend -->
+  <circle cx="720" cy="190" r="36" fill="white" opacity="0.95"/>
+
+  <!-- Coin circle top right -->
+  <circle cx="810" cy="240" r="90" fill="url(#coin)" opacity="0.0"/>
+
+  <!-- Bottom label line (decorative) -->
+  <rect x="180" y="830" width="600" height="12" rx="6" fill="url(#accent)" opacity="0.4"/>
+</svg>

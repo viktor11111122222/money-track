@@ -1,3 +1,11 @@
+// Set Chart.js global defaults for dark mode
+if (typeof Chart !== 'undefined') {
+  Chart.defaults.color = '#e5e7eb';
+}
+document.addEventListener('DOMContentLoaded', () => {
+  if (typeof Chart !== 'undefined') Chart.defaults.color = '#e5e7eb';
+});
+
 // ===== DATA MANAGEMENT =====
 const DEFAULT_MONTHLY_INCOME = 100000;
 function getCurrency(){ try { var s = JSON.parse(localStorage.getItem('mt_settings_v1')); var c = s && s.preferences && s.preferences.currency; var m = { RSD:' RSD', USD:' $', EUR:' €', GBP:' £', JPY:' ¥', AUD:' A$', CAD:' C$', CNY:' ¥', INR:' ₹', BRL:' R$', CHF:' CHF', SEK:' kr', NOK:' kr' }; return m[c] || ' RSD'; } catch(e){ return ' RSD'; } }
@@ -324,6 +332,7 @@ function getSpendingByCategory() {
   const categorySpending = {};
   appData.expenses.forEach(exp => {
     if (exp.type === 'income' || exp.type === 'savings') return;
+    if (!isExpenseInCurrentMonth(exp)) return;
     if (!categorySpending[exp.category]) {
       categorySpending[exp.category] = 0;
     }
@@ -947,7 +956,6 @@ function updateDashboard() {
 
 function updateRecentTransactions() {
   const txList = document.querySelector('.transactions ul');
-  if (!txList) return;
   txList.innerHTML = '';
 
   // Filter based on active tag filter
@@ -1645,106 +1653,65 @@ function initChart() {
   const ctx = document.getElementById('spendingChart');
   if (!ctx) return;
 
-  const { labels, data, colors, isEmpty } = buildChartData();
+  const { labels, data, isEmpty } = buildChartData();
 
-  if (isEmpty) {
-    const container = ctx.closest('.chart-container') || ctx.parentElement;
-    ctx.style.display = 'none';
-    if (!container.querySelector('.chart-no-data')) {
-      const msg = document.createElement('p');
-      msg.className = 'chart-no-data';
-      msg.style.cssText = 'text-align:center;color:#9ca3af;padding:60px 0;margin:0;font-size:14px;';
-      msg.textContent = 'Nema troškova ovog meseca';
-      container.appendChild(msg);
-    }
-    return;
-  }
-  ctx.style.display = '';
-  const existing = ctx.parentElement && ctx.parentElement.querySelector('.chart-no-data');
-  if (existing) existing.remove();
+  const solidColors = [
+    'rgba(239,68,68,0.85)', 'rgba(249,115,22,0.85)', 'rgba(245,158,11,0.85)',
+    'rgba(34,197,94,0.85)', 'rgba(59,130,246,0.85)', 'rgba(139,92,246,0.85)',
+    'rgba(236,72,153,0.85)', 'rgba(20,184,166,0.85)', 'rgba(14,165,233,0.85)',
+    'rgba(132,204,22,0.85)'
+  ];
 
-  // Destroy old chart if exists
-  if (chartInstance) {
-    chartInstance.destroy();
-    chartInstance = null;
-  }
+  if (chartInstance) chartInstance.destroy();
 
-  try {
   chartInstance = new Chart(ctx, {
     type: 'doughnut',
     data: {
-      labels: labels,
+      labels,
       datasets: [{
-        data: data,
-        backgroundColor: colors,
-        borderColor: 'rgba(255,255,255,0.06)',
-        borderWidth: 3,
-        hoverOffset: 10
+        data,
+        backgroundColor: labels.map((_, i) => solidColors[i % solidColors.length]),
+        borderColor: '#ffffff',
+        borderWidth: 2
       }]
     },
     options: {
       responsive: true,
       maintainAspectRatio: false,
+      animation: { duration: 600 },
       plugins: {
         legend: {
           display: !isEmpty,
           position: 'bottom',
-          labels: {
-            font: {
-              family: "'Inter', sans-serif",
-              size: 13,
-              weight: '500'
-            },
-            color: '#0f1724',
-            padding: 20,
-            boxWidth: 12,
-            boxHeight: 12,
-            borderRadius: 3
-          }
+          labels: { color: '#e5e7eb', font: { size: 12 }, padding: 12, boxWidth: 12 }
         },
         tooltip: {
           enabled: !isEmpty,
-          backgroundColor: 'rgba(15, 23, 36, 0.8)',
-          padding: 12,
-          titleFont: {
-            family: "'Inter', sans-serif",
-            size: 14,
-            weight: '600'
-          },
-          bodyFont: {
-            family: "'Inter', sans-serif",
-            size: 13
-          },
-          borderColor: 'rgba(255, 255, 255, 0.1)',
-          borderWidth: 1,
-          borderRadius: 8,
           callbacks: {
             label: function(context) {
-              const value = context.parsed;
+              const val = context.parsed;
               const total = context.dataset.data.reduce((a, b) => a + b, 0);
-              const percentage = ((value / total) * 100).toFixed(1);
-              return value.toLocaleString() + ' RSD (' + percentage + '%)';
+              return context.label + ': ' + val.toLocaleString() + ' RSD (' + ((val/total)*100).toFixed(1) + '%)';
             }
           }
         }
       }
     }
   });
-  } catch(e) {
-    const container = ctx.closest('.chart-container') || ctx.parentElement;
-    if (container) {
-      container.innerHTML = '<p style="text-align:center;color:#ef4444;padding:20px;font-size:12px;">Chart error: ' + e.message + '</p>';
-    }
-  }
 }
 
 function updateChart() {
   if (chartInstance) {
-    const { labels, data, colors, isEmpty } = buildChartData();
-
+    const { labels, data, isEmpty } = buildChartData();
+    const solidColors = [
+      'rgba(239,68,68,0.85)', 'rgba(249,115,22,0.85)', 'rgba(245,158,11,0.85)',
+      'rgba(34,197,94,0.85)', 'rgba(59,130,246,0.85)', 'rgba(139,92,246,0.85)',
+      'rgba(236,72,153,0.85)', 'rgba(20,184,166,0.85)', 'rgba(14,165,233,0.85)',
+      'rgba(132,204,22,0.85)'
+    ];
     chartInstance.data.labels = labels;
     chartInstance.data.datasets[0].data = data;
-    chartInstance.data.datasets[0].backgroundColor = colors;
+    chartInstance.data.datasets[0].backgroundColor = labels.map((_, i) => solidColors[i % solidColors.length]);
     chartInstance.options.plugins.legend.display = !isEmpty;
     chartInstance.options.plugins.tooltip.enabled = !isEmpty;
     chartInstance.update();
@@ -2519,7 +2486,7 @@ function filterByTag(tag) {
             labels: {
               padding: 15,
               font: { size: 12, family: 'Inter' },
-              color: '#374151'
+              color: '#e5e7eb'
             }
           },
           tooltip: {
@@ -2601,7 +2568,7 @@ function updateChartWithTagFilter(tag) {
           labels: {
             padding: 15,
             font: { size: 12, family: 'Inter' },
-            color: '#374151'
+            color: '#e5e7eb'
           }
         },
         tooltip: {
@@ -2798,26 +2765,29 @@ window.addEventListener('languageChanged', () => {
   if (typeof initComparisonChart === 'function') initComparisonChart();
 });
 
+enqueueMissingWalletSync();
+flushWalletSyncQueue();
+setInterval(() => {
+  flushWalletSyncQueue();
+}, 8000);
+
 // Initialize chart after a small delay to ensure DOM is ready
 function initAllCharts() {
-  initChart();
-  if (typeof Chart !== 'undefined') {
-    initDailyChart();
-    initComparisonChart();
+  if (typeof Chart === 'undefined') {
+    setTimeout(initAllCharts, 200);
+    return;
   }
+  initChart();
+  initDailyChart();
+  initComparisonChart();
   initRecurringExpenses();
   updateTagsUI();
-  requestAnimationFrame(() => {
+  // Force resize for Android WebView after layout settles
+  setTimeout(() => {
     if (chartInstance) chartInstance.resize();
-  });
+  }, 300);
 }
 setTimeout(initAllCharts, 400);
-
-try { enqueueMissingWalletSync(); } catch(e) {}
-try { flushWalletSyncQueue(); } catch(e) {}
-setInterval(() => {
-  try { flushWalletSyncQueue(); } catch(e) {}
-}, 8000);
 // Footer navigation - smooth scroll
 document.querySelectorAll('.footer-link').forEach(link => {
   link.addEventListener('click', function(e) {
