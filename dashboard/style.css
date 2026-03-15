@@ -500,7 +500,7 @@ main {
 
 /* Top row: title and summary cards */
 .top-row { display: flex; align-items: center; gap: 1rem; }
-.top-row h1 { margin: 0; font-size: 1.9rem; color: #0f1724; text-align: center; width: 100%; }
+.top-row h1 { margin: 0; font-size: 1.9rem; color: #0f1724; }
 
 .card h4 { margin: 0; color: #667085; font-size: 0.9rem; }
 .card .amount { font-weight: 700; margin-top: 6px; }
@@ -1047,20 +1047,20 @@ main {
 
 .tag-filter-btn {
   padding: 6px 12px;
-  border: 2px solid rgba(255,255,255,0.15);
-  background: rgba(255,255,255,0.07);
+  border: 2px solid #e5e7eb;
+  background: white;
   border-radius: 20px;
   font-size: 13px;
   font-weight: 500;
-  color: #c4c9d4;
+  color: #6b7280;
   cursor: pointer;
   transition: all 0.3s;
 }
 
 .tag-filter-btn:hover {
   border-color: #667eea;
-  background: rgba(102,126,234,0.15);
-  color: #a5b4fc;
+  background: #f3f4ff;
+  color: #667eea;
 }
 
 .tag-filter-btn.active {
@@ -1647,7 +1647,7 @@ button.primary-danger:hover { background: #b91c1c; }
   gap: 1rem;
 }
 
-.top-row h1 { margin: 0; color: #111827; text-align: center; width: 100%; }
+.top-row h1 { margin: 0; color: #111827; }
 
 .summary-cards {
   display: grid;
@@ -2127,25 +2127,24 @@ button.primary-danger {
   background: #252b42;
 }
 
-/* Charts Popup Modal - always dark regardless of theme */
+/* Charts Popup Modal */
 .charts-modal-content {
-  background: #0f1724 !important;
+  background: #0f1724;
   width: min(900px, 92vw);
-  color: #e6eef8 !important;
 }
 .charts-modal-content .modal-header {
-  border-color: rgba(255,255,255,0.08) !important;
+  border-color: rgba(255,255,255,0.08);
 }
 .charts-modal-content .modal-header h2 {
-  color: #e6eef8 !important;
+  color: #e6eef8;
   font-size: 1.2rem;
 }
 .charts-modal-content .modal-close {
-  background: rgba(255,255,255,0.08) !important;
-  color: #e6eef8 !important;
+  background: rgba(255,255,255,0.08);
+  color: #e6eef8;
 }
 .charts-modal-content .modal-close:hover {
-  background: rgba(255,255,255,0.15) !important;
+  background: rgba(255,255,255,0.15);
 }
 .charts-modal-body {
   display: flex;
