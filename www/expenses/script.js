@@ -1,6 +1,6 @@
 // Data Management
 const DEFAULT_MONTHLY_INCOME = 100000;
-function getCurrency(){ try { var s = JSON.parse(localStorage.getItem('mt_settings_v1')); var c = s && s.preferences && s.preferences.currency; var m = { RSD:' RSD', USD:' $', EUR:' €', GBP:' £', JPY:' ¥', AUD:' A$', CAD:' C$', CNY:' ¥', INR:' ₹', BRL:' R$', CHF:' CHF', SEK:' kr', NOK:' kr' }; return m[c] || ' RSD'; } catch(e){ return ' RSD'; } }
+function getCurrency(){ try { var s = JSON.parse(localStorage.getItem('mt_settings_v1')); var c = s && s.preferences && s.preferences.currency; var m = { RSD:' RSD', USD:' $', EUR:' €', GBP:' £', JPY:' ¥', AUD:' A$', CAD:' C$', CNY:' ¥', INR:' ₹', BRL:' R$', CHF:' CHF', SEK:' kr', NOK:' kr' }; return m[c] || ' €'; } catch(e){ return ' €'; } }
 const CURRENCY = getCurrency();
 const API_BASE = window.__API_BASE__ || ((window.location.port === '5500' || window.location.port === '5501') ? 'http://localhost:8080/api' : '/api');
 const TOKEN_KEY = 'sharedBudgetToken';
@@ -182,7 +182,7 @@ function configureWalletFilterUI() {
     const shortcuts = document.getElementById('quickShortcuts');
 
     if (walletFilterActive) {
-        if (banner) banner.hidden = false;
+        if (banner) banner.style.display = 'flex';
         if (labelEl) labelEl.textContent = 'Viewing wallet transactions for';
         if (nameEl) nameEl.textContent = walletFilterName || 'Wallet';
         if (nameEl) nameEl.style.display = '';
@@ -190,8 +190,7 @@ function configureWalletFilterUI() {
         if (addBtn) addBtn.style.display = 'none';
         if (shortcuts) shortcuts.style.display = 'none';
     } else {
-        if (banner) banner.hidden = false;
-        if (labelEl) labelEl.textContent = 'Viewing all transactions';
+        if (banner) banner.style.display = 'none';
         if (nameEl) nameEl.textContent = '';
         if (nameEl) nameEl.style.display = 'none';
         if (clearBtn) clearBtn.style.display = 'none';
@@ -244,8 +243,12 @@ btnAddExpense.onclick = function() {
     editingExpenseId = null;
     modalTitle.textContent = 'Add New Expense';
     expenseForm.reset();
-    document.getElementById('expenseDate').valueAsDate = new Date();
-    modal.style.display = 'block';
+    const today = new Date();
+    const todayStr = today.toISOString().split('T')[0];
+    document.getElementById('expenseDate').value = todayStr;
+    const disp = document.getElementById('expenseDateDisplay');
+    if (disp) disp.textContent = today.toLocaleDateString();
+    modal.style.display = 'flex';
 }
 
 closeBtn.onclick = function() {
@@ -511,16 +514,16 @@ function getExpenseDateValue(expense) {
 // Category Icons
 function getCategoryIcon(category) {
     const icons = {
-        'Food': '🍽️',
-        'Transport': '🚗',
-        'Rent': '🏠',
-        'Entertainment': '🎬',
-        'Shopping': '🛍️',
-        'Health': '💊',
-        'Utilities': '💡',
-        'Other': '📌'
+        'Food': 'fa-utensils',
+        'Transport': 'fa-car',
+        'Rent': 'fa-house',
+        'Entertainment': 'fa-film',
+        'Shopping': 'fa-bag-shopping',
+        'Health': 'fa-pills',
+        'Utilities': 'fa-bolt',
+        'Other': 'fa-tag'
     };
-    return icons[category] || '📌';
+    return icons[category] || 'fa-tag';
 }
 
 // Get app/service icon or logo by name
@@ -646,7 +649,7 @@ function renderExpenses() {
         const description = expense.description && expense.description.trim()
             ? expense.description.trim()
             : (expense.category || 'Expense');
-        const categoryLabel = expense.category || 'Uncategorized';
+        const categoryLabel = typeof tCat === 'function' ? tCat(expense.category || 'Other') : (expense.category || 'Uncategorized');
         const dateLabel = formatExpenseDate(expense);
         const iconCategory = expense.category || 'Other';
 
@@ -655,7 +658,7 @@ function renderExpenses() {
         if (appIcon) {
             iconContent = appIcon.includes('<') ? appIcon : `<span>${appIcon}</span>`;
         } else {
-            iconContent = `<span>${getCategoryIcon(iconCategory)}</span>`;
+            iconContent = `<i class="fa-solid ${getCategoryIcon(iconCategory)}"></i>`;
         }
 
         const actionButtons = walletFilterActive
@@ -742,9 +745,11 @@ function editExpense(id) {
     document.getElementById('expenseCategory').value = expense.category;
     document.getElementById('expenseDescription').value = expense.description;
     document.getElementById('expenseDate').value = expense.date;
+    const disp = document.getElementById('expenseDateDisplay');
+    if (disp) disp.textContent = expense.date ? new Date(expense.date).toLocaleDateString() : '';
     document.getElementById('expenseTags').value = expense.tags ? expense.tags.join(', ') : '';
-    
-    modal.style.display = 'block';
+
+    modal.style.display = 'flex';
 }
 
 // Delete Expense
@@ -786,31 +791,34 @@ function populateCategoryOptions() {
     const categoryFilter = document.getElementById('categoryFilter');
     const expenseCategory = document.getElementById('expenseCategory');
     
+    const _tCat = typeof tCat === 'function' ? tCat : (c => c);
+    const _t = typeof t === 'function' ? t : (k => k);
+
     // Populate filter dropdown
-    categoryFilter.innerHTML = '<option value="all">All Categories</option>';
+    categoryFilter.innerHTML = `<option value="all">${_t('exp.allCategories')}</option>`;
     if (walletFilterActive) {
         const walletCategories = Array.from(new Set(walletTransactions.map(txn => txn.category || 'Other')));
         walletCategories.forEach(category => {
             const option = document.createElement('option');
             option.value = category;
-            option.textContent = category;
+            option.textContent = _tCat(category);
             categoryFilter.appendChild(option);
         });
     } else {
         appData.categories.forEach(category => {
             const option = document.createElement('option');
             option.value = category;
-            option.textContent = category;
+            option.textContent = _tCat(category);
             categoryFilter.appendChild(option);
         });
     }
-    
+
     // Populate form dropdown
     expenseCategory.innerHTML = '';
     appData.categories.forEach(category => {
         const option = document.createElement('option');
         option.value = category;
-        option.textContent = category;
+        option.textContent = _tCat(category);
         expenseCategory.appendChild(option);
     });
     if (walletFilterActive) {
@@ -852,6 +860,8 @@ initExpensesPage();
 // Re-render when language changes
 window.addEventListener('languageChanged', () => {
   renderExpenses();
+  populateCategoryOptions();
+  if (typeof refreshAnalytics === 'function') refreshAnalytics();
   if (typeof applyI18n === 'function') applyI18n();
 });
 
@@ -917,6 +927,7 @@ function renderKPI() {
         const currentYear = now.getFullYear();
 
         const expensesThisMonth = appData.expenses.filter(exp => {
+                if (exp.type === 'income' || exp.type === 'savings') return false;
                 if (exp.category === 'Savings') return false;
                 const d = getExpenseDateValue(exp);
                 if (!d) return false;
@@ -970,51 +981,72 @@ function renderKPI() {
         }
 }
 // ===== CSV Export/Import =====
-function exportCSV() {
+async function exportCSV() {
     if (appData.expenses.length === 0) {
         alert('No expenses to export!');
         return;
     }
 
-    // CSV header
     const headers = ['ID', 'Date', 'Amount', 'Category', 'Description', 'Tags'];
-    
-    // Convert expenses to CSV rows
     const rows = appData.expenses.map(exp => {
-        const date = exp.date || 'No date set';
+        const date = exp.date || '';
         const tags = (exp.tags || []).join('; ');
-        const description = (exp.description || '').replace(/"/g, '""'); // Escape quotes
-        return [
-            exp.id,
-            date,
-            exp.amount,
-            exp.category || 'Other',
-            `"${description}"`,
-            `"${tags}"`
-        ].join(',');
+        const description = (exp.description || '').replace(/"/g, '""');
+        return [exp.id, date, exp.amount, exp.category || 'Other', `"${description}"`, `"${tags}"`].join(',');
     });
-
-    // Combine header and rows
     const csv = [headers.join(','), ...rows].join('\n');
-
-    // Create and download file
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    
     const timestamp = new Date().toISOString().split('T')[0];
-    link.setAttribute('href', url);
-    link.setAttribute('download', `expenses_${timestamp}.csv`);
-    link.style.visibility = 'hidden';
-    
+    const filename = `expenses_${timestamp}.csv`;
+
+    // 1. Capacitor Filesystem + Share (Android native)
+    try {
+        const Filesystem = window.Capacitor?.Plugins?.Filesystem;
+        const Share = window.Capacitor?.Plugins?.Share;
+        if (Filesystem && Share) {
+            await Filesystem.writeFile({
+                path: filename,
+                data: csv,
+                directory: 'CACHE',
+                encoding: 'utf8'
+            });
+            const { uri } = await Filesystem.getUri({ path: filename, directory: 'CACHE' });
+            await Share.share({ title: filename, url: uri, dialogTitle: 'Save or share CSV' });
+            return;
+        }
+    } catch (e) { /* fall through */ }
+
+    // 2. Web Share API with file (Chrome Android 86+)
+    if (navigator.share) {
+        try {
+            const file = new File([csv], filename, { type: 'text/csv' });
+            if (navigator.canShare?.({ files: [file] })) {
+                await navigator.share({ files: [file], title: filename });
+                return;
+            }
+        } catch (e) {
+            if (e.name === 'AbortError') return;
+        }
+    }
+
+    // 3. Desktop fallback: download link
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const url = URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = filename;
+    link.style.display = 'none';
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
+    setTimeout(() => URL.revokeObjectURL(url), 1000);
 }
 
 function importCSV() {
     const fileInput = document.getElementById('fileInput');
-    fileInput.click();
+    if (fileInput) {
+        fileInput.value = ''; // reset so same file can be re-imported
+        fileInput.click();
+    }
 }
 
 function handleFileImport(event) {

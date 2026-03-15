@@ -2,7 +2,9 @@ const API_BASE = window.__API_BASE__ || ((window.location.port === '5500' || win
 const TOKEN_KEY = 'sharedBudgetToken';
 const WALLET_PROGRESS_CACHE_KEY = 'walletProgressCache';
 const DEFAULT_MONTHLY_INCOME = 100000;
-const CURRENCY = ' RSD';
+const _currencySymbols = { RSD: ' RSD', USD: ' $', EUR: ' €', GBP: ' £', JPY: ' ¥', AUD: ' A$', CAD: ' C$', CNY: ' ¥', INR: ' ₹', BRL: ' R$', CHF: ' CHF', SEK: ' kr', NOK: ' kr' };
+function getCurrency() { try { const s = JSON.parse(localStorage.getItem('mt_settings_v1') || '{}'); return _currencySymbols[(s.preferences || {}).currency] || ' €'; } catch(e) { return ' €'; } }
+const CURRENCY = getCurrency();
 
 const spendingsBtn = document.getElementById('spendingsBtn');
 
@@ -820,7 +822,7 @@ function buildWalletItem(wallet, progressModes, progressCache, hiddenWallets) {
       const label = isYou ? `${m} (you)` : m;
       const chipClass = `wallet-chip ${isYou ? 'wallet-chip--you' : 'wallet-chip--member'}`;
       const canRemove = isOwner && !isYou;
-      return `<span class="${chipClass}">${label}${canRemove ? `<button type="button" class="wallet-chip-remove" data-id="${wallet.id}" data-member="${m}" aria-label="Remove member">×</button>` : ''}</span>`;
+      return `<span class="${chipClass}">${label}${canRemove ? `<button type="button" class="wallet-chip-remove" data-id="${wallet.id}" data-member="${m}" aria-label="Remove member"><i class="fa-solid fa-xmark"></i></button>` : ''}</span>`;
     });
     if (isOwner && !members.some(isCurrentMember)) {
       memberChips.unshift('<span class="wallet-chip wallet-chip--you">You</span>');
@@ -1208,13 +1210,13 @@ function renderSplitMembersBreakdown() {
     let removeBtn = '';
     if (!isCurrentUser) {
       // Always allow removing other members
-      removeBtn = `<button type="button" class="split-member-remove" data-member="${member}">✕</button>`;
+      removeBtn = `<button type="button" class="split-member-remove" data-member="${member}"><i class="fa-solid fa-xmark"></i></button>`;
     } else if (isEditing && isOwner) {
       // When editing and user is owner, can't remove themselves
       removeBtn = '';
     } else if (isEditing && !isOwner && isCurrentUser) {
       // When editing and not owner, can remove themselves (leave the split)
-      removeBtn = `<button type="button" class="split-member-remove" data-member="${member}">✕</button>`;
+      removeBtn = `<button type="button" class="split-member-remove" data-member="${member}"><i class="fa-solid fa-xmark"></i></button>`;
     }
     
     // Disable percentage field for current user when creating, but allow when owner is editing

@@ -35,8 +35,8 @@
     'dash.balance':           { en: 'Balance',           sr: 'Stanje',               es: 'Balance' },
     'dash.spendingThisMonth': { en: 'Spending this month', sr: 'Potrošnja ovog meseca', es: 'Gastos este mes' },
     'dash.insights':          { en: 'Insights',          sr: 'Uvidi',                es: 'Perspectivas' },
-    'dash.transactionTags':   { en: '🏷️ Transaction Tags', sr: '🏷️ Tagovi transakcija', es: '🏷️ Etiquetas' },
-    'dash.allTags':           { en: '📋 All',            sr: '📋 Sve',               es: '📋 Todo' },
+    'dash.transactionTags':   { en: 'Transaction Tags',   sr: 'Tagovi transakcija',   es: 'Etiquetas' },
+    'dash.allTags':           { en: 'All',               sr: 'Sve',                  es: 'Todo' },
     'dash.recentTx':          { en: 'Recent Transactions', sr: 'Nedavne transakcije', es: 'Transacciones Recientes' },
     'dash.limits':            { en: 'Limits',            sr: 'Limiti',               es: 'Límites' },
     'dash.editLimits':        { en: 'Edit Limits',       sr: 'Izmeni limite',        es: 'Editar Límites' },
@@ -50,24 +50,24 @@
     'dash.addExpenseBtn':     { en: 'Add Expense',       sr: 'Dodaj trošak',         es: 'Agregar Gasto' },
     'dash.addSavings':        { en: 'Add Savings',       sr: 'Dodaj ušteđevinu',     es: 'Agregar Ahorros' },
     'dash.addMoney':          { en: 'Add Money',         sr: 'Dodaj novac',          es: 'Agregar Dinero' },
-    'dash.trackLimits':       { en: '📊 Track Limits',   sr: '📊 Praćenje limita',   es: '📊 Seguir Límites' },
-    'dash.resetAll':          { en: '🔄 Reset All',      sr: '🔄 Resetuj sve',       es: '🔄 Restablecer Todo' },
+    'dash.trackLimits':       { en: 'Track Limits',      sr: 'Praćenje limita',      es: 'Seguir Límites' },
+    'dash.resetAll':          { en: 'Reset All',         sr: 'Resetuj sve',          es: 'Restablecer Todo' },
     'dash.spendingByCat':     { en: 'Spending by Category', sr: 'Potrošnja po kategoriji', es: 'Gastos por Categoría' },
     'dash.spendingCalendar':  { en: 'Spending Calendar', sr: 'Kalendar potrošnje',   es: 'Calendario de Gastos' },
     'dash.topSpendingDays':   { en: 'Top Spending Days', sr: 'Dani sa najviše troškova', es: 'Días de Mayor Gasto' },
-    'dash.recurringExpenses': { en: '🔄 Recurring Expenses', sr: '🔄 Ponavljajući troškovi', es: '🔄 Gastos Recurrentes' },
+    'dash.recurringExpenses': { en: 'Recurring Expenses', sr: 'Ponavljajući troškovi',  es: 'Gastos Recurrentes' },
     'dash.recurringDesc':     { en: 'Automatically added every month', sr: 'Automatski se dodaju svakog meseca', es: 'Se agregan automáticamente cada mes' },
     'dash.recurringName':     { en: 'Name (Rent, Netflix, Internet...)', sr: 'Naziv (Kirija, Netflix, Internet...)', es: 'Nombre (Alquiler, Netflix, Internet...)' },
     'dash.recurringAmount':   { en: 'Amount',            sr: 'Iznos',                es: 'Monto' },
     'dash.addRecurring':      { en: 'Add Recurring',     sr: 'Dodaj ponavljajući',   es: 'Agregar Recurrente' },
-    'dash.smartSuggestions':  { en: '🤖 Smart Suggestions', sr: '🤖 Pametni predlozi', es: '🤖 Sugerencias Inteligentes' },
+    'dash.smartSuggestions':  { en: 'Smart Suggestions',  sr: 'Pametni predlozi',     es: 'Sugerencias Inteligentes' },
     'dash.weRecommend':       { en: 'We recommend:',     sr: 'Preporučujemo:',       es: 'Recomendamos:' },
     'dash.analyzingSpending': { en: 'Analyzing your spending...', sr: 'Analiziramo tvoju potrošnju...', es: 'Analizando tus gastos...' },
     'dash.openMonth':         { en: 'Open Month',        sr: 'Otvori mesec',         es: 'Abrir Mes' },
     'dash.addCategory':       { en: '+ Add category',    sr: '+ Dodaj kategoriju',   es: '+ Agregar categoría' },
 
     // Dashboard – Onboarding Modal
-    'dash.welcomeTitle':      { en: '👋 Welcome to Money Tracker!', sr: '👋 Dobrodošli u Money Tracker!', es: '👋 ¡Bienvenido a Money Tracker!' },
+    'dash.welcomeTitle':      { en: 'Welcome to Money Tracker!', sr: 'Dobrodošli u Money Tracker!', es: '¡Bienvenido a Money Tracker!' },
     'dash.welcomeDesc':       { en: "Let's set up your account to start tracking your expenses effectively.", sr: 'Hajde da podesimo tvoj nalog za efikasno praćenje troškova.', es: 'Configuremos tu cuenta para comenzar a rastrear tus gastos.' },
     'dash.fullName':          { en: 'Full Name',         sr: 'Puno ime',             es: 'Nombre Completo' },
     'dash.monthlyIncome':     { en: 'Monthly Income',    sr: 'Mesečni prihod',       es: 'Ingreso Mensual' },
@@ -231,10 +231,10 @@
     'footer.title':           { en: 'Money Tracker',     sr: 'Money Tracker',        es: 'Money Tracker' },
     'footer.desc':            { en: 'Smart expense tracking for better financial management', sr: 'Pametno praćenje troškova za bolje upravljanje finansijama', es: 'Seguimiento inteligente de gastos para una mejor gestión financiera' },
     'footer.features':        { en: 'Features',          sr: 'Funkcije',             es: 'Características' },
-    'footer.budgetTracking':  { en: '📊 Budget Tracking', sr: '📊 Praćenje budžeta', es: '📊 Seguimiento de Presupuesto' },
-    'footer.tagManagement':   { en: '🏷️ Tag Management', sr: '🏷️ Upravljanje tagovima', es: '🏷️ Gestión de Etiquetas' },
-    'footer.recurringExp':    { en: '🔄 Recurring Expenses', sr: '🔄 Ponavljajući troškovi', es: '🔄 Gastos Recurrentes' },
-    'footer.smartSuggestions': { en: '🤖 Smart Suggestions', sr: '🤖 Pametni predlozi', es: '🤖 Sugerencias Inteligentes' },
+    'footer.budgetTracking':  { en: 'Budget Tracking',    sr: 'Praćenje budžeta',     es: 'Seguimiento de Presupuesto' },
+    'footer.tagManagement':   { en: 'Tag Management',     sr: 'Upravljanje tagovima', es: 'Gestión de Etiquetas' },
+    'footer.recurringExp':    { en: 'Recurring Expenses', sr: 'Ponavljajući troškovi', es: 'Gastos Recurrentes' },
+    'footer.smartSuggestions': { en: 'Smart Suggestions', sr: 'Pametni predlozi',     es: 'Sugerencias Inteligentes' },
     'footer.info':            { en: 'Info',              sr: 'Info',                 es: 'Info' },
 
     // ═══ DYNAMIC JS STRINGS ═══
@@ -265,13 +265,41 @@
     'js.recurringPercent':    { en: 'Recurring expenses make up {0}% of monthly spending', sr: 'Ponavljajući troškovi čine {0}% mesečne potrošnje', es: 'Los gastos recurrentes representan {0}% del gasto mensual' },
     'js.tagCosts':            { en: '{0} costs you {1} monthly {2}', sr: '{0} te košta {1} mesečno {2}', es: '{0} te cuesta {1} mensualmente {2}' },
     'js.noDataForSuggestions': { en: 'Not enough data for suggestions', sr: 'Nema dovoljno podataka za sugestije', es: 'No hay suficientes datos para sugerencias' },
+    'js.showLess':             { en: 'Show less',             sr: 'Prikaži manje',         es: 'Mostrar menos' },
     'js.reduceSuggestion':    { en: 'If you reduce {0} by 20%, you\'ll save ~{1}', sr: 'Ako smanjiš {0} za 20%, uštedećeš ~{1}', es: 'Si reduces {0} un 20%, ahorrarás ~{1}' },
     'js.aboveRecommended':    { en: '{0} is above the recommended 30% of income ({1}%)', sr: '{0} ti je iznad preporučenih 30% prihoda ({1}%)', es: '{0} supera el 30% recomendado de ingresos ({1}%)' },
     'js.spendingTooHigh':     { en: 'You\'re spending {0}% of your income - try to reduce to 70%', sr: 'Trošiš {0}% svojih prihoda - pokušaj da smanjiš na 70%', es: 'Estás gastando {0}% de tus ingresos - intenta reducir al 70%' },
     'js.savingsGoal':         { en: 'Try to save {0} more to reach 20% of income', sr: 'Pokušaj da uštediš još {0} da dostigneš 20% prihoda', es: 'Intenta ahorrar {0} más para alcanzar el 20% de ingresos' },
     'js.recurringTooHigh':    { en: '{0}% of expenses are recurring - consider reducing subscriptions', sr: '{0}% troškova su recurring - razmisli o smanjenju pretplata', es: '{0}% de los gastos son recurrentes - considera reducir suscripciones' },
     'js.addAllRecurring':     { en: 'Add all recurring for new month', sr: 'Dodaj sve ponavljajuće za novi mesec', es: 'Agregar todos los recurrentes para el nuevo mes' },
-    'js.removeMemberConfirm': { en: 'Are you sure you want to remove {0} from this wallet?', sr: 'Da li si siguran da želiš da ukloniš {0} iz ovog novčanika?', es: '¿Estás seguro de que deseas eliminar a {0} de esta billetera?' }
+    'js.removeMemberConfirm': { en: 'Are you sure you want to remove {0} from this wallet?', sr: 'Da li si siguran da želiš da ukloniš {0} iz ovog novčanika?', es: '¿Estás seguro de que deseas eliminar a {0} de esta billetera?' },
+
+    // ═══ CATEGORY NAMES ═══
+    'cat.food':          { en: 'Food',          sr: 'Hrana',          es: 'Comida' },
+    'cat.transport':     { en: 'Transport',      sr: 'Prevoz',         es: 'Transporte' },
+    'cat.rent':          { en: 'Rent',           sr: 'Kirija',         es: 'Alquiler' },
+    'cat.entertainment': { en: 'Entertainment',  sr: 'Zabava',         es: 'Entretenimiento' },
+    'cat.shopping':      { en: 'Shopping',       sr: 'Kupovina',       es: 'Compras' },
+    'cat.health':        { en: 'Health',         sr: 'Zdravlje',       es: 'Salud' },
+    'cat.utilities':     { en: 'Utilities',      sr: 'Komunalije',     es: 'Servicios' },
+    'cat.savings':       { en: 'Savings',        sr: 'Uštedevina',     es: 'Ahorros' },
+    'cat.income':        { en: 'Income',         sr: 'Prihod',         es: 'Ingreso' },
+    'cat.other':         { en: 'Other',          sr: 'Ostalo',         es: 'Otro' },
+
+    // ═══ ANALYTICS / SMART INSIGHTS ═══
+    'analytics.budgetExceeded':   { en: '⚠️ Budget exceeded!',           sr: '⚠️ Budžet prekoračen!',              es: '⚠️ ¡Presupuesto superado!' },
+    'analytics.budgetLow':        { en: '⚠️ Only {0} remaining',          sr: '⚠️ Samo {0} preostalo',              es: '⚠️ Solo {0} restante' },
+    'analytics.budgetWarning':    { en: '⚡ {0} remaining',               sr: '⚡ {0} preostalo',                   es: '⚡ {0} restante' },
+    'analytics.budgetOk':         { en: '✓ {0} remaining',               sr: '✓ {0} preostalo',                   es: '✓ {0} restante' },
+    'analytics.recurringTitle':   { en: 'Recurring Subscriptions',       sr: 'Ponavljajuće pretplate',             es: 'Suscripciones Recurrentes' },
+    'analytics.recurringDesc':    { en: 'Found {0} subscription(s) costing {1} this month. Review to save money.', sr: 'Pronađeno {0} pretplata koje koštaju {1} ovog meseca. Pregled radi uštede.', es: 'Se encontraron {0} suscripción(es) con costo de {1} este mes. Revisa para ahorrar.' },
+    'analytics.highSpendingTitle':{ en: 'High {0} Spending',             sr: 'Visoka potrošnja na {0}',            es: 'Alto gasto en {0}' },
+    'analytics.highSpendingDesc': { en: '{0} accounts for {1}% of your spending ({2}). Consider reducing expenses in this category.', sr: '{0} čini {1}% vaše potrošnje ({2}). Razmotrite smanjenje troškova u ovoj kategoriji.', es: '{0} representa el {1}% de tus gastos ({2}). Considera reducir gastos en esta categoría.' },
+    'analytics.onTrackTitle':     { en: 'On Track!',                     sr: 'Na pravom putu!',                   es: '¡En buen camino!' },
+    'analytics.onTrackDesc':      { en: "You've spent {0}% of your budget. Keep up the good spending habits!", sr: 'Potrošili ste {0}% budžeta. Nastavite sa dobrim navikama potrošnje!', es: 'Has gastado el {0}% de tu presupuesto. ¡Sigue con los buenos hábitos de gasto!' },
+    'analytics.saveMoreTitle':    { en: 'Save More',                     sr: 'Uštedi više',                       es: 'Ahorra Más' },
+    'analytics.saveMoreDesc':     { en: 'You have room in your budget. Consider moving {0} to savings.', sr: 'Imate prostora u budžetu. Razmotrite premještanje {0} u uštedinu.', es: 'Tienes margen en tu presupuesto. Considera mover {0} a ahorros.' },
+    'analytics.noInsights':       { en: 'No insights available yet. Add more expenses to get personalized recommendations.', sr: 'Nema uvida još uvek. Dodajte više troškova za personalizovane preporuke.', es: 'Aún no hay perspectivas. Agrega más gastos para obtener recomendaciones personalizadas.' }
   };
 
   // ── Detect current language ──
@@ -359,8 +387,17 @@
     window.dispatchEvent(new CustomEvent('languageChanged', { detail: { language: langName } }));
   }
 
+  // ── Translate a category name (falls back to original if no translation) ──
+  function tCat(catName) {
+    if (!catName) return catName;
+    var key = 'cat.' + catName.toLowerCase();
+    var result = t(key);
+    return result === key ? catName : result;
+  }
+
   // ── Expose globally ──
   window.t = t;
+  window.tCat = tCat;
   window.getLocale = getLocale;
   window.applyI18n = applyI18n;
   window.setLanguage = setLanguage;

@@ -55,7 +55,8 @@ nav.sidebar > hr {
 .side-card:hover { transform: none !important; }
 
 .side-card.active {
-  background: rgba(108, 99, 255, 0.15) !important;
+  background: linear-gradient(135deg, rgba(99,102,241,0.25), rgba(59,130,246,0.18)) !important;
+  box-shadow: inset 0 0 0 1px rgba(99,102,241,0.25) !important;
 }
 
 .side-card i {
@@ -143,14 +144,15 @@ main {
    ============================================ */
 
 .settings-wrap:has(.settings-card.active) {
-  background: rgba(108, 99, 255, 0.15) !important;
+  background: linear-gradient(135deg, rgba(99,102,241,0.25), rgba(59,130,246,0.18)) !important;
+  box-shadow: inset 0 0 0 1px rgba(99,102,241,0.25) !important;
 }
 
 .settings-card.active i,
-.settings-card.active h3 { color: #a89fff !important; }
+.settings-card.active h3 { color: #a5b4fc !important; }
 
 .side-card.active i,
-.side-card.active h3 { color: #a89fff !important; }
+.side-card.active h3 { color: #a5b4fc !important; }
 
 /* ============================================
    GENERAL MOBILE FIXES
@@ -256,8 +258,8 @@ footer.dashboard-footer,
 
 /* ---- EXPENSES grids ---- */
 .kpi-analytics-grid {
-  grid-template-columns: 1fr 1fr !important;
-  gap: 8px !important;
+  grid-template-columns: 1fr !important;
+  gap: 12px !important;
 }
 
 /* Any other auto-fit grid → single column */
@@ -305,23 +307,25 @@ canvas {
 
 /* Charts toggle button */
 .charts-toggle-btn {
-  display: flex !important;
+  display: inline-flex !important;
   align-items: center !important;
-  gap: 8px !important;
-  width: 100% !important;
-  padding: 12px 16px !important;
-  background: #1e2235 !important;
-  border: 1px solid rgba(255,255,255,0.08) !important;
-  border-radius: 12px !important;
-  color: #e6eef8 !important;
+  gap: 6px !important;
+  width: auto !important;
+  padding: 10px 18px !important;
+  min-height: 42px !important;
+  background: linear-gradient(135deg, #6366f1, #3b82f6 60%, #06b6d4) !important;
+  border: none !important;
+  border-radius: 22px !important;
+  color: #fff !important;
   font-size: 14px !important;
-  font-weight: 500 !important;
+  font-weight: 600 !important;
   cursor: pointer !important;
-  margin: 8px 0 !important;
+  margin: 0 !important;
+  box-shadow: 0 3px 10px rgba(99,102,241,0.35) !important;
 }
 
 .charts-toggle-btn i:last-child {
-  margin-left: auto !important;
+  margin-left: 0 !important;
   transition: transform 0.2s !important;
 }
 

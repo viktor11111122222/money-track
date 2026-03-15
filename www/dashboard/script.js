@@ -1,14 +1,6 @@
-// Set Chart.js global defaults for dark mode
-if (typeof Chart !== 'undefined') {
-  Chart.defaults.color = '#e5e7eb';
-}
-document.addEventListener('DOMContentLoaded', () => {
-  if (typeof Chart !== 'undefined') Chart.defaults.color = '#e5e7eb';
-});
-
 // ===== DATA MANAGEMENT =====
 const DEFAULT_MONTHLY_INCOME = 100000;
-function getCurrency(){ try { var s = JSON.parse(localStorage.getItem('mt_settings_v1')); var c = s && s.preferences && s.preferences.currency; var m = { RSD:' RSD', USD:' $', EUR:' €', GBP:' £', JPY:' ¥', AUD:' A$', CAD:' C$', CNY:' ¥', INR:' ₹', BRL:' R$', CHF:' CHF', SEK:' kr', NOK:' kr' }; return m[c] || ' RSD'; } catch(e){ return ' RSD'; } }
+function getCurrency(){ try { var s = JSON.parse(localStorage.getItem('mt_settings_v1')); var c = s && s.preferences && s.preferences.currency; var m = { RSD:' RSD', USD:' $', EUR:' €', GBP:' £', JPY:' ¥', AUD:' A$', CAD:' C$', CNY:' ¥', INR:' ₹', BRL:' R$', CHF:' CHF', SEK:' kr', NOK:' kr' }; return m[c] || ' €'; } catch(e){ return ' €'; } }
 const CURRENCY = getCurrency();
 const API_BASE = window.__API_BASE__ || ((window.location.port === '5500' || window.location.port === '5501') ? 'http://localhost:8080/api' : '/api');
 const TOKEN_KEY = 'sharedBudgetToken';
@@ -413,7 +405,8 @@ function renderSpendingsSummary(expenses) {
   });
   const top = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1])[0];
   if (spendingsTopCategory) {
-    spendingsTopCategory.textContent = top ? `${top[0]} · ${top[1].toLocaleString()}${CURRENCY}` : '—';
+    const topCatName = top ? (typeof tCat === 'function' ? tCat(top[0]) : top[0]) : null;
+    spendingsTopCategory.textContent = top ? `${topCatName} · ${top[1].toLocaleString()}${CURRENCY}` : '—';
   }
 }
 
@@ -429,9 +422,10 @@ function renderSpendingsCategories(expenses) {
     return;
   }
   spendingsCategories.innerHTML = entries.map(([name, amount]) => {
+    const displayName = typeof tCat === 'function' ? tCat(name) : name;
     return `
       <div class="spendings-category-item">
-        <span class="spendings-category-name">${name}</span>
+        <span class="spendings-category-name">${displayName}</span>
         <span class="spendings-category-amount">-${amount.toLocaleString()}${CURRENCY}</span>
       </div>
     `;
@@ -450,7 +444,7 @@ function renderSpendingsTransactions(expenses) {
     return `
       <li class="spendings-transaction-item">
         <div class="spendings-transaction-meta">
-          <span class="spendings-transaction-title">${exp.category}</span>
+          <span class="spendings-transaction-title">${typeof tCat === 'function' ? tCat(exp.category) : exp.category}</span>
           <span class="spendings-transaction-sub">${date} · ${time}</span>
         </div>
         <span class="spendings-transaction-amount">-${exp.amount.toLocaleString()}${CURRENCY}</span>
@@ -464,7 +458,7 @@ function renderSpendingsModal() {
     const current = spendingsCategory.value || 'all';
     const options = ['all', ...appData.categories];
     spendingsCategory.innerHTML = options.map(opt => {
-      const label = opt === 'all' ? 'All' : opt;
+      const label = opt === 'all' ? (typeof t === 'function' ? t('dash.all') : 'All') : (typeof tCat === 'function' ? tCat(opt) : opt);
       return `<option value="${opt}">${label}</option>`;
     }).join('');
     spendingsCategory.value = current;
@@ -644,17 +638,22 @@ function renderMenu() {
   appData.categories.forEach(cat => {
     const d = document.createElement('div');
     d.className = 'option';
-    d.textContent = cat;
+    d.dataset.value = cat; // always English for storage
+    d.textContent = typeof tCat === 'function' ? tCat(cat) : cat;
     menu.appendChild(d);
   });
   const add = document.createElement('div');
   add.className = 'option add-option';
   add.dataset.add = 'true';
-  add.textContent = '+ Add category';
+  add.textContent = typeof t === 'function' ? t('dash.addCategory') : '+ Add category';
   menu.appendChild(add);
 }
 
 renderMenu();
+// Set initial data-value for the default selected category
+if (selected && appData.categories.length > 0) {
+  selected.dataset.value = appData.categories[0];
+}
 
 btn.addEventListener("click", (e) => {
   e.stopPropagation();
@@ -675,6 +674,7 @@ menu.addEventListener('click', (e) => {
   }
 
   selected.textContent = opt.textContent;
+  selected.dataset.value = opt.dataset.value || opt.textContent;
   menu.style.display = 'none';
   arrow.style.transform = 'rotate(0deg)';
 });
@@ -759,6 +759,7 @@ function showAddForm() {
     }
     renderMenu();
     selected.textContent = v;
+    selected.dataset.value = v;
     menu.style.display = 'none';
     arrow.style.transform = 'rotate(0deg)';
   });
@@ -781,7 +782,7 @@ document.addEventListener("click", (e) => {
 // ===== ADD EXPENSE FUNCTIONALITY =====
 addExpenseBtn.addEventListener('click', async () => {
   const amount = parseFloat(amountInput.value);
-  const category = selected.textContent;
+  const category = selected.dataset.value || selected.textContent;
 
   if (!amount || amount <= 0) {
     alert('Please enter a valid amount');
@@ -844,6 +845,7 @@ addExpenseBtn.addEventListener('click', async () => {
   updateDashboard();
   updateChart();
   updateTagsUI();
+  checkLimitAlert(category);
 });
 
 // ===== ADD SAVINGS FUNCTIONALITY =====
@@ -922,9 +924,14 @@ function updateDashboard() {
   document.querySelectorAll('.summary-cards .card:nth-child(2) .amount')[0].textContent = 
     appData.income.toLocaleString() + getCurrency();
 
-  // Update Savings
-  document.querySelectorAll('.summary-cards .card:nth-child(3) .amount')[0].textContent = 
-    getSavings().toLocaleString() + getCurrency();
+  // Update Balance
+  const balance = appData.income - getTotalSpent();
+  const balanceCard = document.querySelectorAll('.summary-cards .card:nth-child(3)')[0];
+  if (balanceCard) {
+    balanceCard.querySelector('.amount').textContent = balance.toLocaleString() + getCurrency();
+    balanceCard.classList.toggle('balance-negative', balance < 0);
+    balanceCard.classList.toggle('balance-positive', balance >= 0);
+  }
 
   // Update sidebar stats
   updateSidebarStats();
@@ -956,6 +963,7 @@ function updateDashboard() {
 
 function updateRecentTransactions() {
   const txList = document.querySelector('.transactions ul');
+  if (!txList) return;
   txList.innerHTML = '';
 
   // Filter based on active tag filter
@@ -1138,9 +1146,7 @@ function updateLimitWarnings(overLimitList) {
 }
 
 // ===== CATEGORY LIMITS FUNCTIONALITY =====
-let limitsEditMode = false;
 let limitsExpanded = false;
-let limitsScrollPosition = 0;
 
 function updateCategoryLimits() {
   const limitsContainer = document.querySelector('.limits-list');
@@ -1148,7 +1154,8 @@ function updateCategoryLimits() {
   if (!limitsContainer) return;
 
   limitsContainer.innerHTML = '';
-  
+
+  const spending = getSpendingByCategory();
   const categoriesToShow = limitsExpanded ? appData.categories : appData.categories.slice(0, 3);
   const hasMore = appData.categories.length > 3;
 
@@ -1156,224 +1163,175 @@ function updateCategoryLimits() {
     const item = document.createElement('div');
     item.className = 'limit-item';
     item.dataset.category = cat;
-    
+
     const color = getCategoryColor(cat);
+    const catLabel = typeof tCat === 'function' ? tCat(cat) : cat;
+    const limit = appData.categoryLimits[cat];
+    const spent = spending[cat] || 0;
 
-    const categoryName = document.createElement('span');
-    categoryName.className = 'limit-category-name';
-    categoryName.innerHTML = `<span style="display: inline-block; width: 10px; height: 10px; border-radius: 50%; background: ${color}; margin-right: 8px;"></span>${cat}`;
+    const top = document.createElement('div');
+    top.className = 'limit-item-top';
 
-    const limitValue = document.createElement('span');
-    limitValue.className = 'limit-value';
-    
-    if (appData.categoryLimits[cat]) {
-      limitValue.textContent = appData.categoryLimits[cat].toLocaleString() + getCurrency();
-      
-      // Add delete button for existing limits (only visible in edit mode)
-      const deleteBtn = document.createElement('button');
-      deleteBtn.className = 'limit-delete-btn';
-      if (!limitsEditMode) {
-        deleteBtn.style.display = 'none';
-      }
-      deleteBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
-      deleteBtn.title = 'Delete limit';
-      deleteBtn.addEventListener('click', (evt) => {
-        evt.stopPropagation();
-        deleteCategoryLimit(cat);
-      });
-      item.appendChild(categoryName);
-      item.appendChild(limitValue);
-      item.appendChild(deleteBtn);
+    const nameEl = document.createElement('span');
+    nameEl.className = 'limit-category-name';
+    nameEl.innerHTML = `<span class="limit-dot" style="background:${color};"></span>${catLabel}`;
+
+    const valueEl = document.createElement('span');
+    valueEl.className = 'limit-value';
+
+    if (limit) {
+      const pct = Math.min(100, Math.round((spent / limit) * 100));
+      const isOver = spent > limit;
+      valueEl.textContent = `${spent.toLocaleString()} / ${limit.toLocaleString()}${getCurrency()}`;
+      valueEl.style.color = isOver ? '#ef4444' : '';
+
+      top.appendChild(nameEl);
+      top.appendChild(valueEl);
+      item.appendChild(top);
+
+      const barWrap = document.createElement('div');
+      barWrap.className = 'limit-mini-bar';
+      const barFill = document.createElement('div');
+      barFill.className = 'limit-mini-fill' + (isOver ? ' danger' : pct > 80 ? ' warning' : '');
+      barFill.style.width = pct + '%';
+      if (!isOver && pct <= 80) barFill.style.background = color;
+      barWrap.appendChild(barFill);
+      item.appendChild(barWrap);
     } else {
-      limitValue.textContent = 'Set limit';
-      limitValue.style.opacity = '0.5';
-      item.appendChild(categoryName);
-      item.appendChild(limitValue);
+      valueEl.textContent = 'Set limit';
+      valueEl.className = 'limit-value unset';
+      top.appendChild(nameEl);
+      top.appendChild(valueEl);
+      item.appendChild(top);
     }
 
+    item.addEventListener('click', () => openEditLimitsModal(cat));
     limitsContainer.appendChild(item);
-
-    // Click handler to show input (disabled in edit mode)
-    if (!limitsEditMode) {
-      item.addEventListener('click', (evt) => {
-        showLimitInput(cat, item, evt);
-      });
-    }
   });
-  
-  // Show/hide the expand button
+
   if (showAllBtn) {
     showAllBtn.style.display = hasMore ? 'flex' : 'none';
   }
 }
 
 function toggleLimitsExpanded() {
-  const limitsSection = document.querySelector('.category-limits-compact');
-  const limitsList = document.querySelector('.limits-list');
-  
   limitsExpanded = !limitsExpanded;
   const showAllText = document.getElementById('showAllText');
   const showAllIcon = document.getElementById('showAllIcon');
-  
-  if (limitsExpanded) {
-    if (showAllText) showAllText.textContent = 'Show less';
-    if (showAllIcon) showAllIcon.style.transform = 'rotate(180deg)';
-    updateCategoryLimits();
-  } else {
-    if (showAllText) showAllText.textContent = 'Show all';
-    if (showAllIcon) showAllIcon.style.transform = 'rotate(0deg)';
-    
-    // Start scroll animation
-    if (limitsSection) {
-      limitsSection.scrollIntoView({ behavior: 'smooth', block: 'center' });
-    }
-    
-    // Add collapsing class for animation
-    if (limitsList) {
-      limitsList.classList.add('collapsing');
-    }
-    
-    // Update content after scroll completes
-    setTimeout(() => {
-      updateCategoryLimits();
-      if (limitsList) {
-        limitsList.classList.remove('collapsing');
-      }
-    }, 600);
-    return;
-  }
-}
-
-function toggleLimitsEditMode() {
-  limitsEditMode = !limitsEditMode;
-  const editBtn = document.getElementById('editLimitsBtn');
-  const limitsSection = document.querySelector('.category-limits-compact');
-  const backdrop = document.getElementById('limitsBackdrop');
-  
-  if (limitsEditMode) {
-    editBtn.textContent = 'Done';
-    editBtn.classList.add('active');
-    limitsSection.classList.add('edit-mode');
-    if (backdrop) backdrop.classList.add('active');
-    document.body.style.overflow = 'hidden';
-  } else {
-    editBtn.textContent = 'Edit Limits';
-    editBtn.classList.remove('active');
-    limitsSection.classList.remove('edit-mode');
-    if (backdrop) backdrop.classList.remove('active');
-    document.body.style.overflow = '';
-  }
-  
+  if (showAllText) showAllText.textContent = limitsExpanded ? 'Show less' : 'Show all';
+  if (showAllIcon) showAllIcon.style.transform = limitsExpanded ? 'rotate(180deg)' : 'rotate(0deg)';
   updateCategoryLimits();
 }
 
-// Initialize edit button
 document.addEventListener('DOMContentLoaded', () => {
-  const editBtn = document.getElementById('editLimitsBtn');
-  if (editBtn) {
-    editBtn.addEventListener('click', toggleLimitsEditMode);
-  }
-  
   const showAllBtn = document.getElementById('limitsShowAll');
-  if (showAllBtn) {
-    showAllBtn.addEventListener('click', toggleLimitsExpanded);
+  if (showAllBtn) showAllBtn.addEventListener('click', toggleLimitsExpanded);
+
+  const editLimitsModalClose = document.getElementById('editLimitsModalClose');
+  if (editLimitsModalClose) {
+    editLimitsModalClose.addEventListener('click', () => {
+      document.getElementById('editLimitsModal').style.display = 'none';
+    });
   }
-  
-  const backdrop = document.getElementById('limitsBackdrop');
-  if (backdrop) {
-    backdrop.addEventListener('click', () => {
-      if (limitsEditMode) {
-        toggleLimitsEditMode();
-      }
+  const editLimitsModal = document.getElementById('editLimitsModal');
+  if (editLimitsModal) {
+    editLimitsModal.addEventListener('click', (e) => {
+      if (e.target === editLimitsModal) editLimitsModal.style.display = 'none';
     });
   }
 });
 
-function showLimitInput(category, itemElement, evt) {
-  const isEditing = itemElement.classList.contains('editing');
-  const isSafeTarget = evt && (evt.target.closest('.limit-input') || evt.target.closest('.limit-save-btn') || evt.target.closest('.limit-cancel-btn'));
+function openEditLimitsModal(focusCategory) {
+  const modal = document.getElementById('editLimitsModal');
+  const list = document.getElementById('editLimitsList');
+  if (!modal || !list) return;
 
-  // Toggle close if already open and the click is outside the input/actions
-  if (isEditing && !isSafeTarget) {
-    updateCategoryLimits();
-    return;
-  }
+  const spending = getSpendingByCategory();
+  list.innerHTML = '';
 
-  itemElement.classList.add('editing');
+  appData.categories.forEach(cat => {
+    const color = getCategoryColor(cat);
+    const catLabel = typeof tCat === 'function' ? tCat(cat) : cat;
+    const currentLimit = appData.categoryLimits[cat] || '';
+    const spent = spending[cat] || 0;
 
-  // Clear existing content
-  itemElement.innerHTML = '';
-  itemElement.style.flexDirection = 'column';
-  itemElement.style.gap = '8px';
+    const row = document.createElement('div');
+    row.className = 'edit-limit-row';
 
-  const inputWrapper = document.createElement('div');
-  inputWrapper.className = 'limit-actions-row';
+    const label = document.createElement('div');
+    label.className = 'edit-limit-label';
+    label.innerHTML = `<span class="limit-dot" style="background:${color};"></span><span>${catLabel}</span>`;
+    if (spent > 0) {
+      const spentNote = document.createElement('span');
+      spentNote.className = 'edit-limit-spent';
+      spentNote.textContent = `spent: ${spent.toLocaleString()}${getCurrency()}`;
+      label.appendChild(spentNote);
+    }
 
-  const input = document.createElement('input');
-  input.type = 'number';
-  input.placeholder = 'Enter limit';
-  input.className = 'limit-input';
-  input.value = appData.categoryLimits[category] || '';
+    const inputRow = document.createElement('div');
+    inputRow.className = 'edit-limit-input-row';
 
-  const saveBtn = document.createElement('button');
-  saveBtn.textContent = 'Save';
-  saveBtn.className = 'limit-save-btn limit-action-btn';
+    const input = document.createElement('input');
+    input.type = 'number';
+    input.className = 'edit-limit-input';
+    input.placeholder = 'No limit';
+    input.min = '1';
+    input.value = currentLimit;
+    input.dataset.cat = cat;
 
-  const cancelBtn = document.createElement('button');
-  cancelBtn.textContent = 'Cancel';
-  cancelBtn.className = 'limit-cancel-btn limit-action-btn';
+    const saveBtn = document.createElement('button');
+    saveBtn.className = 'edit-limit-save-btn';
+    saveBtn.textContent = 'Save';
+    saveBtn.addEventListener('click', () => {
+      const val = parseFloat(input.value);
+      if (val > 0) {
+        appData.categoryLimits[cat] = val;
+      } else {
+        delete appData.categoryLimits[cat];
+      }
+      saveData();
+      updateCategoryLimits();
+      updateBudgetProgress();
+      openEditLimitsModal(); // refresh modal
+    });
 
-  inputWrapper.appendChild(input);
-  inputWrapper.appendChild(saveBtn);
-  inputWrapper.appendChild(cancelBtn);
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') saveBtn.click();
+    });
 
-  const categoryLabel = document.createElement('span');
-  categoryLabel.textContent = category;
-  categoryLabel.style.fontSize = '13px';
-  categoryLabel.style.fontWeight = '500';
-  categoryLabel.style.color = '#64748b';
+    inputRow.appendChild(input);
+    inputRow.appendChild(saveBtn);
 
-  itemElement.appendChild(categoryLabel);
-  itemElement.appendChild(inputWrapper);
+    if (currentLimit) {
+      const delBtn = document.createElement('button');
+      delBtn.className = 'edit-limit-delete-btn';
+      delBtn.innerHTML = '<i class="fa-solid fa-trash"></i>';
+      delBtn.title = 'Remove limit';
+      delBtn.addEventListener('click', () => {
+        delete appData.categoryLimits[cat];
+        saveData();
+        updateCategoryLimits();
+        updateBudgetProgress();
+        openEditLimitsModal();
+      });
+      inputRow.appendChild(delBtn);
+    }
 
-  // Prevent inner clicks from toggling the card closed
-  [input, saveBtn, cancelBtn].forEach(el => {
-    el.addEventListener('click', (e) => e.stopPropagation());
-  });
+    row.appendChild(label);
+    row.appendChild(inputRow);
+    list.appendChild(row);
 
-  // Auto-focus input
-  requestAnimationFrame(() => {
-    input.focus();
-    input.select();
-  });
-
-  // Save on button click
-  saveBtn.addEventListener('click', () => {
-    saveCategoryLimit(category, input.value);
-  });
-
-  // Save on Enter key
-  input.addEventListener('keydown', (e) => {
-    if (e.key === 'Enter') {
-      e.preventDefault();
-      saveCategoryLimit(category, input.value);
+    if (focusCategory === cat) {
+      requestAnimationFrame(() => input.focus());
     }
   });
 
-  // Cancel/close
-  cancelBtn.addEventListener('click', () => {
-    updateCategoryLimits();
-  });
+  modal.style.display = 'flex';
 }
 
 function saveCategoryLimit(category, rawValue) {
   const value = parseFloat(rawValue);
-
-  if (!value || value <= 0) {
-    alert('Please enter a valid limit');
-    return;
-  }
-
+  if (!value || value <= 0) return;
   appData.categoryLimits[category] = value;
   saveData();
   updateCategoryLimits();
@@ -1381,12 +1339,72 @@ function saveCategoryLimit(category, rawValue) {
 }
 
 function deleteCategoryLimit(category) {
-  if (!confirm(`Delete limit for ${category}?`)) return;
-  
   delete appData.categoryLimits[category];
   saveData();
   updateCategoryLimits();
   updateBudgetProgress();
+}
+
+// ===== LIMIT EXCEEDED ALERT =====
+const LIMIT_SUGGESTIONS = {
+  'Food': 'Try meal prepping or cooking at home more often.',
+  'Transport': 'Consider public transport or carpooling to save money.',
+  'Entertainment': 'Look for free events or reduce subscriptions.',
+  'Shopping': 'Make a shopping list and stick to it before buying.',
+  'Health': 'Check if your insurance covers some of these expenses.',
+  'Rent': 'Review if any fixed costs could be renegotiated.',
+  'Education': 'Look for free or discounted learning resources.',
+  'Travel': 'Book in advance or look for off-season deals.',
+};
+
+let _limitAlertTimeout = null;
+
+function checkLimitAlert(category) {
+  const limit = appData.categoryLimits[category];
+  if (!limit) return;
+  const spending = getSpendingByCategory();
+  const spent = spending[category] || 0;
+  if (spent <= limit) return;
+  const over = spent - limit;
+  const suggestion = LIMIT_SUGGESTIONS[category] || 'Try reviewing your recent expenses and cutting back where possible.';
+  showLimitAlert(category, spent, limit, over, suggestion);
+}
+
+function showLimitAlert(category, spent, limit, over, suggestion) {
+  const banner = document.getElementById('limitAlertBanner');
+  if (!banner) return;
+  const color = getCategoryColor(category);
+  const cur = getCurrency();
+  banner.innerHTML = `
+    <div class="limit-alert-inner">
+      <div class="limit-alert-top">
+        <span class="limit-alert-icon">⚠️</span>
+        <div class="limit-alert-info">
+          <div class="limit-alert-title">Limit exceeded — <span style="color:${color}">${category}</span></div>
+          <div class="limit-alert-sub">Spent ${spent.toLocaleString()}${cur} · ${over.toLocaleString()}${cur} over the limit</div>
+        </div>
+        <button class="limit-alert-close" onclick="document.getElementById('limitAlertBanner').style.display='none'">
+          <i class="fa-solid fa-xmark"></i>
+        </button>
+      </div>
+      <div class="limit-alert-suggestion">💡 ${suggestion}</div>
+    </div>
+  `;
+  banner.style.display = 'block';
+  clearTimeout(_limitAlertTimeout);
+  _limitAlertTimeout = setTimeout(() => { banner.style.display = 'none'; }, 9000);
+}
+
+function checkAllLimitAlerts() {
+  const spending = getSpendingByCategory();
+  const exceeded = Object.keys(appData.categoryLimits || {}).filter(cat => {
+    return (spending[cat] || 0) > appData.categoryLimits[cat];
+  });
+  if (exceeded.length === 0) return;
+  const cat = exceeded[0];
+  const spent = spending[cat];
+  const limit = appData.categoryLimits[cat];
+  checkLimitAlert(cat);
 }
 
 // ===== CHART.JS SETUP =====
@@ -1641,8 +1659,9 @@ function buildChartData() {
   }
 
   const chartData = { ...spending };
+  const _tCat = typeof tCat === 'function' ? tCat : (c => c);
   return {
-    labels: Object.keys(chartData),
+    labels: Object.keys(chartData).map(cat => _tCat(cat)),
     data: Object.values(chartData),
     colors: Object.keys(chartData).map(cat => getCategoryColor(cat)),
     isEmpty: false
@@ -1664,26 +1683,33 @@ function initChart() {
 
   if (chartInstance) chartInstance.destroy();
 
+  const isDark = document.documentElement.classList.contains('dark-theme');
+  const bgColors = isEmpty ? ['#e5e7eb'] : labels.map((_, i) => solidColors[i % solidColors.length]);
+  const borderCol = isEmpty ? (isDark ? '#1e293b' : '#e5e7eb') : (isDark ? '#1e293b' : '#ffffff');
+  const legendColor = isDark ? '#e2e8f0' : '#374151';
+  const emptyState = document.getElementById('chartEmptyState');
+  if (emptyState) emptyState.style.display = isEmpty ? 'block' : 'none';
+
   chartInstance = new Chart(ctx, {
     type: 'doughnut',
     data: {
       labels,
       datasets: [{
         data,
-        backgroundColor: labels.map((_, i) => solidColors[i % solidColors.length]),
-        borderColor: '#ffffff',
-        borderWidth: 2
+        backgroundColor: bgColors,
+        borderColor: borderCol,
+        borderWidth: isEmpty ? 0 : 2
       }]
     },
     options: {
-      responsive: true,
+      responsive: false,
       maintainAspectRatio: false,
       animation: { duration: 600 },
       plugins: {
         legend: {
           display: !isEmpty,
           position: 'bottom',
-          labels: { color: '#e5e7eb', font: { size: 12 }, padding: 12, boxWidth: 12 }
+          labels: { color: legendColor, font: { size: 12 }, padding: 12, boxWidth: 12, boxHeight: 12, borderRadius: 3, useBorderRadius: true }
         },
         tooltip: {
           enabled: !isEmpty,
@@ -1709,10 +1735,18 @@ function updateChart() {
       'rgba(236,72,153,0.85)', 'rgba(20,184,166,0.85)', 'rgba(14,165,233,0.85)',
       'rgba(132,204,22,0.85)'
     ];
+    const isDark = document.documentElement.classList.contains('dark-theme');
+    const bgColors = isEmpty ? ['#e5e7eb'] : labels.map((_, i) => solidColors[i % solidColors.length]);
+    const borderCol = isEmpty ? (isDark ? '#1e293b' : '#e5e7eb') : (isDark ? '#1e293b' : '#ffffff');
+    const emptyState = document.getElementById('chartEmptyState');
+    if (emptyState) emptyState.style.display = isEmpty ? 'block' : 'none';
     chartInstance.data.labels = labels;
     chartInstance.data.datasets[0].data = data;
-    chartInstance.data.datasets[0].backgroundColor = labels.map((_, i) => solidColors[i % solidColors.length]);
+    chartInstance.data.datasets[0].backgroundColor = bgColors;
+    chartInstance.data.datasets[0].borderColor = borderCol;
+    chartInstance.data.datasets[0].borderWidth = isEmpty ? 0 : 2;
     chartInstance.options.plugins.legend.display = !isEmpty;
+    chartInstance.options.plugins.legend.labels.color = isDark ? '#e2e8f0' : '#374151';
     chartInstance.options.plugins.tooltip.enabled = !isEmpty;
     chartInstance.update();
   }
@@ -1734,7 +1768,9 @@ function buildDailySpendingData(year, month) {
 
   appData.expenses.forEach(e => {
     if (e.type === 'income' || e.type === 'savings') return;
-    const d = new Date(e.timestamp || Date.now());
+    const ts = e.timestamp || (e.date ? new Date(e.date).getTime() : null);
+    if (!ts) return;
+    const d = new Date(ts);
     if (d.getFullYear() === year && d.getMonth() === month) {
       const dayIdx = d.getDate() - 1;
       data[dayIdx] += e.amount;
@@ -1745,19 +1781,30 @@ function buildDailySpendingData(year, month) {
 }
 
 function getHeatColor(amount) {
-  if (!amount || amount <= 0) return '#dbeafe'; // subtle light blue for zero spending
-  if (amount < 2000) return '#d9f99d'; // very light green
-  if (amount < 10000) return '#86efac'; // light green
-  if (amount < 20000) return '#34d399'; // green
-  if (amount < 30000) return '#fbbf24'; // amber
-  if (amount < 50000) return '#f97316'; // orange
-  return '#ef4444'; // red for >= 50k
+  const dark = document.documentElement.classList.contains('dark-theme');
+  if (!amount || amount <= 0) return dark ? 'rgba(255,255,255,0.06)' : '#dbeafe';
+  if (dark) {
+    if (amount < 2000) return 'rgba(134,239,172,0.35)';
+    if (amount < 10000) return 'rgba(52,211,153,0.5)';
+    if (amount < 20000) return 'rgba(16,185,129,0.6)';
+    if (amount < 30000) return 'rgba(251,191,36,0.55)';
+    if (amount < 50000) return 'rgba(249,115,22,0.65)';
+    return 'rgba(239,68,68,0.75)';
+  }
+  if (amount < 2000) return '#bbf7d0';
+  if (amount < 10000) return '#86efac';
+  if (amount < 20000) return '#34d399';
+  if (amount < 30000) return '#fbbf24';
+  if (amount < 50000) return '#f97316';
+  return '#ef4444';
 }
 
 function getDaySpendingBreakdown(year, month, dayNum) {
   const dayExpenses = appData.expenses.filter(e => {
     if (e.type === 'income' || e.type === 'savings') return false;
-    const d = new Date(e.timestamp || Date.now());
+    const ts = e.timestamp || (e.date ? new Date(e.date).getTime() : null);
+    if (!ts) return false;
+    const d = new Date(ts);
     return d.getFullYear() === year && d.getMonth() === month && d.getDate() === dayNum;
   });
 
@@ -1902,7 +1949,9 @@ function getTopSpendingDays() {
       // Find top category for this day
       const dayExpenses = appData.expenses.filter(e => {
         if (e.type === 'income' || e.type === 'savings') return false;
-        const d = new Date(e.timestamp || Date.now());
+        const ts = e.timestamp || (e.date ? new Date(e.date).getTime() : null);
+        if (!ts) return false;
+        const d = new Date(ts);
         return d.getFullYear() === year && d.getMonth() === month && d.getDate() === dayNum;
       });
       
@@ -2022,9 +2071,11 @@ function buildComparisonData() {
 
   const curr = getMonthSpendingByCategory(m, y);
   const prev = getMonthSpendingByCategory(prevM, prevY);
-  const labels = [...appData.categories];
-  const currentData = labels.map(c => curr[c] || 0);
-  const prevData = labels.map(c => prev[c] || 0);
+  const engLabels = [...appData.categories];
+  const _tCat2 = typeof tCat === 'function' ? tCat : (c => c);
+  const labels = engLabels.map(c => _tCat2(c));
+  const currentData = engLabels.map(c => curr[c] || 0);
+  const prevData = engLabels.map(c => prev[c] || 0);
   return { labels, currentData, prevData };
 }
 
@@ -2122,7 +2173,8 @@ function updateBudgetProgress() {
     const text = item.querySelector('.progress-text');
 
     if (header) {
-      header.innerHTML = `<span style="display: flex; align-items: center; gap: 8px;"><span style="width: 12px; height: 12px; border-radius: 3px; background: ${color};"></span>${cat}</span><span>${spent.toLocaleString()}${CURRENCY} / ${limit.toLocaleString()}${CURRENCY}</span>`;
+      const catTr = typeof tCat === 'function' ? tCat(cat) : cat;
+      header.innerHTML = `<span style="display: flex; align-items: center; gap: 8px;"><span style="width: 12px; height: 12px; border-radius: 3px; background: ${color};"></span>${catTr}</span><span>${spent.toLocaleString()}${CURRENCY} / ${limit.toLocaleString()}${CURRENCY}</span>`;
     }
 
     if (fill) {
@@ -2214,32 +2266,37 @@ function checkPayDay() {
 
 // ===== RECURRING EXPENSES =====
 function checkAndAddRecurringExpenses() {
-  const currentMonth = new Date().getMonth();
-  
-  // Check if we're in a new month
-  if (appData.lastMonthCheck !== currentMonth) {
-    // Add all active recurring expenses
-    appData.recurringExpenses.forEach(recurring => {
-      if (recurring.isActive) {
-        const newExpense = {
-          id: Date.now() + Math.random(),
-          amount: recurring.amount,
-          category: recurring.name,
-          date: new Date().toLocaleDateString(getLocale()),
-          time: new Date().toLocaleTimeString(getLocale(), { hour: '2-digit', minute: '2-digit' }),
-          timestamp: Date.now(),
-          type: 'recurring'
-        };
-        appData.expenses.push(newExpense);
-      }
-    });
-    
-    appData.lastMonthCheck = currentMonth;
-    saveData();
-  }
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+  const currentDay = now.getDate();
+  let changed = false;
+
+  appData.recurringExpenses.forEach(recurring => {
+    if (!recurring.isActive) return;
+    const day = recurring.dayOfMonth || 1;
+    const alreadyAdded = recurring.lastAddedYear === currentYear && recurring.lastAddedMonth === currentMonth;
+    if (!alreadyAdded && currentDay >= day) {
+      const newExpense = {
+        id: Date.now() + Math.random(),
+        amount: recurring.amount,
+        category: recurring.name,
+        date: new Date().toLocaleDateString(getLocale()),
+        time: new Date().toLocaleTimeString(getLocale(), { hour: '2-digit', minute: '2-digit' }),
+        timestamp: Date.now(),
+        type: 'recurring'
+      };
+      appData.expenses.push(newExpense);
+      recurring.lastAddedYear = currentYear;
+      recurring.lastAddedMonth = currentMonth;
+      changed = true;
+    }
+  });
+
+  if (changed) saveData();
 }
 
-function addRecurringExpense(name, amount) {
+function addRecurringExpense(name, amount, dayOfMonth) {
   if (!name || !amount) {
     alert(t('js.fillNameAmount'));
     return;
@@ -2249,22 +2306,11 @@ function addRecurringExpense(name, amount) {
     id: Date.now(),
     name: name,
     amount: parseFloat(amount),
-    isActive: true
+    dayOfMonth: Math.min(31, Math.max(1, parseInt(dayOfMonth) || 1)),
+    isActive: false
   };
 
   appData.recurringExpenses.push(recurring);
-  
-  // Immediately add to current month expenses
-  const newExpense = {
-    id: Date.now() + Math.random(),
-    amount: parseFloat(amount),
-    category: name,
-    date: new Date().toLocaleDateString(getLocale()),
-    time: new Date().toLocaleTimeString(getLocale(), { hour: '2-digit', minute: '2-digit' }),
-    timestamp: Date.now(),
-    type: 'recurring'
-  };
-  appData.expenses.push(newExpense);
   
   saveData();
   updateRecurringExpensesList();
@@ -2277,24 +2323,75 @@ function addRecurringExpense(name, amount) {
   // Clear form
   document.getElementById('recurringName').value = '';
   document.getElementById('recurringAmount').value = '';
+  selectedRecurringDay = null;
+  const dayLabel = document.getElementById('recurringDayLabel');
+  if (dayLabel) dayLabel.textContent = 'Day of month';
+  const dayBtn = document.getElementById('recurringDayBtn');
+  if (dayBtn) dayBtn.classList.remove('selected');
+  const popup = document.getElementById('dayPickerPopup');
+  if (popup) popup.querySelectorAll('.day-cell').forEach(c => c.classList.remove('active'));
 }
 
 function toggleRecurringExpense(id) {
   const recurring = appData.recurringExpenses.find(r => r.id === id);
-  if (recurring) {
-    recurring.isActive = !recurring.isActive;
-    saveData();
-    updateRecurringExpensesList();
-    updateRecurringInsight();
+  if (!recurring) return;
+
+  recurring.isActive = !recurring.isActive;
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+  const currentDay = now.getDate();
+
+  if (recurring.isActive) {
+    // Activating: add expense for this month if day has already passed and not yet added
+    const alreadyAdded = recurring.lastAddedYear === currentYear && recurring.lastAddedMonth === currentMonth;
+    if (!alreadyAdded && currentDay >= (recurring.dayOfMonth || 1)) {
+      appData.expenses.push({
+        id: Date.now() + Math.random(),
+        amount: recurring.amount,
+        category: recurring.name,
+        date: now.toLocaleDateString(getLocale()),
+        time: now.toLocaleTimeString(getLocale(), { hour: '2-digit', minute: '2-digit' }),
+        timestamp: Date.now(),
+        type: 'recurring'
+      });
+      recurring.lastAddedYear = currentYear;
+      recurring.lastAddedMonth = currentMonth;
+    }
+  } else {
+    // Deactivating: remove this month's recurring expenses for this item
+    appData.expenses = appData.expenses.filter(e => {
+      if (e.type !== 'recurring' || e.category !== recurring.name) return true;
+      const d = e.timestamp ? new Date(e.timestamp) : new Date(e.date);
+      return !(d.getFullYear() === currentYear && d.getMonth() === currentMonth);
+    });
+    recurring.lastAddedYear = undefined;
+    recurring.lastAddedMonth = undefined;
   }
+
+  saveData();
+  updateRecurringExpensesList();
+  updateRecurringInsight();
+  updateDashboard();
+  updateChart();
+  updateDailyChart();
+  updateComparisonChart();
 }
 
 function deleteRecurringExpense(id) {
   if (confirm(t('js.deleteRecurring'))) {
+    const recurring = appData.recurringExpenses.find(r => r.id === id);
+    if (recurring) {
+      appData.expenses = appData.expenses.filter(e => !(e.type === 'recurring' && e.category === recurring.name));
+    }
     appData.recurringExpenses = appData.recurringExpenses.filter(r => r.id !== id);
     saveData();
     updateRecurringExpensesList();
     updateRecurringInsight();
+    updateDashboard();
+    updateChart();
+    updateDailyChart();
+    updateComparisonChart();
   }
 }
 
@@ -2318,7 +2415,7 @@ function updateRecurringExpensesList() {
 
   appData.recurringExpenses.forEach(recurring => {
     const item = document.createElement('div');
-    item.className = 'recurring-item' + (recurring.isActive ? '' : ' paused');
+    item.className = 'recurring-item' + (recurring.isActive ? ' paused' : '');
 
     const info = document.createElement('div');
     info.className = 'recurring-item-info';
@@ -2329,7 +2426,7 @@ function updateRecurringExpensesList() {
 
     const details = document.createElement('div');
     details.className = 'recurring-item-details';
-    details.textContent = `${recurring.amount.toLocaleString()}${CURRENCY}`;
+    details.textContent = `${recurring.amount.toLocaleString()}${CURRENCY} · Every ${recurring.dayOfMonth || 1}. in month`;
 
     info.appendChild(nameEl);
     info.appendChild(details);
@@ -2338,8 +2435,8 @@ function updateRecurringExpensesList() {
     actions.className = 'recurring-item-actions';
 
     const toggleBtn = document.createElement('button');
-    toggleBtn.className = 'toggle-btn ' + (recurring.isActive ? 'active' : 'paused');
-    toggleBtn.textContent = recurring.isActive ? 'Active' : 'Paused';
+    toggleBtn.className = 'toggle-btn ' + (recurring.isActive ? 'paused' : 'active');
+    toggleBtn.textContent = recurring.isActive ? 'Activated' : 'Activate';
     toggleBtn.onclick = () => toggleRecurringExpense(recurring.id);
 
     const deleteBtn = document.createElement('button');
@@ -2360,32 +2457,67 @@ function updateRecurringInsight() {
   const insight = document.getElementById('recurringInsight');
   if (!insight) return;
 
-  // Calculate total recurring expenses (active only)
   const totalRecurring = appData.recurringExpenses
     .filter(r => r.isActive)
     .reduce((sum, r) => sum + r.amount, 0);
 
-  const totalSpent = getTotalSpent();
+  const income = appData.income || 0;
 
-  if (totalSpent === 0 || totalRecurring === 0) {
+  if (income === 0 || totalRecurring === 0) {
     insight.style.display = 'none';
     return;
   }
 
-  const percentage = Math.round((totalRecurring / totalSpent) * 100);
+  const percentage = Math.round((totalRecurring / income) * 100);
   insight.style.display = 'block';
-  insight.textContent = t('js.recurringPercent', [percentage]);
+  insight.textContent = `Recurring expenses are ${percentage}% of your income`;
+}
+
+let selectedRecurringDay = null;
+
+function initDayPicker() {
+  const btn = document.getElementById('recurringDayBtn');
+  const popup = document.getElementById('dayPickerPopup');
+  if (!btn || !popup) return;
+
+  // Build day grid
+  popup.innerHTML = '';
+  for (let d = 1; d <= 31; d++) {
+    const cell = document.createElement('div');
+    cell.className = 'day-cell';
+    cell.textContent = d;
+    cell.onclick = (e) => {
+      e.stopPropagation();
+      selectedRecurringDay = d;
+      document.getElementById('recurringDayLabel').textContent = d + '. in month';
+      btn.classList.add('selected');
+      popup.querySelectorAll('.day-cell').forEach(c => c.classList.remove('active'));
+      cell.classList.add('active');
+      popup.style.display = 'none';
+    };
+    popup.appendChild(cell);
+  }
+
+  btn.onclick = (e) => {
+    e.stopPropagation();
+    popup.style.display = popup.style.display === 'none' ? 'grid' : 'none';
+  };
+
+  document.addEventListener('click', () => { popup.style.display = 'none'; });
 }
 
 function initRecurringExpenses() {
   const addBtn = document.getElementById('addRecurringBtn');
+
+  initDayPicker();
 
   // Add button
   if (addBtn) {
     addBtn.onclick = () => {
       const name = document.getElementById('recurringName').value.trim();
       const amount = document.getElementById('recurringAmount').value;
-      addRecurringExpense(name, amount);
+      const day = selectedRecurringDay || 1;
+      addRecurringExpense(name, amount, day);
     };
   }
 
@@ -2421,34 +2553,76 @@ function getSpendingByTag(tag) {
     .reduce((sum, exp) => sum + exp.amount, 0);
 }
 
+function getTagsSortedByRecency() {
+  // Build tag → {count, latestTimestamp}
+  const tagMeta = {};
+  appData.expenses.forEach(exp => {
+    if (exp.type === 'income' || exp.type === 'savings') return;
+    if (!exp.tags || !Array.isArray(exp.tags)) return;
+    exp.tags.forEach(tag => {
+      if (!tagMeta[tag]) tagMeta[tag] = { count: 0, ts: 0 };
+      tagMeta[tag].count++;
+      if ((exp.timestamp || 0) > tagMeta[tag].ts) tagMeta[tag].ts = exp.timestamp || 0;
+    });
+  });
+  // Sort by most recently used
+  return Object.entries(tagMeta)
+    .sort((a, b) => b[1].ts - a[1].ts)
+    .map(([tag, meta]) => [tag, meta.count]);
+}
+
 function updatePopularTags() {
   const container = document.getElementById('popularTags');
   if (!container) return;
 
-  const tagCounts = getAllTags();
-  const sortedTags = Object.entries(tagCounts)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 10);
+  const allTags = getTagsSortedByRecency();
+  const PREVIEW = 4;
+  const isAll = activeTagFilter === 'all';
+  const showExpanded = container.dataset.expanded === '1';
+  const prevCount = container.querySelectorAll('.tag-filter-btn:not(.tag-show-all-btn)').length;
 
   container.innerHTML = '';
 
-  sortedTags.forEach(([tag, count]) => {
+  const tagsToShow = (isAll && !showExpanded && allTags.length > PREVIEW)
+    ? allTags.slice(0, PREVIEW)
+    : allTags;
+
+  tagsToShow.forEach(([tag, count], i) => {
     const btn = document.createElement('button');
-    btn.className = 'tag-filter-btn' + (activeTagFilter === tag ? ' active' : '');
+    const isNew = showExpanded && i >= PREVIEW;
+    btn.className = 'tag-filter-btn' + (activeTagFilter === tag ? ' active' : '') + (isNew ? ' animated' : '');
+    if (isNew) btn.style.animationDelay = ((i - PREVIEW) * 0.05) + 's';
     btn.dataset.tag = tag;
     btn.textContent = `${tag} (${count})`;
     btn.onclick = () => filterByTag(tag);
     container.appendChild(btn);
   });
+
+  if (isAll && allTags.length > PREVIEW) {
+
+    const showAllBtn = document.createElement('button');
+    showAllBtn.className = 'tag-filter-btn tag-show-all-btn';
+    const label = typeof t === 'function' ? (showExpanded ? t('js.showLess') : t('dash.showAll')) : (showExpanded ? 'Show less' : 'Show all');
+    showAllBtn.innerHTML = `${label} <i class="fa-solid fa-chevron-down" style="font-size:10px;margin-left:2px;transform:rotate(${showExpanded?'180':'0'}deg);"></i>`;
+    showAllBtn.onclick = () => {
+      container.dataset.expanded = showExpanded ? '' : '1';
+      updatePopularTags();
+    };
+    container.appendChild(showAllBtn);
+  } else if (!isAll) {
+    delete container.dataset.expanded;
+  }
 }
 
 function filterByTag(tag) {
   activeTagFilter = tag;
-  
-  // Update button states
-  document.querySelectorAll('.tag-filter-btn').forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.tag === tag);
-  });
+
+  // Re-render tag list so active states + collapse/expand are correct
+  updatePopularTags();
+
+  // Re-sync "All" button active state (it's static HTML, not inside popularTags)
+  const allBtn = document.querySelector('.tag-filter-btn[data-tag="all"]');
+  if (allBtn) allBtn.classList.toggle('active', tag === 'all');
 
   // Update insight
   updateTagInsight(tag);
@@ -2486,7 +2660,7 @@ function filterByTag(tag) {
             labels: {
               padding: 15,
               font: { size: 12, family: 'Inter' },
-              color: '#e5e7eb'
+              color: '#374151'
             }
           },
           tooltip: {
@@ -2538,9 +2712,10 @@ function updateChartWithTagFilter(tag) {
     data = [1];
     colors = ['#e5e7eb'];
   } else {
-    labels = Object.keys(categorySpending);
+    const engKeys = Object.keys(categorySpending);
+    labels = engKeys.map(cat => typeof tCat === 'function' ? tCat(cat) : cat);
     data = Object.values(categorySpending);
-    colors = labels.map(cat => chartColors[cat] || '#95a5a6');
+    colors = engKeys.map(cat => chartColors[cat] || '#95a5a6');
   }
 
   if (chartInstance) {
@@ -2568,7 +2743,7 @@ function updateChartWithTagFilter(tag) {
           labels: {
             padding: 15,
             font: { size: 12, family: 'Inter' },
-            color: '#e5e7eb'
+            color: '#374151'
           }
         },
         tooltip: {
@@ -2592,7 +2767,39 @@ function updateTagInsight(tag) {
   if (!insight) return;
 
   if (tag === 'all') {
-    insight.style.display = 'none';
+    const allTags = getTagsSortedByRecency();
+    if (allTags.length === 0) { insight.style.display = 'none'; return; }
+    const PREVIEW = 4;
+    const isExpanded = insight.dataset.expanded === '1';
+    insight.style.display = 'block';
+
+    const makeRow = ([tg, count]) => {
+      const spending = getSpendingByTag(tg);
+      return `<div class="tag-insight-row">
+        <span class="tag-insight-name">${tg} <span class="tag-insight-count">(${count})</span></span>
+        <span class="tag-insight-amount">${spending.toLocaleString()}${CURRENCY}</span>
+      </div>`;
+    };
+
+    const previewRows = allTags.slice(0, PREVIEW).map(makeRow).join('');
+    const extraRows = allTags.length > PREVIEW
+      ? `<div class="tag-insight-extra${isExpanded ? ' open' : ''}" id="tagInsightExtra">
+          ${allTags.slice(PREVIEW).map(makeRow).join('')}
+        </div>`
+      : '';
+    const showBtn = allTags.length > PREVIEW
+      ? `<button class="tag-insight-show-all" id="tagInsightShowAll" onclick="
+          var ex=document.getElementById('tagInsightExtra');
+          var el=document.getElementById('tagInsight');
+          var open=ex.classList.toggle('open');
+          el.dataset.expanded=open?'1':'';
+          var icon=this.querySelector('i');
+          icon.style.transform=open?'rotate(180deg)':'rotate(0deg)';
+          this.childNodes[0].textContent=open?'${typeof t==='function'?t('js.showLess'):'Show less'} ':'${typeof t==='function'?t('dash.showAll'):'Show all'} ';
+        "><span>${isExpanded ? (typeof t==='function'?t('js.showLess'):'Show less') : (typeof t==='function'?t('dash.showAll'):'Show all')} </span><i class="fa-solid fa-chevron-down" style="font-size:10px;transition:transform 0.25s ease;transform:rotate(${isExpanded?'180':'0'}deg);"></i></button>`
+      : '';
+
+    insight.innerHTML = previewRows + extraRows + showBtn;
     return;
   }
 
@@ -2602,19 +2809,16 @@ function updateTagInsight(tag) {
     return;
   }
 
-  const emoji = tag.includes('kafa') || tag.includes('coffee') ? '☕' :
-                tag.includes('posao') || tag.includes('work') ? '💼' :
-                tag.includes('putovanje') || tag.includes('travel') ? '✈️' : '💰';
-
   insight.style.display = 'block';
-  insight.textContent = t('js.tagCosts', [tag, spending.toLocaleString() + CURRENCY, emoji]);
+  insight.innerHTML = `<div class="tag-insight-row">
+    <span class="tag-insight-name">${tag}</span>
+    <span class="tag-insight-amount">${spending.toLocaleString()}${CURRENCY}</span>
+  </div>`;
 }
 
 function updateTagsUI() {
   updatePopularTags();
-  if (activeTagFilter !== 'all') {
-    updateTagInsight(activeTagFilter);
-  }
+  updateTagInsight(activeTagFilter);
   
   // Add event listener to "All" button
   const allBtn = document.querySelector('.tag-filter-btn[data-tag="all"]');
@@ -2752,6 +2956,7 @@ updateDashboard();
 
 // Re-render dynamic JS content when language changes
 window.addEventListener('languageChanged', () => {
+  renderMenu();
   updateDashboard();
   updateInsights();
   updateSpendingCalendar();
@@ -2773,11 +2978,7 @@ setInterval(() => {
 
 // Initialize chart after a small delay to ensure DOM is ready
 function initAllCharts() {
-  if (typeof Chart === 'undefined') {
-    setTimeout(initAllCharts, 200);
-    return;
-  }
-  initChart();
+  initChart(); // test: bypass Chart check
   initDailyChart();
   initComparisonChart();
   initRecurringExpenses();
@@ -2963,4 +3164,16 @@ document.addEventListener('DOMContentLoaded', () => {
       if (e.target === chartsModal) chartsModal.style.display = 'none';
     });
   }
+  const trackLimitsModal = document.getElementById('trackLimitsModal');
+  const trackLimitsClose = document.getElementById('trackLimitsModalClose');
+  if (trackLimitsClose) trackLimitsClose.addEventListener('click', () => { trackLimitsModal.style.display = 'none'; });
+  if (trackLimitsModal) trackLimitsModal.addEventListener('click', (e) => { if (e.target === trackLimitsModal) trackLimitsModal.style.display = 'none'; });
 });
+
+function openTrackLimitsModal() {
+  const modal = document.getElementById('trackLimitsModal');
+  if (modal) {
+    updateBudgetProgress();
+    modal.style.display = 'flex';
+  }
+}

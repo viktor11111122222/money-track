@@ -12,6 +12,7 @@ function renderBudgetProgress() {
     const currentYear = now.getFullYear();
 
     const expensesThisMonth = appData.expenses.filter(exp => {
+        if (exp.type === 'income' || exp.type === 'savings') return false;
         if (exp.category === 'Savings') return false;
         const d = getExpenseDateValue(exp);
         if (!d) return false;
@@ -22,25 +23,28 @@ function renderBudgetProgress() {
     const percentage = Math.min((spent / income) * 100, 100);
     const remaining = income - spent;
 
-    budgetAmountEl.textContent = `${spent.toLocaleString()} / ${income.toLocaleString()} RSD`;
+    const budgetCurrency = typeof getCurrency === 'function' ? getCurrency() : 'RSD';
+    budgetAmountEl.textContent = `${spent.toLocaleString()} / ${income.toLocaleString()} ${budgetCurrency}`;
     progressFill.style.width = `${percentage}%`;
 
     // Color thresholds
     progressFill.classList.remove('warning', 'danger');
+    const currency = typeof getCurrency === 'function' ? getCurrency() : 'RSD';
+    const remainingStr = remaining.toLocaleString() + currency;
     if (percentage >= 100) {
         progressFill.classList.add('danger');
-        budgetStatus.textContent = '⚠️ Budget exceeded!';
+        budgetStatus.textContent = typeof t === 'function' ? t('analytics.budgetExceeded') : '⚠️ Budget exceeded!';
         budgetStatus.style.color = '#ef4444';
     } else if (percentage >= 90) {
         progressFill.classList.add('danger');
-        budgetStatus.textContent = `⚠️ Only ${remaining.toLocaleString()} RSD remaining`;
+        budgetStatus.textContent = typeof t === 'function' ? t('analytics.budgetLow', [remainingStr]) : `⚠️ Only ${remainingStr} remaining`;
         budgetStatus.style.color = '#ef4444';
     } else if (percentage >= 75) {
         progressFill.classList.add('warning');
-        budgetStatus.textContent = `⚡ ${remaining.toLocaleString()} RSD remaining`;
+        budgetStatus.textContent = typeof t === 'function' ? t('analytics.budgetWarning', [remainingStr]) : `⚡ ${remainingStr} remaining`;
         budgetStatus.style.color = '#f59e0b';
     } else {
-        budgetStatus.textContent = `✓ ${remaining.toLocaleString()} RSD remaining`;
+        budgetStatus.textContent = typeof t === 'function' ? t('analytics.budgetOk', [remainingStr]) : `✓ ${remainingStr} remaining`;
         budgetStatus.style.color = '#10b981';
     }
 }
@@ -57,6 +61,7 @@ function renderCategoryChart() {
     const currentYear = now.getFullYear();
 
     const expensesThisMonth = appData.expenses.filter(exp => {
+        if (exp.type === 'income' || exp.type === 'savings') return false;
         if (exp.category === 'Savings') return false;
         const d = getExpenseDateValue(exp);
         if (!d) return false;
@@ -70,11 +75,12 @@ function renderCategoryChart() {
         categoryTotals[cat] = (categoryTotals[cat] || 0) + (exp.amount || 0);
     });
 
-    const labels = Object.keys(categoryTotals);
+    const engKeys = Object.keys(categoryTotals);
+    const labels = engKeys.map(cat => typeof tCat === 'function' ? tCat(cat) : cat);
     const data = Object.values(categoryTotals);
-    
+
     // Koristimo getCategoryColor funkciju za svaku kategoriju
-    const colors = labels.map(cat => getCategoryColor(cat));
+    const colors = engKeys.map(cat => getCategoryColor(cat));
 
     if (categoryChartInstance) {
         categoryChartInstance.destroy();
@@ -148,11 +154,14 @@ function renderInsights() {
 
     if (subscriptions.length > 0) {
         const totalSubs = subscriptions.reduce((sum, e) => sum + (e.amount || 0), 0);
+        const subsCurrency = typeof getCurrency === 'function' ? getCurrency() : 'RSD';
         insights.push({
             icon: 'fa-repeat',
             iconClass: 'warning',
-            title: 'Recurring Subscriptions',
-            description: `Found ${subscriptions.length} subscription(s) costing ${totalSubs.toLocaleString()} RSD this month. Review to save money.`
+            title: typeof t === 'function' ? t('analytics.recurringTitle') : 'Recurring Subscriptions',
+            description: typeof t === 'function'
+                ? t('analytics.recurringDesc', [subscriptions.length, totalSubs.toLocaleString() + subsCurrency])
+                : `Found ${subscriptions.length} subscription(s) costing ${totalSubs.toLocaleString()} ${subsCurrency} this month. Review to save money.`
         });
     }
 
@@ -171,11 +180,15 @@ function renderInsights() {
         const percentage = ((topAmount / totalSpent) * 100).toFixed(0);
         
         if (percentage > 40) {
+            const catCurrency = typeof getCurrency === 'function' ? getCurrency() : 'RSD';
+            const topCatTr = typeof tCat === 'function' ? tCat(topCat) : topCat;
             insights.push({
                 icon: 'fa-triangle-exclamation',
                 iconClass: 'warning',
-                title: `High ${topCat} Spending`,
-                description: `${topCat} accounts for ${percentage}% of your spending (${topAmount.toLocaleString()} RSD). Consider reducing expenses in this category.`
+                title: typeof t === 'function' ? t('analytics.highSpendingTitle', [topCatTr]) : `High ${topCatTr} Spending`,
+                description: typeof t === 'function'
+                    ? t('analytics.highSpendingDesc', [topCatTr, percentage, topAmount.toLocaleString() + catCurrency])
+                    : `${topCatTr} accounts for ${percentage}% of your spending (${topAmount.toLocaleString()} ${catCurrency}). Consider reducing expenses in this category.`
             });
         }
     }
@@ -189,27 +202,33 @@ function renderInsights() {
         insights.push({
             icon: 'fa-circle-check',
             iconClass: 'success',
-            title: 'On Track!',
-            description: `You've spent ${budgetPercentage.toFixed(0)}% of your budget. Keep up the good spending habits!`
+            title: typeof t === 'function' ? t('analytics.onTrackTitle') : 'On Track!',
+            description: typeof t === 'function'
+                ? t('analytics.onTrackDesc', [budgetPercentage.toFixed(0)])
+                : `You've spent ${budgetPercentage.toFixed(0)}% of your budget. Keep up the good spending habits!`
         });
     }
 
     // 4. Savings suggestion
     const savingsTotal = appData.expenses.filter(e => e.category === 'Savings')
         .reduce((sum, e) => sum + (e.amount || 0), 0);
-    
+
     if (savingsTotal === 0 && totalSpent < income * 0.8) {
+        const saveCurrency = typeof getCurrency === 'function' ? getCurrency() : 'RSD';
+        const saveAmount = ((income - totalSpent) * 0.3).toFixed(0);
         insights.push({
             icon: 'fa-piggy-bank',
             iconClass: 'success',
-            title: 'Save More',
-            description: `You have room in your budget. Consider moving ${((income - totalSpent) * 0.3).toFixed(0).toLocaleString()} RSD to savings.`
+            title: typeof t === 'function' ? t('analytics.saveMoreTitle') : 'Save More',
+            description: typeof t === 'function'
+                ? t('analytics.saveMoreDesc', [saveAmount + saveCurrency])
+                : `You have room in your budget. Consider moving ${saveAmount} ${saveCurrency} to savings.`
         });
     }
 
     // Render insights
     if (insights.length === 0) {
-        insightsList.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">No insights available yet. Add more expenses to get personalized recommendations.</p>';
+        insightsList.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">' + (typeof t === 'function' ? t('analytics.noInsights') : 'No insights available yet. Add more expenses to get personalized recommendations.') + '</p>';
     } else {
         insightsList.innerHTML = insights.map(insight => `
             <div class="insight-item">

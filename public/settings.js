@@ -8,7 +8,7 @@
     profile: { fullName: '', email: '', username: '', avatar: '/public/avatar-default.svg' },
     account: { twoFactor: true },
     notifications: { expense: true, monthly: true, family: true, wallet: true, weekly: true },
-    preferences: { currency: 'RSD', dateFormat: 'DD/MM/YYYY', startMonth: '1', monthlyIncome: 0, language: 'English' },
+    preferences: { currency: 'EUR', dateFormat: 'DD/MM/YYYY', startMonth: '1', monthlyIncome: 0, language: 'English' },
     appearance: { theme: 'light', accent: 'blue' }
   };
 
@@ -301,7 +301,7 @@
     qs('#notifWallet').checked = !!state.notifications.wallet;
     qs('#notifWeekly').checked = !!state.notifications.weekly;
 
-    qs('#currencySelect').value = state.preferences.currency || 'RSD';
+    qs('#currencySelect').value = state.preferences.currency || 'EUR';
     qs('#dateFormatSelect').value = state.preferences.dateFormat || 'DD/MM/YYYY';
     qs('#startMonthSelect').value = state.preferences.startMonth || '1';
     qs('#languageSelect').value = state.preferences.language || 'English';
@@ -381,7 +381,7 @@
         fetch(API_BASE + '/me/profile', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-          body: JSON.stringify({ name: name, email: email })
+          body: JSON.stringify({ name: name, email: email, username: qs('#usernameInput').value.trim() })
         })
         .then(function(res) {
           if (!res.ok) return res.json().then(function(d){ showToast(d.message || 'Failed to save', 'error'); });
@@ -474,7 +474,7 @@
           fetch(API_BASE + '/me/profile', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
-            body: JSON.stringify({ name: state.profile.fullName, email: state.profile.email })
+            body: JSON.stringify({ name: state.profile.fullName, email: state.profile.email, username: state.profile.username })
           }).catch(function(){});
         }
         showToast('All settings saved ✓');
@@ -556,7 +556,7 @@
       if (el) el.addEventListener('change', function () {
         if (sel === '#currencySelect') {
           var oldState = readStorage();
-          var oldCurrency = oldState.preferences.currency || 'RSD';
+          var oldCurrency = oldState.preferences.currency || 'EUR';
           var newCurrency = el.value;
           if (oldCurrency !== newCurrency) {
             // Convert all monetary data
@@ -581,6 +581,26 @@
         }
       });
     });
+
+    // ═══ Active Sessions link ═══
+    var activeSessionsLink = document.querySelector('a.link[href="#"]');
+    if (activeSessionsLink) {
+      activeSessionsLink.addEventListener('click', function(e) {
+        e.preventDefault();
+        var token = getToken();
+        if (!token) return showToast('Not logged in', 'error');
+        fetch(API_BASE + '/me/sessions', {
+          headers: { Authorization: 'Bearer ' + token }
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+          var sessions = data.sessions || data || [];
+          var count = Array.isArray(sessions) ? sessions.length : 1;
+          showToast('You have ' + count + ' active session(s)', 'info');
+        })
+        .catch(function() { showToast('Could not load sessions', 'error'); });
+      });
+    }
 
     // ═══ Leave Family Budget ═══
     var leaveBtn = qs('#leaveFamilyBtn');

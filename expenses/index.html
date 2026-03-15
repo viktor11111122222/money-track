@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Expenses - Money Tracker</title>
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#6c63ff">
@@ -184,15 +184,19 @@
             <button class="btn-import" id="btnImportCSV">
                 <i class="fa-solid fa-upload"></i> <span data-i18n="exp.importCSV">Import CSV</span>
             </button>
-            <input type="file" id="fileInput" accept=".csv" style="display: none;">
+            <input type="file" id="fileInput" accept=".csv,text/csv,text/plain,*/*" style="display: none;">
         </div>
         
         <!-- Add/Edit Expense Modal -->
         <div class="modal" id="expenseModal">
             <div class="modal-content">
-                <span class="close">&times;</span>
+                <span class="close"><i class="fa-solid fa-xmark"></i></span>
                 <h2 id="modalTitle" data-i18n="exp.modalTitle">Add New Expense</h2>
                 <form id="expenseForm">
+                    <div class="form-group">
+                        <label for="expenseDescription">Expense name:</label>
+                        <input type="text" id="expenseDescription" placeholder="e.g. Lunch, Netflix, Taxi..." required>
+                    </div>
                     <div class="form-group">
                         <label for="expenseAmount" data-i18n="exp.amountLabel">Amount:</label>
                         <input type="number" id="expenseAmount" required min="0" step="0.01">
@@ -203,12 +207,9 @@
                         </select>
                     </div>
                     <div class="form-group">
-                        <label for="expenseDescription" data-i18n="exp.descriptionLabel">Description:</label>
-                        <input type="text" id="expenseDescription" required>
-                    </div>
-                    <div class="form-group">
-                        <label for="expenseDate" data-i18n="exp.dateLabel">Date:</label>
-                        <input type="date" id="expenseDate" required>
+                        <label data-i18n="exp.dateLabel">Date:</label>
+                        <input type="hidden" id="expenseDate">
+                        <div id="expenseDateDisplay" style="padding:12px 16px;border:2px solid #e5e7eb;border-radius:10px;font-size:15px;color:#6b7280;background:#f9fafb;user-select:none;pointer-events:none;"></div>
                     </div>
                     <div class="form-group">
                         <label for="expenseTags" data-i18n="exp.tagsLabel">Tags (optional, comma-separated):</label>

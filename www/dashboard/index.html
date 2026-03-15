@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
     <title>Money Tracker</title>
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#6c63ff">
@@ -11,6 +11,9 @@
     <meta name="apple-mobile-web-app-title" content="MoneyTrack">
     <link rel="apple-touch-icon" href="/public/wallet-logo.jpg">
     <link rel="stylesheet" href="style.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:ital,opsz,wght@0,14..32,100..900;1,14..32,100..900&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="/public/fontawesome/css/all.min.css">
     <script src="chart.min.js"></script>
     <script src="/public/app-config.js"></script>
@@ -41,7 +44,7 @@
 
             <div class="side-card" id="spendingsBtn">
                 <i class="fa-solid fa-chart-line"></i>
-                <h3>Spendings</h3>
+                <h3 data-i18n="sidebar.spendings">Spendings</h3>
             </div>
 
             <div class="side-card" id="familyBudgetBtn" onclick="window.location.href='../shared/index.html'">
@@ -103,9 +106,19 @@
                 </div>
 
                 <div class="chart-card" id="mainChartSection" style="position:relative;z-index:1;">
-                    <h3 data-i18n="dash.spendingThisMonth">Spending this month</h3>
-                    <div style="position:relative;height:260px;width:100%;margin-top:12px;z-index:2;">
-                        <canvas id="spendingChart" style="display:block;position:relative;z-index:3;"></canvas>
+                    <div style="display:flex;align-items:center;justify-content:space-between;gap:16px;">
+                        <h3 data-i18n="dash.spendingThisMonth" style="margin:0;white-space:nowrap;font-size:1.15rem;">Spending this month</h3>
+                        <button class="charts-toggle-btn" id="chartsToggleBtn" onclick="toggleCharts()">
+                            <i class="fa-solid fa-chart-bar"></i>
+                            <span data-i18n="dash.showCharts">Charts</span>
+                            <i class="fa-solid fa-up-right-from-square" style="font-size:11px;"></i>
+                        </button>
+                    </div>
+                    <div style="width:100%;margin-top:12px;position:relative;">
+                        <canvas id="spendingChart" width="300" height="260" style="display:block;"></canvas>
+                        <div id="chartEmptyState" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;">
+                            <div style="font-size:14px;color:#9ca3af;font-weight:500;">No expenses this month</div>
+                        </div>
                     </div>
                 </div>
 
@@ -115,33 +128,34 @@
                 </section>
 
                 <section class="tags-card" id="tagsCard">
-                    <h3 data-i18n="dash.transactionTags">🏷️ Transaction Tags</h3>
+                    <h3><i class="fa-solid fa-tags" style="margin-right:6px;"></i><span data-i18n="dash.transactionTags">Transaction Tags</span></h3>
                     <div class="tags-filter">
-                        <button class="tag-filter-btn active" data-tag="all" data-i18n="dash.allTags">📋 All</button>
+                        <button class="tag-filter-btn active" data-tag="all"><i class="fa-solid fa-list" style="margin-right:4px;"></i><span data-i18n="dash.allTags">All</span></button>
                         <div id="popularTags"></div>
                     </div>
                     <div id="tagInsight" class="tag-insight"></div>
                 </section>
 
-                <div class="limits-backdrop" id="limitsBackdrop"></div>
                 <section class="category-limits-compact">
                     <div class="limits-header">
                         <h3 data-i18n="dash.limits">Limits</h3>
-                        <button class="edit-limits-btn" id="editLimitsBtn" data-i18n="dash.editLimits">Edit Limits</button>
+                        <div style="display:flex;gap:8px;align-items:center;">
+                            <button class="edit-limits-btn" id="editLimitsBtn" onclick="openEditLimitsModal()">
+                                <i class="fa-solid fa-sliders" style="margin-right:5px;font-size:12px;"></i>Edit Limits
+                            </button>
+                            <button class="charts-toggle-btn" onclick="openTrackLimitsModal()" style="font-size:12px;padding:6px 12px;min-height:32px;">
+                                <i class="fa-solid fa-chart-bar"></i>
+                                <span data-i18n="dash.trackLimits">Track</span>
+                            </button>
+                        </div>
                     </div>
-                    <div class="limits-list" id="limitsList">
-                    </div>
+                    <div class="limits-list" id="limitsList"></div>
                     <button class="limits-show-all" id="limitsShowAll">
                         <span id="showAllText" data-i18n="dash.showAll">Show all</span>
                         <i class="fa-solid fa-chevron-down" id="showAllIcon"></i>
                     </button>
                 </section>
 
-                <button class="charts-toggle-btn" id="chartsToggleBtn" onclick="toggleCharts()">
-                    <i class="fa-solid fa-chart-bar"></i>
-                    <span data-i18n="dash.showCharts">Show Charts</span>
-                    <i class="fa-solid fa-up-right-from-square" style="margin-left:auto;font-size:13px;"></i>
-                </button>
             </div>
 
             <aside class="main-right">
@@ -189,13 +203,8 @@
 
                 
 
-                <section class="budget-progress" id="budgetProgress">
-                    <h3 data-i18n="dash.trackLimits">📊 Track Limits</h3>
-                    <div class="progress-list" id="progressList"></div>
-                </section>
-
                 <section class="reset-section">
-                    <button class="primary primary-danger" id="resetBtn" data-i18n="dash.resetAll">🔄 Reset All</button>
+                    <button class="primary primary-danger" id="resetBtn"><i class="fa-solid fa-rotate" style="margin-right:6px;"></i><span data-i18n="dash.resetAll">Reset All</span></button>
                 </section>
 
                 <section class="spending-by-category">
@@ -235,11 +244,17 @@
                 </section>
 
                 <section class="recurring-expenses-card" id="recurringCard">
-                    <h3 data-i18n="dash.recurringExpenses">🔄 Recurring Expenses</h3>
+                    <h3><i class="fa-solid fa-rotate" style="margin-right:6px;"></i><span data-i18n="dash.recurringExpenses">Recurring Expenses</span></h3>
                     <p class="recurring-description" data-i18n="dash.recurringDesc">Automatically added every month</p>
                     <div class="recurring-add-form">
                         <input type="text" id="recurringName" data-i18n-placeholder="dash.recurringName" placeholder="Name (Rent, Netflix, Internet...)">
                         <input type="number" id="recurringAmount" data-i18n-placeholder="dash.recurringAmount" placeholder="Amount">
+                        <div style="position:relative;">
+                            <button type="button" id="recurringDayBtn" class="day-picker-btn">
+                                <i class="fa-solid fa-calendar-days"></i> <span id="recurringDayLabel">Day of month</span>
+                            </button>
+                            <div id="dayPickerPopup" class="day-picker-popup" style="display:none;"></div>
+                        </div>
                         <button class="primary" id="addRecurringBtn">
                             <i class="fa-solid fa-plus"></i> <span data-i18n="dash.addRecurring">Add Recurring</span>
                         </button>
@@ -252,7 +267,7 @@
                 </section>
 
                 <section class="smart-suggestions-card" id="smartSuggestions">
-                    <h3 data-i18n="dash.smartSuggestions">🤖 Smart Suggestions</h3>
+                    <h3><i class="fa-solid fa-lightbulb" style="margin-right:6px;"></i><span data-i18n="dash.smartSuggestions">Smart Suggestions</span></h3>
                     <p class="smart-description" data-i18n="dash.weRecommend">We recommend:</p>
                     <div class="suggestions-list" id="suggestionsList">
                         <div class="suggestion-placeholder" data-i18n="dash.analyzingSpending">Analyzing your spending...</div>
@@ -267,7 +282,7 @@
     <div class="modal-overlay" id="onboardingModal" aria-hidden="true" role="dialog" aria-modal="true" style="display: none;">
         <div class="modal-content onboarding-modal" role="document">
             <div class="modal-header">
-                <h2 data-i18n="dash.welcomeTitle">👋 Welcome to Money Tracker!</h2>
+                <h2><i class="fa-solid fa-hand-wave" style="margin-right:8px;"></i><span data-i18n="dash.welcomeTitle">Welcome to Money Tracker!</span></h2>
             </div>
             <div class="modal-body">
                 <p class="onboarding-description" data-i18n="dash.welcomeDesc">Let's set up your account to start tracking your expenses effectively.</p>
@@ -302,7 +317,7 @@
         <div class="modal-content" role="document">
             <div class="modal-header">
                 <h2 data-i18n="dash.spendingsTitle">Spendings</h2>
-                <button class="modal-close" id="spendingsClose" aria-label="Close">✕</button>
+                <button class="modal-close" id="spendingsClose" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="modal-body">
                 <div class="spendings-summary">
@@ -321,13 +336,15 @@
                 </div>
 
                 <div class="spendings-filters simple">
-                    <div class="filter-group">
-                        <label for="spendingsFrom" data-i18n="dash.from">From</label>
-                        <input type="date" id="spendingsFrom">
-                    </div>
-                    <div class="filter-group">
-                        <label for="spendingsTo" data-i18n="dash.to">To</label>
-                        <input type="date" id="spendingsTo">
+                    <div style="display:flex;gap:10px;">
+                        <div class="filter-group" style="flex:1;">
+                            <label for="spendingsFrom" data-i18n="dash.from">From</label>
+                            <input type="date" id="spendingsFrom">
+                        </div>
+                        <div class="filter-group" style="flex:1;">
+                            <label for="spendingsTo" data-i18n="dash.to">To</label>
+                            <input type="date" id="spendingsTo">
+                        </div>
                     </div>
                     <div class="filter-group">
                         <label for="spendingsCategory" data-i18n="dash.category">Category</label>
@@ -360,7 +377,7 @@
         <div class="modal-content charts-modal-content" role="document">
             <div class="modal-header">
                 <h2><i class="fa-solid fa-chart-bar" style="margin-right:8px;"></i><span data-i18n="dash.showCharts">Charts</span></h2>
-                <button class="modal-close" id="chartsModalClose" aria-label="Close">✕</button>
+                <button class="modal-close" id="chartsModalClose" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="modal-body charts-modal-body">
                 <section class="chart-card">
@@ -375,6 +392,36 @@
                         <canvas id="comparisonChart"></canvas>
                     </div>
                 </section>
+            </div>
+        </div>
+    </div>
+
+    <!-- Edit Limits Modal -->
+    <div class="modal-overlay" id="editLimitsModal" style="display:none;" role="dialog" aria-modal="true">
+        <div class="modal-content" style="max-width:420px;width:92vw;max-height:85vh;display:flex;flex-direction:column;">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-sliders" style="margin-right:8px;"></i>Edit Limits</h2>
+                <button class="modal-close" id="editLimitsModalClose" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" style="overflow-y:auto;padding:16px;">
+                <p style="font-size:13px;color:#64748b;margin:0 0 14px;">Set a monthly spending limit per category. You'll get an alert when you exceed it.</p>
+                <div id="editLimitsList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Limit Exceeded Alert Banner -->
+    <div id="limitAlertBanner" class="limit-alert-banner" style="display:none;"></div>
+
+    <!-- Track Limits Modal -->
+    <div class="modal-overlay" id="trackLimitsModal" style="display:none;" role="dialog" aria-modal="true">
+        <div class="modal-content" style="max-width:480px;width:92vw;max-height:80vh;display:flex;flex-direction:column;">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-chart-bar" style="margin-right:8px;"></i><span data-i18n="dash.trackLimits">Track Limits</span></h2>
+                <button class="modal-close" id="trackLimitsModalClose" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" style="overflow-y:auto;padding:16px;">
+                <div class="progress-list" id="progressList"></div>
             </div>
         </div>
     </div>
