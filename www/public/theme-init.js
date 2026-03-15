@@ -20,17 +20,19 @@
             setMode(theme === 'dark' ? 'dark' : 'light');
         }
         // Apply accent color immediately
-        var accent = parsed && parsed.appearance && parsed.appearance.accent ? parsed.appearance.accent : 'blue';
+        var accent = parsed && parsed.appearance && parsed.appearance.accent ? parsed.appearance.accent : 'indigo';
         var accentMap = {
-            blue:   { main: '#2563eb', hover: '#1d4ed8', rgb: '37,99,235' },
-            green:  { main: '#059669', hover: '#047857', rgb: '5,150,105' },
-            purple: { main: '#7c3aed', hover: '#6d28d9', rgb: '124,58,237' },
-            pink:   { main: '#db2777', hover: '#be185d', rgb: '219,39,119' },
-            gray:   { main: '#64748b', hover: '#475569', rgb: '100,116,139' }
+            indigo: { main: '#6366f1', hover: '#4f46e5', rgb: '99,102,241',  grad: '#06b6d4' },
+            blue:   { main: '#2563eb', hover: '#1d4ed8', rgb: '37,99,235',   grad: '#60a5fa' },
+            green:  { main: '#10b981', hover: '#059669', rgb: '16,185,129',  grad: '#34d399' },
+            purple: { main: '#7c3aed', hover: '#6d28d9', rgb: '124,58,237', grad: '#a78bfa' },
+            pink:   { main: '#ec4899', hover: '#db2777', rgb: '236,72,153', grad: '#f472b6' },
+            gray:   { main: '#64748b', hover: '#475569', rgb: '100,116,139', grad: '#94a3b8' }
         };
         var a = accentMap[accent] || accentMap.blue;
         root.style.setProperty('--accent', a.main);
         root.style.setProperty('--accent-hover', a.hover);
         root.style.setProperty('--accent-rgb', a.rgb);
+        root.style.setProperty('--accent-grad', a.grad);
     }catch(e){ /* ignore */ }
 })();

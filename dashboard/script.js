@@ -183,6 +183,14 @@ function getCurrentMonthSpent() {
   }, 0);
 }
 
+function getCurrentMonthSavings() {
+  return appData.expenses.reduce((sum, exp) => {
+    if (exp.type !== 'savings') return sum;
+    if (!isExpenseInCurrentMonth(exp)) return sum;
+    return sum + exp.amount;
+  }, 0);
+}
+
 // Initialize or get data from localStorage
 function initializeData() {
   let data = localStorage.getItem('expenseTrackerData');
@@ -846,13 +854,18 @@ addExpenseBtn.addEventListener('click', async () => {
   updateChart();
   updateTagsUI();
   checkLimitAlert(category);
+
+  // Native notification
+  if (typeof notifyExpenseAdded === 'function') {
+    notifyExpenseAdded(amount, category, getCurrency());
+  }
 });
 
 // ===== ADD SAVINGS FUNCTIONALITY =====
 const savingsInput = document.getElementById('savingsInput');
 const addSavingsBtn = document.querySelector('.add-savings .primary-success');
 
-addSavingsBtn.addEventListener('click', async () => {
+if (addSavingsBtn) addSavingsBtn.addEventListener('click', async () => {
   const amount = parseFloat(savingsInput.value);
 
   if (!amount || amount <= 0) {
@@ -900,14 +913,14 @@ if (resetBtn) {
 
 // ===== UPDATE SIDEBAR STATS =====
 function updateSidebarStats() {
-  const totalSpent = getTotalSpent();
-  const remaining = getSavings();
-  
+  const monthSpent = getCurrentMonthSpent();
+  const remaining = appData.income + getCurrentMonthSavings() - monthSpent;
+
   const sidebarSpent = document.getElementById('sidebarSpent');
   const sidebarRemaining = document.getElementById('sidebarRemaining');
-  
+
   if (sidebarSpent) {
-    sidebarSpent.textContent = totalSpent.toLocaleString() + getCurrency();
+    sidebarSpent.textContent = monthSpent.toLocaleString() + getCurrency();
   }
   if (sidebarRemaining) {
     sidebarRemaining.textContent = remaining.toLocaleString() + getCurrency();
@@ -916,16 +929,17 @@ function updateSidebarStats() {
 
 // ===== UPDATE DASHBOARD =====
 function updateDashboard() {
-  // Update Total Spent
-  document.querySelectorAll('.summary-cards .card:nth-child(1) .amount')[0].textContent = 
-    getTotalSpent().toLocaleString() + getCurrency();
+  // Update Total Spent (current month only)
+  const monthSpent = getCurrentMonthSpent();
+  document.querySelectorAll('.summary-cards .card:nth-child(1) .amount')[0].textContent =
+    monthSpent.toLocaleString() + getCurrency();
 
-  // Update Income
-  document.querySelectorAll('.summary-cards .card:nth-child(2) .amount')[0].textContent = 
+  // Update Income (fixed, never changes from dashboard)
+  document.querySelectorAll('.summary-cards .card:nth-child(2) .amount')[0].textContent =
     appData.income.toLocaleString() + getCurrency();
 
-  // Update Balance
-  const balance = appData.income - getTotalSpent();
+  // Update Balance (income + savings this month - spent this month)
+  const balance = appData.income + getCurrentMonthSavings() - monthSpent;
   const balanceCard = document.querySelectorAll('.summary-cards .card:nth-child(3)')[0];
   if (balanceCard) {
     balanceCard.querySelector('.amount').textContent = balance.toLocaleString() + getCurrency();
@@ -1076,7 +1090,7 @@ function updateRecentTransactions() {
 function updateChartStats() {
   const statsContainer = document.querySelector('.chart-stats');
   const spending = getSpendingByCategory();
-  const total = getTotalSpent();
+  const total = getCurrentMonthSpent();
 
   statsContainer.innerHTML = '';
 
@@ -1368,6 +1382,9 @@ function checkLimitAlert(category) {
   const over = spent - limit;
   const suggestion = LIMIT_SUGGESTIONS[category] || 'Try reviewing your recent expenses and cutting back where possible.';
   showLimitAlert(category, spent, limit, over, suggestion);
+  if (typeof notifyLimitExceeded === 'function') {
+    notifyLimitExceeded(category, spent, limit, getCurrency());
+  }
 }
 
 function showLimitAlert(category, spent, limit, over, suggestion) {
@@ -1684,11 +1701,15 @@ function initChart() {
   if (chartInstance) chartInstance.destroy();
 
   const isDark = document.documentElement.classList.contains('dark-theme');
-  const bgColors = isEmpty ? ['#e5e7eb'] : labels.map((_, i) => solidColors[i % solidColors.length]);
+  const bgColors = isEmpty ? [isDark ? 'rgba(255,255,255,0.22)' : '#e5e7eb'] : labels.map((_, i) => solidColors[i % solidColors.length]);
   const borderCol = isEmpty ? (isDark ? '#1e293b' : '#e5e7eb') : (isDark ? '#1e293b' : '#ffffff');
   const legendColor = isDark ? '#e2e8f0' : '#374151';
   const emptyState = document.getElementById('chartEmptyState');
-  if (emptyState) emptyState.style.display = isEmpty ? 'block' : 'none';
+  if (emptyState) {
+    emptyState.style.display = isEmpty ? 'block' : 'none';
+    const emptyText = emptyState.querySelector('div');
+    if (emptyText) emptyText.style.color = isDark ? '#94a3b8' : '#6b7280';
+  }
 
   chartInstance = new Chart(ctx, {
     type: 'doughnut',
@@ -1736,10 +1757,14 @@ function updateChart() {
       'rgba(132,204,22,0.85)'
     ];
     const isDark = document.documentElement.classList.contains('dark-theme');
-    const bgColors = isEmpty ? ['#e5e7eb'] : labels.map((_, i) => solidColors[i % solidColors.length]);
+    const bgColors = isEmpty ? [isDark ? 'rgba(255,255,255,0.22)' : '#e5e7eb'] : labels.map((_, i) => solidColors[i % solidColors.length]);
     const borderCol = isEmpty ? (isDark ? '#1e293b' : '#e5e7eb') : (isDark ? '#1e293b' : '#ffffff');
     const emptyState = document.getElementById('chartEmptyState');
-    if (emptyState) emptyState.style.display = isEmpty ? 'block' : 'none';
+    if (emptyState) {
+      emptyState.style.display = isEmpty ? 'block' : 'none';
+      const emptyText = emptyState.querySelector('div');
+      if (emptyText) emptyText.style.color = isDark ? '#94a3b8' : '#6b7280';
+    }
     chartInstance.data.labels = labels;
     chartInstance.data.datasets[0].data = data;
     chartInstance.data.datasets[0].backgroundColor = bgColors;

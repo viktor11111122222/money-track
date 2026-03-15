@@ -550,11 +550,11 @@ main {
 .insight-item {
     display: flex;
     align-items: flex-start;
-    gap: 12px;
-    padding: 14px;
+    gap: 14px;
+    padding: 16px;
     background: white;
     border-left: 3px solid #667eea;
-    border-radius: 8px;
+    border-radius: 10px;
     transition: all 0.2s ease;
 }
 
@@ -583,16 +583,16 @@ main {
 }
 
 .insight-icon {
-    width: 28px;
-    height: 28px;
-    border-radius: 6px;
+    width: 36px;
+    height: 36px;
+    border-radius: 8px;
     display: flex;
     align-items: center;
     justify-content: center;
     background: linear-gradient(135deg, #667eea, #764ba2);
     color: white;
     flex-shrink: 0;
-    font-size: 12px;
+    font-size: 15px;
 }
 
 .insight-icon.warning {
@@ -1480,4 +1480,37 @@ main {
     background: #fff;
   }
   .expenses-list { gap: 10px; }
+}
+
+/* ── Dark mode: Smart Insights & chart card ── */
+.dark-theme .kpi-insights-card {
+    background: #131f2e !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    border-radius: 14px !important;
+}
+.dark-theme .kpi-chart-card {
+    background: #131f2e !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    border-radius: 14px !important;
+}
+.dark-theme .kpi-chart-card h3,
+.dark-theme .kpi-insights-card h3 {
+    color: #f0f5fb !important;
+}
+.dark-theme .insight-item {
+    background: rgba(255,255,255,0.07) !important;
+    border-left-color: #6366f1 !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+    border-left: 3px solid #6366f1 !important;
+}
+.dark-theme .insight-item:hover {
+    background: rgba(255,255,255,0.11) !important;
+}
+.dark-theme .insight-title,
+.dark-theme .insight-item .insight-title {
+    color: #e2e8f0 !important;
+}
+.dark-theme .insight-description,
+.dark-theme .insight-item .insight-description {
+    color: #94a3b8 !important;
 }

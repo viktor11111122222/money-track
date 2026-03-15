@@ -107,11 +107,12 @@
 .theme-options .radio { display: inline-flex; align-items: center; cursor: pointer; }
 .theme-options .radio input { position: absolute; opacity: 0; width: 0; height: 0; pointer-events: none; }
 .theme-options .radio span { display: inline-block; padding: 8px 18px; border-radius: 20px; border: 2px solid #e2e8f0; font-size: 14px; font-weight: 600; color: #475569; background: #f8fafc; white-space: nowrap; transition: all 0.2s; }
-.theme-options .radio input:checked + span { background: #6366f1; color: white; border-color: #6366f1; }
+.theme-options .radio input:checked + span { background: var(--accent); color: white; border-color: var(--accent); }
 .theme-options input { margin: 0; flex-shrink: 0; }
 
 .accent-palette { display: flex; gap: 8px; align-items: center; }
 .color-swatch { width: 28px; height: 28px; border-radius: 999px; border: 2px solid transparent; cursor: pointer; }
+.color-swatch.indigo { background: linear-gradient(135deg, #6366f1, #06b6d4); }
 .color-swatch.blue { background: #2563eb; }
 .color-swatch.green { background: #10b981; }
 .color-swatch.purple { background: #7c3aed; }

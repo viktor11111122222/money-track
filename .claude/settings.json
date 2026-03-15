@@ -60,7 +60,15 @@
       "Bash(sed -i '' 's/background: #e2e8f0 !important/background: #f1f5f9 !important/g' /Users/vica/money-track-app/dashboard/style.css /Users/vica/money-track-app/shared/style.css)",
       "Bash(sed -i '' 's/background:#e2e8f0!important/background:#f1f5f9!important/g' /Users/vica/money-track-app/public/spendings-modal.js)",
       "Read(//Users/vica/money-track-app/**)",
-      "Bash(grep -rn \"of your income\\\\|recurringInsight\\\\|recurring.*income\" /Users/vica/money-track-app/dashboard/ --include=*.js --include=*.html)"
+      "Bash(grep -rn \"of your income\\\\|recurringInsight\\\\|recurring.*income\" /Users/vica/money-track-app/dashboard/ --include=*.js --include=*.html)",
+      "Bash(grep -r notif /Users/vica/money-track-app --include=*.js --include=*.ts --exclude-dir=node_modules --exclude-dir=build --exclude-dir=.git)",
+      "Bash(grep -rn .notifications. /Users/vica/money-track-app --include=*.js --exclude-dir=node_modules --exclude-dir=build)",
+      "Bash(find /Users/vica/money-track-app/android -name build.gradle -o -name *.gradle)",
+      "Bash(grep -rn \"mt_settings_v1\\\\|notifications\\\\.\" /Users/vica/money-track-app/dashboard /Users/vica/money-track-app/expenses --include=*.js)",
+      "Bash(grep -rn \"api.*notification\\\\|POST.*notification\" /Users/vica/money-track-app/public /Users/vica/money-track-app/dashboard /Users/vica/money-track-app/expenses --include=*.js)",
+      "Bash(grep -r \"user-scalable\" /Users/vica/money-track-app/*.html)",
+      "Bash(grep -r \"overflow-y\\\\|overflow-x\\\\|-webkit-overflow-scrolling\" /Users/vica/money-track-app/public/*.css)",
+      "Bash(grep -r \"overflow-y\\\\|overflow-x\\\\|-webkit-overflow-scrolling\" /Users/vica/money-track-app/dashboard/*.css /Users/vica/money-track-app/expenses/*.css /Users/vica/money-track-app/shared/*.css)"
     ],
     "additionalDirectories": [
       "/Users/vica/money-track-app"

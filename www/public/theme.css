@@ -52,7 +52,10 @@ body {
     --text: #0f1724;
     --surface: #f8fafc;
     --border: #e6eefc;
-    --accent: #2563eb;
+    --accent: #6366f1;
+    --accent-hover: #4f46e5;
+    --accent-grad: #06b6d4;
+    --accent-rgb: 99,102,241;
 }
 
 .dark-theme {
@@ -230,17 +233,25 @@ body, .main-container, .shared-hero, .shared-card, .setting-card, .auth-card, .m
 }
 
 /* Recurring expense cards */
-.dark-theme .recurring-item {
-    background: rgba(255,255,255,0.1) !important;
-    border: 1px solid rgba(255,255,255,0.18) !important;
-    color: var(--text) !important;
-    box-shadow: 0 2px 8px rgba(0,0,0,0.25) !important;
-}
-.dark-theme .recurring-item.paused {
+.dark-theme .recurring-expenses-card .recurring-item,
+.dark-theme .recurring-list .recurring-item {
     background: transparent !important;
-    border: none !important;
+    border: 1px solid rgba(255,255,255,0.13) !important;
+    border-left: 3px solid #6366f1 !important;
+    color: var(--text) !important;
+    box-shadow: none !important;
+}
+.dark-theme .recurring-expenses-card .recurring-item.paused,
+.dark-theme .recurring-list .recurring-item.paused {
+    background: transparent !important;
+    border: 1px solid rgba(255,255,255,0.05) !important;
+    border-left: 3px solid rgba(99,102,241,0.25) !important;
     box-shadow: none !important;
     opacity: 0.45 !important;
+}
+.dark-theme .recurring-expenses-card {
+    background: transparent !important;
+    box-shadow: none !important;
 }
 
 /* Limits dark mode */
@@ -263,7 +274,7 @@ body, .main-container, .shared-hero, .shared-card, .setting-card, .auth-card, .m
     color: var(--text) !important;
 }
 .dark-theme .edit-limit-input:focus { border-color: #818cf8 !important; }
-.dark-theme .edit-limit-save-btn { background: #6366f1 !important; }
+.dark-theme .edit-limit-save-btn { background: var(--accent) !important; }
 .dark-theme .edit-limit-delete-btn {
     background: transparent !important;
     border-color: rgba(239,68,68,0.3) !important;
@@ -523,8 +534,6 @@ html:not(.dark-theme) .calendar-day .day-label {
 .dark-theme .filters-section,
 .dark-theme .filter-group,
 .dark-theme .kpi-bar,
-.dark-theme .kpi-chart-card,
-.dark-theme .kpi-insights-card,
 .dark-theme .kpi-metrics,
 .dark-theme .kpi-budget-progress,
 .dark-theme .quick-shortcuts,
@@ -533,6 +542,14 @@ html:not(.dark-theme) .calendar-day .day-label {
     color: var(--text) !important;
     border: none !important;
     box-shadow: none !important;
+}
+.dark-theme .kpi-chart-card,
+.dark-theme .kpi-insights-card {
+    background: #131f2e !important;
+    color: var(--text) !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: none !important;
+    border-radius: 14px !important;
 }
 
 .dark-theme .filter-group label,
@@ -592,7 +609,7 @@ html:not(.dark-theme) .calendar-day .day-label {
 .dark-theme .btn-export,
 .dark-theme .btn-import,
 .dark-theme .primary {
-    background: linear-gradient(135deg, #6366f1, #3b82f6) !important;
+    background: linear-gradient(135deg, var(--accent), var(--accent-grad)) !important;
     color: #fff !important;
     border: none !important;
 }
@@ -868,9 +885,9 @@ html:not(.dark-theme) .calendar-day .day-label {
     color: rgba(230,238,252,0.8) !important;
 }
 .dark-theme .theme-options .radio input:checked + span {
-    background: #6366f1 !important;
+    background: var(--accent) !important;
     color: white !important;
-    border-color: #6366f1 !important;
+    border-color: var(--accent) !important;
 }
 
 /* Charts modal header visible in both themes */
@@ -941,4 +958,77 @@ html:not(.dark-theme) .calendar-day .day-label {
 
 .shared-categories:active {
     background: transparent !important;
+}
+
+/* ─── Spendings modal dark mode (dashboard inline #spendingsModal) ─── */
+.dark-theme .spendings-category-item {
+    background: rgba(255,255,255,0.05) !important;
+    border-color: rgba(255,255,255,0.08) !important;
+}
+.dark-theme .spendings-category-name {
+    color: #e2e8f0 !important;
+}
+.dark-theme .spendings-transaction-item {
+    background: rgba(255,255,255,0.05) !important;
+    border-color: rgba(255,255,255,0.08) !important;
+}
+.dark-theme .spendings-transaction-title {
+    color: #e2e8f0 !important;
+}
+.dark-theme .spendings-empty {
+    background: rgba(255,255,255,0.04) !important;
+    color: #475569 !important;
+}
+.dark-theme .spendings-filters select,
+.dark-theme .spendings-filters input,
+.dark-theme .spendings-filter-bar select,
+.dark-theme .spendings-filter-bar input {
+    background: rgba(255,255,255,0.06) !important;
+    border-color: rgba(255,255,255,0.12) !important;
+    color: var(--text) !important;
+}
+.dark-theme .spendings-filters label,
+.dark-theme .filter-group label {
+    color: #94a3b8 !important;
+}
+.dark-theme .spendings-summary-row {
+    border-bottom-color: rgba(255,255,255,0.06) !important;
+}
+.dark-theme .spendings-summary-label {
+    color: #94a3b8 !important;
+}
+.dark-theme .spendings-summary-value {
+    color: var(--text) !important;
+}
+
+/* ─── Accent color: global button overrides (use CSS variables from theme-init.js) ─── */
+button.primary,
+.btn-add-expense,
+.btn-export,
+.btn-import,
+.btn-submit {
+    background: linear-gradient(135deg, var(--accent), var(--accent-grad)) !important;
+    box-shadow: 0 4px 14px rgba(var(--accent-rgb), 0.35) !important;
+    color: #fff !important;
+    border: none !important;
+}
+button.primary:hover,
+.btn-add-expense:hover,
+.btn-submit:hover {
+    background: linear-gradient(135deg, var(--accent-hover), var(--accent)) !important;
+    box-shadow: 0 6px 18px rgba(var(--accent-rgb), 0.45) !important;
+}
+.tag-filter-btn.active {
+    background: linear-gradient(135deg, var(--accent), var(--accent-grad)) !important;
+    box-shadow: 0 3px 10px rgba(var(--accent-rgb), 0.35) !important;
+    border-color: transparent !important;
+    color: #fff !important;
+}
+.edit-limit-save-btn {
+    background: var(--accent) !important;
+}
+.theme-options .radio input:checked + span {
+    background: var(--accent) !important;
+    border-color: var(--accent) !important;
+    color: #fff !important;
 }

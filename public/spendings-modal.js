@@ -48,7 +48,24 @@
       '#sharedSpendingsModal .spendings-transaction-title{font-weight:600;color:#0f1724}',
       '#sharedSpendingsModal .spendings-transaction-sub{color:#64748b;font-size:12px}',
       '#sharedSpendingsModal .spendings-transaction-amount{font-weight:700;color:#ef4444}',
-      '#sharedSpendingsModal .spendings-empty{padding:12px;border-radius:10px;background:#f8fafc;color:#94a3b8;font-style:italic}'
+      '#sharedSpendingsModal .spendings-empty{padding:12px;border-radius:10px;background:#f8fafc;color:#94a3b8;font-style:italic}',
+      '.dark-theme #sharedSpendingsModal .modal-content{background:#0f1724!important;color:#e2e8f0!important}',
+      '.dark-theme #sharedSpendingsModal .modal-header{border-bottom-color:rgba(255,255,255,0.08)!important}',
+      '.dark-theme #sharedSpendingsModal .modal-header h2{color:#f1f5f9!important}',
+      '.dark-theme #sharedSpendingsModal .modal-body{color:#cbd5e1!important}',
+      '.dark-theme #sharedSpendingsModal .summary-box{background:rgba(255,255,255,0.05)!important;border:1px solid rgba(255,255,255,0.08)!important}',
+      '.dark-theme #sharedSpendingsModal .summary-box span{color:#94a3b8!important}',
+      '.dark-theme #sharedSpendingsModal .summary-box strong{color:#f1f5f9!important}',
+      '.dark-theme #sharedSpendingsModal .filter-group label{color:#94a3b8!important}',
+      '.dark-theme #sharedSpendingsModal .filter-group input,.dark-theme #sharedSpendingsModal .filter-group select{background:rgba(255,255,255,0.06)!important;border-color:rgba(255,255,255,0.12)!important;color:#e2e8f0!important}',
+      '.dark-theme #sharedSpendingsModal .spendings-card{background:rgba(255,255,255,0.04)!important;border-color:rgba(255,255,255,0.08)!important}',
+      '.dark-theme #sharedSpendingsModal .spendings-card h3{color:#f1f5f9!important}',
+      '.dark-theme #sharedSpendingsModal .spendings-category-item{background:rgba(255,255,255,0.05)!important}',
+      '.dark-theme #sharedSpendingsModal .spendings-category-name{color:#e2e8f0!important}',
+      '.dark-theme #sharedSpendingsModal .spendings-transaction-item{background:rgba(255,255,255,0.05)!important}',
+      '.dark-theme #sharedSpendingsModal .spendings-transaction-title{color:#e2e8f0!important}',
+      '.dark-theme #sharedSpendingsModal .spendings-transaction-sub{color:#64748b!important}',
+      '.dark-theme #sharedSpendingsModal .spendings-empty{background:rgba(255,255,255,0.04)!important;color:#475569!important}'
     ].join('\n');
     document.head.appendChild(style);
   }

@@ -3,7 +3,7 @@
 :root { --sidebar-width: 360px; }
 
 html { height: 100%; overflow: hidden; }
-body { height: 100%; overflow-x: visible; }
+body { height: 100%; overflow-x: hidden; }
 body {
   margin: 0;
   font-family: "Inter", sans-serif;
@@ -476,6 +476,49 @@ hr {
   font-style: italic;
 }
 
+/* ── Dark mode overrides for inline #spendingsModal ── */
+.dark-theme #spendingsModal .spendings-card {
+  background: rgba(255,255,255,0.04) !important;
+  border-color: rgba(255,255,255,0.08) !important;
+}
+.dark-theme #spendingsModal .spendings-card h3 {
+  color: #f1f5f9 !important;
+}
+.dark-theme #spendingsModal .spendings-category-item {
+  background: rgba(255,255,255,0.05) !important;
+}
+.dark-theme #spendingsModal .spendings-category-name {
+  color: #e2e8f0 !important;
+}
+.dark-theme #spendingsModal .spendings-transaction-item {
+  background: rgba(255,255,255,0.05) !important;
+}
+.dark-theme #spendingsModal .spendings-transaction-title {
+  color: #e2e8f0 !important;
+}
+.dark-theme #spendingsModal .spendings-empty {
+  background: rgba(255,255,255,0.04) !important;
+  color: #475569 !important;
+}
+.dark-theme #spendingsModal .spendings-filters select,
+.dark-theme #spendingsModal .spendings-filters input {
+  background: rgba(255,255,255,0.06) !important;
+  border-color: rgba(255,255,255,0.12) !important;
+  color: #f0f5fb !important;
+}
+.dark-theme #spendingsModal .filter-group label {
+  color: #94a3b8 !important;
+}
+.dark-theme #spendingsModal .summary-box {
+  background: rgba(255,255,255,0.04) !important;
+}
+.dark-theme #spendingsModal .summary-box span {
+  color: #94a3b8 !important;
+}
+.dark-theme #spendingsModal .summary-box strong {
+  color: #f0f5fb !important;
+}
+
 @keyframes overlayIn {
   from { opacity: 0; }
   to { opacity: 1; }
@@ -752,7 +795,7 @@ main {
   padding: 12px 16px;
   font-size: 15px;
   font-weight: 600;
-  background: #667eea;
+  background: linear-gradient(135deg, var(--accent), var(--accent-grad));
   color: white;
   border: none;
   border-radius: 10px;
@@ -765,9 +808,9 @@ main {
 }
 
 .recurring-add-form button:hover {
-  background: #5568d3;
+  background: linear-gradient(135deg, var(--accent-hover), var(--accent));
   transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 4px 12px rgba(var(--accent-rgb), 0.3);
 }
 
 .day-picker-btn {
@@ -1714,8 +1757,9 @@ button.primary-danger:hover { background: linear-gradient(135deg, #dc2626, #b91c
 
 /* Dropdown add-category styles */
 .dropdown { position:relative; width: 100%; }
+.cat-wrap { position: relative; }
 .dropdown-btn { padding:10px 14px; font-size:14px; border:1px solid #e4e7ec; border-radius:8px; background:#fff; cursor:pointer; display:flex; align-items:center; justify-content:space-between; min-width:150px; white-space: nowrap; }
-.dropdown-menu { position:absolute; top:calc(100% + 8px); left:0; min-width: 200px; background:#fff; border:1px solid #e4e7ec; border-radius:8px; box-shadow:0 8px 24px rgba(16,24,40,0.08); display:none; z-index:120; }
+.dropdown-menu { position:absolute; top:calc(100% + 4px); right:0; left:auto; min-width: 220px; background:#fff; border:1px solid #e4e7ec; border-radius:8px; box-shadow:0 8px 24px rgba(16,24,40,0.08); display:none; z-index:120; }
 .dropdown-menu .option { padding:10px 14px; cursor:pointer; }
 .dropdown-menu .option:hover { background:#f8fafb; }
 .dropdown-menu .add-form { padding:10px; }
@@ -2267,9 +2311,9 @@ button.primary-danger {
   flex-direction: column;
   justify-content: space-between;
   min-height: 90px;
-  background: linear-gradient(135deg, #6366f1 0%, #3b82f6 55%, #06b6d4 100%) !important;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-grad) 100%) !important;
   box-shadow: none !important;
-  filter: drop-shadow(0 4px 10px rgba(99,102,241,0.5)) drop-shadow(0 0 8px rgba(99,102,241,0.25));
+  filter: drop-shadow(0 4px 10px rgba(var(--accent-rgb),0.5)) drop-shadow(0 0 8px rgba(var(--accent-rgb),0.25));
 }
 .summary-cards .card:nth-child(3)::before {
   content: '';
@@ -2311,9 +2355,9 @@ button.primary-danger {
   filter: drop-shadow(0 4px 10px rgba(180,20,20,0.5)) drop-shadow(0 0 8px rgba(180,20,20,0.25));
 }
 .summary-cards .card:nth-child(3).balance-positive {
-  background: linear-gradient(135deg, #6366f1 0%, #3b82f6 55%, #06b6d4 100%) !important;
+  background: linear-gradient(135deg, var(--accent) 0%, var(--accent-grad) 100%) !important;
   box-shadow: none !important;
-  filter: drop-shadow(0 4px 10px rgba(99,102,241,0.5)) drop-shadow(0 0 8px rgba(99,102,241,0.25));
+  filter: drop-shadow(0 4px 10px rgba(var(--accent-rgb),0.5)) drop-shadow(0 0 8px rgba(var(--accent-rgb),0.25));
 }
 
 /* Onboarding Modal Styles */

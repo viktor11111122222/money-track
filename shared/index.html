@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
     <title>Family Budget</title>
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#6c63ff">
@@ -68,14 +68,12 @@
                 </div>
             </div>
 
-            <div class="settings-wrap">
-                <div class="settings-card" onclick="window.location.href='settings.html'">
-                    <i class="fa-solid fa-gear"></i>
-                    <h3 data-i18n="sidebar.settings">Settings</h3>
-                </div>
-                <div class="account-chip" id="accountChip">
-                    <img src="/public/avatar-default.svg" alt="Account">
-                </div>
+            <div class="side-card" onclick="window.location.href='settings.html'">
+                <i class="fa-solid fa-gear"></i>
+                <h3 data-i18n="sidebar.settings">Settings</h3>
+            </div>
+            <div class="account-chip" id="accountChip">
+                <img src="/public/avatar-default.svg" alt="Account">
             </div>
         </nav>
     </header>
@@ -336,6 +334,7 @@
 
     <script src="/public/account-avatar.js"></script>
     <script src="/public/spendings-modal.js"></script>
+    <script src="/public/sounds.js"></script>
     <script src="script.js?v=20260129"></script>
     <script>
       if ('serviceWorker' in navigator) {

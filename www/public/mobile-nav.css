@@ -23,7 +23,7 @@ nav.sidebar {
   flex-direction: row !important;
   align-items: center !important;
   justify-content: space-around !important;
-  padding: 4px 2px calc(4px + env(safe-area-inset-bottom)) 2px !important;
+  padding: 4px 2px env(safe-area-inset-bottom) 2px !important;
   height: auto !important;
   gap: 0 !important;
 }
@@ -55,8 +55,8 @@ nav.sidebar > hr {
 .side-card:hover { transform: none !important; }
 
 .side-card.active {
-  background: linear-gradient(135deg, rgba(99,102,241,0.25), rgba(59,130,246,0.18)) !important;
-  box-shadow: inset 0 0 0 1px rgba(99,102,241,0.25) !important;
+  background: linear-gradient(135deg, rgba(99,102,241,0.45), rgba(59,130,246,0.35)) !important;
+  box-shadow: inset 0 0 0 1.5px rgba(99,102,241,0.6) !important;
 }
 
 .side-card i {
@@ -143,6 +143,7 @@ main {
    ACTIVE STATE
    ============================================ */
 
+.settings-wrap.active,
 .settings-wrap:has(.settings-card.active) {
   background: linear-gradient(135deg, rgba(99,102,241,0.25), rgba(59,130,246,0.18)) !important;
   box-shadow: inset 0 0 0 1px rgba(99,102,241,0.25) !important;
@@ -313,7 +314,7 @@ canvas {
   width: auto !important;
   padding: 10px 18px !important;
   min-height: 42px !important;
-  background: linear-gradient(135deg, #6366f1, #3b82f6 60%, #06b6d4) !important;
+  background: linear-gradient(135deg, var(--accent), var(--accent-grad)) !important;
   border: none !important;
   border-radius: 22px !important;
   color: #fff !important;
@@ -321,7 +322,7 @@ canvas {
   font-weight: 600 !important;
   cursor: pointer !important;
   margin: 0 !important;
-  box-shadow: 0 3px 10px rgba(99,102,241,0.35) !important;
+  box-shadow: 0 3px 10px rgba(var(--accent-rgb), 0.35) !important;
 }
 
 .charts-toggle-btn i:last-child {
@@ -337,4 +338,185 @@ canvas {
   width: 100% !important;
   height: auto !important;
   max-height: 90vh !important;
+}
+
+/* ============================================
+   iOS / SAFARI COMPATIBILITY — all iPhones
+   ============================================ */
+
+/* Prevent text auto-resize on orientation change */
+html {
+  -webkit-text-size-adjust: 100% !important;
+  text-size-adjust: 100% !important;
+}
+
+/* Smooth font rendering */
+body {
+  -webkit-font-smoothing: antialiased !important;
+  -moz-osx-font-smoothing: grayscale !important;
+}
+
+/* Remove blue tap flash on every tappable element */
+*, *::before, *::after {
+  -webkit-tap-highlight-color: transparent !important;
+}
+
+/* Prevent long-press callout (link preview popup) on interactive elements */
+button, a, .side-card, .color-swatch, .card {
+  -webkit-touch-callout: none !important;
+}
+
+/* Allow normal text selection in text nodes */
+p, h1, h2, h3, h4, h5, span, label, .amount, .card-value {
+  -webkit-user-select: text !important;
+  user-select: text !important;
+}
+
+/* Remove default iOS button styling */
+button, input[type="button"], input[type="submit"], input[type="reset"] {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+}
+
+/* Remove iOS rounded corners / inset shadow on inputs */
+input:not([type="range"]), textarea, select {
+  -webkit-appearance: none !important;
+  appearance: none !important;
+  border-radius: 8px !important;
+}
+
+/* Momentum (inertia) scrolling on all scroll containers */
+main,
+.main-container,
+.modal-content,
+.modal-body,
+.charts-modal-content,
+.spendings-transactions,
+.transactions ul,
+.recurring-list,
+.settings-grid,
+.shared-content {
+  -webkit-overflow-scrolling: touch !important;
+}
+
+/* Disable hover effects on touch screens — prevents "stuck hover" states */
+@media (hover: none) and (pointer: coarse) {
+  .side-card:hover {
+    transform: none !important;
+    background: transparent !important;
+  }
+  button:hover,
+  .card:hover,
+  .setting-card:hover,
+  .shared-card:hover,
+  .wallet-panel:hover,
+  .recurring-item:hover {
+    transform: none !important;
+    box-shadow: none !important;
+  }
+}
+
+/* Safe area fallback for iOS < 11 (no env() support) */
+@supports not (padding: env(safe-area-inset-bottom)) {
+  nav.sidebar {
+    padding-bottom: 12px !important;
+  }
+  main {
+    padding-bottom: 72px !important;
+  }
+  header {
+    padding-bottom: 4px !important;
+  }
+}
+
+/* ── iPhone SE 1st/2nd/3rd gen & mini (≤375px) ── */
+@media screen and (max-width: 375px) {
+  /* Nav items – tighter */
+  .side-card h3 {
+    font-size: 8px !important;
+    max-width: 46px !important;
+  }
+  .side-card i {
+    font-size: 15px !important;
+  }
+
+  /* Summary cards – more compact */
+  .summary-cards {
+    gap: 6px !important;
+  }
+  .card h4 {
+    font-size: 0.68rem !important;
+  }
+  .card .amount,
+  .summary-cards .card:nth-child(3) .amount {
+    font-size: 1.15rem !important;
+  }
+
+  /* Balance card on small screens */
+  .summary-cards .card:nth-child(3) {
+    min-height: 78px !important;
+    padding: 1rem !important;
+  }
+
+  /* Form inputs in modals */
+  .modal-card, .modal-content {
+    padding: 16px !important;
+  }
+
+  /* Settings cards */
+  .setting-card {
+    padding: 14px 12px !important;
+  }
+
+  /* Reduce section headings */
+  .top-row h1, .shared-hero h1 {
+    font-size: 1.2rem !important;
+  }
+
+  /* KPI grid */
+  .kpi-analytics-grid {
+    gap: 10px !important;
+  }
+}
+
+/* ── iPhone SE 1st gen (≤ 320px) ── */
+@media screen and (max-width: 320px) {
+  /* Hide nav label text — icons only */
+  .side-card h3 {
+    display: none !important;
+  }
+  .side-card {
+    padding: 6px 4px !important;
+  }
+
+  /* Even smaller amounts */
+  .card .amount {
+    font-size: 1rem !important;
+  }
+
+  /* Tighter main padding */
+  main {
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+}
+
+/* ── Larger iPhones Pro Max / Plus (≥ 428px) ── */
+@media screen and (min-width: 428px) {
+  /* Give nav items a bit more breathing room */
+  .side-card {
+    padding: 6px 10px !important;
+  }
+  .side-card h3 {
+    font-size: 10px !important;
+    max-width: 64px !important;
+  }
+  .side-card i {
+    font-size: 18px !important;
+  }
+
+  /* Slightly larger card amounts */
+  .card .amount {
+    font-size: 1.25rem !important;
+  }
 }

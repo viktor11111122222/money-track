@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
     <title>Settings - Money Tracker</title>
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#6c63ff">
@@ -13,9 +13,11 @@
     <link rel="stylesheet" href="../dashboard/style.css">
     <link rel="stylesheet" href="style.css">
     <link rel="stylesheet" href="/public/fontawesome/css/all.min.css">
+    <link rel="stylesheet" href="/public/theme.css">
     <link rel="stylesheet" href="/public/mobile-nav.css">
     <script src="/public/app-config.js"></script>
     <script src="/public/i18n.js"></script>
+    <script src="/public/theme-init.js"></script>
 </head>
 <body>
     <header>
@@ -58,14 +60,12 @@
                     <p>Version 1.0.0</p>
                 </div>
             </div>
-            <div class="settings-wrap">
-                <div class="settings-card active">
-                    <i class="fa-solid fa-gear"></i>
-                    <h3 data-i18n="sidebar.settings">Settings</h3>
-                </div>
-                <div class="account-chip" id="accountChip">
-                    <img src="/public/avatar-default.svg" alt="Account">
-                </div>
+            <div class="side-card active">
+                <i class="fa-solid fa-gear"></i>
+                <h3 data-i18n="sidebar.settings">Settings</h3>
+            </div>
+            <div class="account-chip" id="accountChip">
+                <img src="/public/avatar-default.svg" alt="Account">
             </div>
         </nav>
     </header>
@@ -232,6 +232,7 @@
                     <div class="form-row">
                         <label data-i18n="settings.accentColor">Accent Color</label>
                         <div class="accent-palette">
+                            <button class="color-swatch indigo" data-accent="indigo"></button>
                             <button class="color-swatch blue" data-accent="blue"></button>
                             <button class="color-swatch green" data-accent="green"></button>
                             <button class="color-swatch purple" data-accent="purple"></button>
@@ -256,10 +257,12 @@
     <footer class="dashboard-footer">
         <p class="footer-copyright">&copy; 2026 Money Tracker &middot; Smart expense tracking for better financial management</p>
     </footer>
-    <script src="/public/theme-init.js"></script>
     <script src="/public/auth-guard.js"></script>
     <script src="/public/account-avatar.js"></script>
     <script src="/public/spendings-modal.js"></script>
+    <script src="/public/notifications.js"></script>
+    <script src="/public/sounds.js"></script>
+    <script src="/public/admob.js"></script>
     <script src="/public/settings.js"></script>
     <script>
         // Reorder settings cards so columns stack vertically as intended

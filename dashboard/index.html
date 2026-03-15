@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
     <title>Money Tracker</title>
     <link rel="manifest" href="/manifest.json">
     <meta name="theme-color" content="#6c63ff">
@@ -71,14 +71,12 @@
                 </div>
 
             </div>
-            <div class="settings-wrap">
-                <div class="settings-card" onclick="window.location.href='../shared/settings.html'">
-                    <i class="fa-solid fa-gear"></i>
-                    <h3 data-i18n="sidebar.settings">Settings</h3>
-                </div>
-                <div class="account-chip" id="accountChip">
-                    <img src="/public/avatar-default.svg" alt="Account">
-                </div>
+            <div class="side-card" onclick="window.location.href='../shared/settings.html'">
+                <i class="fa-solid fa-gear"></i>
+                <h3 data-i18n="sidebar.settings">Settings</h3>
+            </div>
+            <div class="account-chip" id="accountChip">
+                <img src="/public/avatar-default.svg" alt="Account">
             </div>
             
         </nav>
@@ -114,13 +112,49 @@
                             <i class="fa-solid fa-up-right-from-square" style="font-size:11px;"></i>
                         </button>
                     </div>
-                    <div style="width:100%;margin-top:12px;position:relative;">
-                        <canvas id="spendingChart" width="300" height="260" style="display:block;"></canvas>
-                        <div id="chartEmptyState" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;">
-                            <div style="font-size:14px;color:#9ca3af;font-weight:500;">No expenses this month</div>
+                    <div style="width:100%;margin-top:12px;position:relative;display:flex;justify-content:center;">
+                        <div style="position:relative;display:inline-block;">
+                            <canvas id="spendingChart" width="260" height="260" style="display:block;"></canvas>
+                            <div id="chartEmptyState" style="display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;white-space:nowrap;">
+                                <div style="font-size:13px;color:#94a3b8;font-weight:500;" data-i18n="dash.noExpensesMonth">No expenses this month</div>
+                            </div>
                         </div>
                     </div>
                 </div>
+
+                <section class="add-expense">
+                    <h2 data-i18n="dash.addExpense">Add Expense</h2>
+                    <div class="dropdown">
+                            <div class="form-row">
+                                <input type="number" data-i18n-placeholder="dash.amount" placeholder="Amount" style="flex: 1;">
+                                <div class="cat-wrap">
+                                    <button class="dropdown-btn" id="dropdownBtn">
+                                        <span id="selectedCategory" data-i18n="dash.category">Category</span>
+                                        <span class="arrow" id="arrow">▼</span>
+                                    </button>
+                                    <div class="dropdown-menu" id="dropdownMenu">
+                                        <div class="option">Food</div>
+                                        <div class="option">Transport</div>
+                                        <div class="option">Rent</div>
+                                        <div class="option">Entertainment</div>
+                                        <div class="option add-option" data-add="true" data-i18n="dash.addCategory">+ Add category</div>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="form-row" style="margin-top: 8px;">
+                                <input type="text" id="tagsInput" data-i18n-placeholder="dash.tagsPlaceholder" placeholder="Tags (e.g. #coffee, #work, #travel)">
+                            </div>
+                    </div>
+                    <button class="primary" data-i18n="dash.addExpenseBtn">Add Expense</button>
+                </section>
+
+                <section class="add-savings">
+                    <h2 data-i18n="dash.addSavings">Add Savings</h2>
+                    <div class="form-row">
+                        <input type="number" id="savingsInput" data-i18n-placeholder="dash.amount" placeholder="Amount">
+                    </div>
+                    <button class="primary primary-success" data-i18n="dash.addMoney">Add Money</button>
+                </section>
 
                 <section class="insights-card">
                     <h3 data-i18n="dash.insights">Insights</h3>
@@ -159,49 +193,7 @@
             </div>
 
             <aside class="main-right">
-                <section class="add-expense">
-                    <h2 data-i18n="dash.addExpense">Add Expense</h2>
-                    
 
-                    <div class="dropdown">
-
-                            <div class="form-row">
-                                <input type="number" data-i18n-placeholder="dash.amount" placeholder="Amount" style="flex: 1;">
-                                <button class="dropdown-btn" id="dropdownBtn">
-                                    <span id="selectedCategory" data-i18n="dash.category">Category</span>
-                                    <span class="arrow" id="arrow">▼</span>
-                                </button>
-                            </div>
-
-                        <div class="dropdown-menu" id="dropdownMenu">
-                            <div class="option">Food</div>
-                            <div class="option">Transport</div>
-                            <div class="option">Rent</div>
-                            <div class="option">Entertainment</div>
-                            <div class="option add-option" data-add="true" data-i18n="dash.addCategory">+ Add category</div>
-                        </div>
-
-                            <div class="form-row" style="margin-top: 8px;">
-                                <input type="text" id="tagsInput" data-i18n-placeholder="dash.tagsPlaceholder" placeholder="Tags (e.g. #coffee, #work, #travel)">
-                            </div>
-
-                        </div>
-
-                        
-                    <!-- </div> -->
-
-                    <button class="primary" data-i18n="dash.addExpenseBtn">Add Expense</button>
-                </section>
-
-                <section class="add-savings">
-                    <h2 data-i18n="dash.addSavings">Add Savings</h2>
-                    <div class="form-row">
-                        <input type="number" id="savingsInput" data-i18n-placeholder="dash.amount" placeholder="Amount">
-                    </div>
-                    <button class="primary primary-success" data-i18n="dash.addMoney">Add Money</button>
-                </section>
-
-                
 
                 <section class="reset-section">
                     <button class="primary primary-danger" id="resetBtn"><i class="fa-solid fa-rotate" style="margin-right:6px;"></i><span data-i18n="dash.resetAll">Reset All</span></button>
@@ -428,6 +420,9 @@
 
     <script src="/public/auth-guard.js"></script>
     <script src="/public/account-avatar.js"></script>
+    <script src="/public/notifications.js"></script>
+    <script src="/public/sounds.js"></script>
+    <script src="/public/admob.js"></script>
     <script src="script.js"></script>
     <script>
       if ('serviceWorker' in navigator) {

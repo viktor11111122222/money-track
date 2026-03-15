@@ -9,16 +9,17 @@
     account: { twoFactor: true },
     notifications: { expense: true, monthly: true, family: true, wallet: true, weekly: true },
     preferences: { currency: 'EUR', dateFormat: 'DD/MM/YYYY', startMonth: '1', monthlyIncome: 0, language: 'English' },
-    appearance: { theme: 'light', accent: 'blue' }
+    appearance: { theme: 'light', accent: 'indigo' }
   };
 
   /* ── Accent color map ── */
   const accentMap = {
-    blue:   { main: '#2563eb', hover: '#1d4ed8', rgb: '37,99,235' },
-    green:  { main: '#059669', hover: '#047857', rgb: '5,150,105' },
-    purple: { main: '#7c3aed', hover: '#6d28d9', rgb: '124,58,237' },
-    pink:   { main: '#db2777', hover: '#be185d', rgb: '219,39,119' },
-    gray:   { main: '#64748b', hover: '#475569', rgb: '100,116,139' }
+    indigo: { main: '#6366f1', hover: '#4f46e5', rgb: '99,102,241',  grad: '#06b6d4' },
+    blue:   { main: '#2563eb', hover: '#1d4ed8', rgb: '37,99,235',   grad: '#60a5fa' },
+    green:  { main: '#10b981', hover: '#059669', rgb: '16,185,129',  grad: '#34d399' },
+    purple: { main: '#7c3aed', hover: '#6d28d9', rgb: '124,58,237', grad: '#a78bfa' },
+    pink:   { main: '#ec4899', hover: '#db2777', rgb: '236,72,153', grad: '#f472b6' },
+    gray:   { main: '#64748b', hover: '#475569', rgb: '100,116,139', grad: '#94a3b8' }
   };
 
   /* ── Currency symbol map ── */
@@ -243,6 +244,7 @@
     document.documentElement.style.setProperty('--accent', a.main);
     document.documentElement.style.setProperty('--accent-hover', a.hover);
     document.documentElement.style.setProperty('--accent-rgb', a.rgb);
+    document.documentElement.style.setProperty('--accent-grad', a.grad);
     document.querySelectorAll('.accent-palette .color-swatch').forEach(function(btn) {
       if (btn.dataset.accent === accent) {
         btn.style.outline = '3px solid ' + a.main;
@@ -511,12 +513,16 @@
       showToast(this.checked ? '2FA enabled' : '2FA disabled', 'info');
     });
 
-    // ═══ Notification toggles – auto-save ═══
+    // ═══ Notification toggles – auto-save + request permission ═══
     ['#notifExpense', '#notifMonthly', '#notifFamily', '#notifWallet', '#notifWeekly'].forEach(function(sel) {
       var el = qs(sel);
       if (el) el.addEventListener('change', function () {
         var state = collectFromUI();
         writeStorage(state);
+        // Request native permission when any notification is turned on
+        if (this.checked && typeof onNotifToggleEnabled === 'function') {
+          onNotifToggleEnabled();
+        }
       });
     });
 

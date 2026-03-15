@@ -86,10 +86,39 @@ function renderCategoryChart() {
         categoryChartInstance.destroy();
     }
 
+    const isDark = document.documentElement.classList.contains('dark-theme');
+
+    // Show empty state chart when no data
+    let emptyOverlay = canvas.parentElement.querySelector('.chart-empty-overlay');
+    if (!emptyOverlay) {
+        emptyOverlay = document.createElement('div');
+        emptyOverlay.className = 'chart-empty-overlay';
+        emptyOverlay.style.cssText = 'display:none;position:absolute;top:50%;left:50%;transform:translate(-50%,-50%);text-align:center;pointer-events:none;white-space:nowrap;';
+        emptyOverlay.innerHTML = '<div style="font-size:13px;font-weight:500;"></div>';
+        canvas.parentElement.style.position = 'relative';
+        canvas.parentElement.appendChild(emptyOverlay);
+    }
+
     if (labels.length === 0) {
-        canvas.getContext('2d').clearRect(0, 0, canvas.width, canvas.height);
+        emptyOverlay.style.display = 'block';
+        emptyOverlay.querySelector('div').textContent = 'No expenses this month';
+        emptyOverlay.querySelector('div').style.color = isDark ? '#94a3b8' : '#6b7280';
+        categoryChartInstance = new Chart(canvas, {
+            type: 'doughnut',
+            data: {
+                labels: [''],
+                datasets: [{ data: [1], backgroundColor: [isDark ? 'rgba(255,255,255,0.22)' : '#e5e7eb'], borderWidth: 0 }]
+            },
+            options: {
+                responsive: true,
+                maintainAspectRatio: false,
+                plugins: { legend: { display: false }, tooltip: { enabled: false } }
+            }
+        });
         return;
     }
+
+    emptyOverlay.style.display = 'none';
 
     categoryChartInstance = new Chart(canvas, {
         type: 'pie',
@@ -99,7 +128,7 @@ function renderCategoryChart() {
                 data: data,
                 backgroundColor: colors.slice(0, labels.length),
                 borderWidth: 2,
-                borderColor: '#fff'
+                borderColor: isDark ? '#0f1724' : '#fff'
             }]
         },
         options: {
@@ -111,7 +140,7 @@ function renderCategoryChart() {
                     labels: {
                         padding: 15,
                         font: { size: 12, weight: '600' },
-                        color: '#333'
+                        color: isDark ? '#e2e8f0' : '#333'
                     }
                 },
                 tooltip: {
