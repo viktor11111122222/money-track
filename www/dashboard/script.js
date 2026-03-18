@@ -1,4 +1,5 @@
 // ===== DATA MANAGEMENT =====
+(function () {
 const DEFAULT_MONTHLY_INCOME = 100000;
 function getCurrency(){ try { var s = JSON.parse(localStorage.getItem('mt_settings_v1')); var c = s && s.preferences && s.preferences.currency; var m = { RSD:' RSD', USD:' $', EUR:' €', GBP:' £', JPY:' ¥', AUD:' A$', CAD:' C$', CNY:' ¥', INR:' ₹', BRL:' R$', CHF:' CHF', SEK:' kr', NOK:' kr' }; return m[c] || ' €'; } catch(e){ return ' €'; } }
 const CURRENCY = getCurrency();
@@ -2993,6 +2994,7 @@ window.addEventListener('languageChanged', () => {
   updateSmartSuggestions();
   if (typeof updateChart === 'function') updateChart();
   if (typeof initComparisonChart === 'function') initComparisonChart();
+  if (typeof applyI18n === 'function') applyI18n();
 });
 
 enqueueMissingWalletSync();
@@ -3202,3 +3204,10 @@ function openTrackLimitsModal() {
     modal.style.display = 'flex';
   }
 }
+
+// Expose functions used by inline onclick handlers in HTML
+window.toggleCharts = toggleCharts;
+window.openEditLimitsModal = openEditLimitsModal;
+window.openTrackLimitsModal = openTrackLimitsModal;
+
+})(); // end IIFE

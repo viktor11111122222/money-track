@@ -1,4 +1,5 @@
 // Data Management
+(function () {
 const DEFAULT_MONTHLY_INCOME = 100000;
 function getCurrency(){ try { var s = JSON.parse(localStorage.getItem('mt_settings_v1')); var c = s && s.preferences && s.preferences.currency; var m = { RSD:' RSD', USD:' $', EUR:' €', GBP:' £', JPY:' ¥', AUD:' A$', CAD:' C$', CNY:' ¥', INR:' ₹', BRL:' R$', CHF:' CHF', SEK:' kr', NOK:' kr' }; return m[c] || ' €'; } catch(e){ return ' €'; } }
 const CURRENCY = getCurrency();
@@ -1127,3 +1128,5 @@ function handleFileImport(event) {
 document.getElementById('btnExportCSV').addEventListener('click', exportCSV);
 document.getElementById('btnImportCSV').addEventListener('click', importCSV);
 document.getElementById('fileInput').addEventListener('change', handleFileImport);
+
+})(); // end IIFE

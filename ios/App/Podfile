@@ -19,7 +19,6 @@ end
 
 target 'App' do
   capacitor_pods
-  pod 'GoogleUserMessagingPlatform', '~> 2.6'
 end
 
 post_install do |installer|

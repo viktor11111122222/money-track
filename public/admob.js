@@ -50,7 +50,7 @@
             await plugin.showBanner({
                 adId: getAdUnitId(),
                 adSize: 'ADAPTIVE_BANNER',   // adapts to screen width
-                position: 'BOTTOM',           // sits just above content
+                position: 'TOP_CENTER',       // top of screen, away from nav bar
                 margin: 0,
                 isTesting: true
             });

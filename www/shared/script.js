@@ -1,3 +1,4 @@
+(function () {
 const API_BASE = window.__API_BASE__ || ((window.location.port === '5500' || window.location.port === '5501') ? 'http://localhost:8080/api' : '/api');
 const TOKEN_KEY = 'sharedBudgetToken';
 const WALLET_PROGRESS_CACHE_KEY = 'walletProgressCache';
@@ -2048,3 +2049,5 @@ setInterval(() => {
     isWalletRefreshing = false;
   });
 }, 8000);
+
+})(); // end IIFE

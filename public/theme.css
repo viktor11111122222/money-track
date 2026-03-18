@@ -526,6 +526,14 @@ html:not(.dark-theme) .calendar-day .day-label {
     box-shadow: none !important;
 }
 
+/* Expenses page: main-container has a white hardcoded background in expenses/style.css
+   that overrides the variable-based rule (same specificity, loaded later).
+   Use .dark-theme prefix for higher specificity + !important to win. */
+.dark-theme .main-container {
+    background: var(--bg) !important;
+    color: var(--text) !important;
+}
+
 /* Expenses page specific */
 /* .dark-theme .expenses-header, */
 .dark-theme .expenses-content,

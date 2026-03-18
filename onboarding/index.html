@@ -430,17 +430,11 @@
 
     localStorage.setItem(STORAGE_KEY, JSON.stringify(settings));
 
-    // Also save income to app data (moneyTrackerData)
+    // Also save income to app data
     var appData;
     try { appData = JSON.parse(localStorage.getItem(APP_DATA_KEY)) || {}; } catch(e) { appData = {}; }
     appData.income = income;
     localStorage.setItem(APP_DATA_KEY, JSON.stringify(appData));
-
-    // Save income to dashboard's data store (expenseTrackerData)
-    var expenseData;
-    try { expenseData = JSON.parse(localStorage.getItem('expenseTrackerData')) || {}; } catch(e) { expenseData = {}; }
-    expenseData.income = income;
-    localStorage.setItem('expenseTrackerData', JSON.stringify(expenseData));
 
     localStorage.setItem(ONBOARDING_KEY, 'true');
     window.location.href = '/dashboard/index.html';
