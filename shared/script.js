@@ -252,13 +252,60 @@ function getToken() {
   return localStorage.getItem(TOKEN_KEY);
 }
 
-function setToken(token) {
+function setToken(token, remember = true) {
   if (token) {
     localStorage.setItem(TOKEN_KEY, token);
+    if (!remember) {
+      // Označi kao session-only — auth-guard će ga obrisati pri sledećem cold startu
+      localStorage.setItem('mt_session_only', '1');
+    } else {
+      localStorage.removeItem('mt_session_only');
+    }
   } else {
     localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem('mt_session_only');
   }
 }
+
+// ── Local Auth (demo mode, no backend needed) ──────────────────────────────
+const LOCAL_USERS_KEY = 'mt_local_users';
+
+function _getLocalUsers() {
+  try { return JSON.parse(localStorage.getItem(LOCAL_USERS_KEY) || '[]'); } catch { return []; }
+}
+
+function _saveLocalUsers(users) {
+  localStorage.setItem(LOCAL_USERS_KEY, JSON.stringify(users));
+}
+
+function _makeLocalToken(user) {
+  // Base64 encoded user info — not secure, only for local/demo use
+  return 'local_' + btoa(JSON.stringify({ id: user.id, email: user.email, name: user.name }));
+}
+
+function parseLocalToken(token) {
+  try {
+    if (!token || !token.startsWith('local_')) return null;
+    return JSON.parse(atob(token.slice(6)));
+  } catch { return null; }
+}
+
+function localLogin(email, password) {
+  const users = _getLocalUsers();
+  const user = users.find(u => u.email === email && u.password === password);
+  if (!user) throw new Error('Invalid email or password.');
+  return _makeLocalToken(user);
+}
+
+function localRegister(name, email, password) {
+  const users = _getLocalUsers();
+  if (users.find(u => u.email === email)) throw new Error('This email is already registered.');
+  const user = { id: Date.now().toString(), name, email, password };
+  users.push(user);
+  _saveLocalUsers(users);
+  return _makeLocalToken(user);
+}
+// ── End Local Auth ──────────────────────────────────────────────────────────
 
 async function apiFetch(path, options = {}, withAuth = true) {
   const baseUrl = getApiBaseUrl();
@@ -298,17 +345,18 @@ async function apiFetch(path, options = {}, withAuth = true) {
 }
 
 function setAuthView(mode) {
-  if (!ui.authLoginForm || !ui.authRegisterForm) return;
+  const wizard = document.getElementById('registerWizard');
   if (mode === 'login') {
-    ui.authLoginForm.classList.remove('is-hidden');
-    ui.authRegisterForm.classList.add('is-hidden');
+    if (ui.authLoginForm) ui.authLoginForm.classList.remove('is-hidden');
+    if (wizard) wizard.classList.add('is-hidden');
     ui.showLogin?.classList.add('active');
     ui.showRegister?.classList.remove('active');
   } else {
-    ui.authLoginForm.classList.add('is-hidden');
-    ui.authRegisterForm.classList.remove('is-hidden');
+    if (ui.authLoginForm) ui.authLoginForm.classList.add('is-hidden');
+    if (wizard) wizard.classList.remove('is-hidden');
     ui.showLogin?.classList.remove('active');
     ui.showRegister?.classList.add('active');
+    showWizardStep(1);
   }
   if (ui.authError) ui.authError.textContent = '';
 }
@@ -1933,23 +1981,173 @@ async function loadAll() {
   }
 }
 
+// ── Register Wizard ───────────────────────────────────────────────────────────
+
+const _CURRENCY_SYMBOLS = {
+  EUR: '€', USD: '$', RSD: 'RSD', GBP: '£', JPY: '¥',
+  AUD: 'A$', CAD: 'C$', CHF: 'CHF', SEK: 'kr', NOK: 'kr',
+  BRL: 'R$', INR: '₹', CNY: '¥'
+};
+
+function showWizardStep(step) {
+  [1, 2, 3].forEach(n => {
+    const page = document.getElementById('wizardPage' + n);
+    const dot = document.getElementById('wStepDot' + n);
+    if (page) page.classList.toggle('is-hidden', n !== step);
+    if (dot) {
+      dot.classList.toggle('active', n === step);
+      dot.classList.toggle('done', n < step);
+    }
+    if (n < 3) {
+      const conn = document.getElementById('wConn' + n);
+      if (conn) conn.classList.toggle('done', n < step);
+    }
+  });
+  // Sync currency badge in step 3 when arriving there
+  if (step === 3) _updateCurrencyBadge();
+}
+
+function _updateCurrencyBadge() {
+  const sel = document.getElementById('wizardCurrency');
+  const badge = document.getElementById('wizardCurrencyBadge');
+  const input = document.getElementById('wizardIncome');
+  if (!sel || !badge) return;
+  const sym = _CURRENCY_SYMBOLS[sel.value] || sel.value;
+  badge.textContent = sym;
+  // Adjust padding so text doesn't overlap badge
+  if (input) input.style.paddingLeft = (14 + badge.textContent.length * 9) + 'px';
+}
+
+function _wizardError(id, msg) {
+  const el = document.getElementById(id);
+  if (el) el.textContent = msg || '';
+}
+
+function initWizard() {
+  // Currency change → update badge in real time
+  const currSel = document.getElementById('wizardCurrency');
+  if (currSel) currSel.addEventListener('change', _updateCurrencyBadge);
+
+  // Language change → immediately translate whole page
+  const langSel = document.getElementById('wizardLanguage');
+  if (langSel) langSel.addEventListener('change', () => {
+    if (typeof setLanguage === 'function') setLanguage(langSel.value);
+  });
+
+  // Step 1 → 2
+  document.getElementById('wizardNext1')?.addEventListener('click', () => {
+    const name = document.getElementById('registerName')?.value.trim();
+    const email = document.getElementById('registerEmail')?.value.trim();
+    const pass = document.getElementById('registerPassword')?.value;
+    if (!name) { _wizardError('wizardError1', 'Please enter your full name.'); return; }
+    if (!email || !email.includes('@')) { _wizardError('wizardError1', 'Please enter a valid email.'); return; }
+    if (!pass || pass.length < 4) { _wizardError('wizardError1', 'Password must be at least 4 characters.'); return; }
+    _wizardError('wizardError1', '');
+    showWizardStep(2);
+  });
+
+  // Step 2 → 1
+  document.getElementById('wizardBack2')?.addEventListener('click', () => showWizardStep(1));
+
+  // Step 2 → 3
+  document.getElementById('wizardNext2')?.addEventListener('click', () => showWizardStep(3));
+
+  // Step 3 → 2
+  document.getElementById('wizardBack3')?.addEventListener('click', () => showWizardStep(2));
+
+  // Step 3 → Submit
+  document.getElementById('wizardSubmit')?.addEventListener('click', handleWizardSubmit);
+}
+
+async function handleWizardSubmit() {
+  const name     = document.getElementById('registerName')?.value.trim();
+  const email    = document.getElementById('registerEmail')?.value.trim();
+  const pass     = document.getElementById('registerPassword')?.value;
+  const remember = document.getElementById('registerRememberMe')?.checked !== false;
+  const language = document.getElementById('wizardLanguage')?.value || 'English';
+  const currency = document.getElementById('wizardCurrency')?.value || 'EUR';
+  const income   = parseFloat(document.getElementById('wizardIncome')?.value) || 0;
+  const incomeDay = document.getElementById('wizardIncomeDay')?.value || '1';
+
+  try {
+    let token;
+    if (window.__LOCAL_AUTH__) {
+      token = localRegister(name, email, pass);
+    } else {
+      const payload = await apiFetch('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({ name, email, password: pass })
+      }, false);
+      token = payload.token;
+    }
+
+    // Save settings — startMonth is the key used by settings.js and dashboard
+    const settings = { preferences: { language, currency, monthlyIncome: income, startMonth: incomeDay, dateFormat: 'DD/MM/YYYY' } };
+    localStorage.setItem('mt_settings_v1', JSON.stringify(settings));
+
+    // Save full expenseTrackerData — income + currentBalance so dashboard shows correct values
+    const expData = {
+      income: income,
+      currentBalance: income,  // starting balance = monthly income
+      expenses: [],
+      categories: ['Food', 'Transport', 'Rent', 'Entertainment', 'Shopping', 'Health', 'Utilities'],
+      categoryLimits: {},
+      categoryColors: {},
+      savingsTotal: 0,
+      recurringExpenses: [],
+      lastMonthCheck: new Date().getMonth(),
+      lastPayDayMonth: '',
+      _cleared: true
+    };
+    localStorage.setItem('expenseTrackerData', JSON.stringify(expData));
+
+    // Apply language immediately
+    if (typeof setLanguage === 'function') setLanguage(language);
+
+    setToken(token, remember);
+    sessionStorage.setItem('mt_session_active', '1');
+    window.location.href = '../dashboard/index.html';
+
+  } catch (error) {
+    const msg = error.message || 'Registration failed.';
+    const isEmailTaken = msg.toLowerCase().includes('already registered') ||
+                         msg.toLowerCase().includes('already exists') ||
+                         error.status === 409;
+    if (isEmailTaken) {
+      const loginEmailEl = document.getElementById('loginEmail');
+      if (loginEmailEl) loginEmailEl.value = email;
+      setAuthView('login');
+      if (ui.authError) ui.authError.textContent = 'This email already has an account. Please log in.';
+    } else {
+      _wizardError('wizardError1', msg);
+      showWizardStep(1);
+    }
+  }
+}
+
+// ── End Register Wizard ───────────────────────────────────────────────────────
+
 async function handleLogin(event) {
   event.preventDefault();
   if (!ui.loginEmail || !ui.loginPassword) return;
+  const remember = document.getElementById('rememberMe');
+  const shouldRemember = !remember || remember.checked;
   try {
-    const payload = await apiFetch('/auth/login', {
-      method: 'POST',
-      body: JSON.stringify({
-        email: ui.loginEmail.value.trim(),
-        password: ui.loginPassword.value
-      })
-    }, false);
-    const remember = document.getElementById('rememberMe');
-    if (remember && !remember.checked) {
-      sessionStorage.setItem(TOKEN_KEY, payload.token);
+    let token;
+    if (window.__LOCAL_AUTH__) {
+      token = localLogin(ui.loginEmail.value.trim(), ui.loginPassword.value);
     } else {
-      setToken(payload.token);
+      const payload = await apiFetch('/auth/login', {
+        method: 'POST',
+        body: JSON.stringify({
+          email: ui.loginEmail.value.trim(),
+          password: ui.loginPassword.value
+        })
+      }, false);
+      token = payload.token;
     }
+    setToken(token, shouldRemember);
+    sessionStorage.setItem('mt_session_active', '1'); // sprečava auth-guard da odmah obriše token
     window.location.href = '../dashboard/index.html';
   } catch (error) {
     if (ui.authError) ui.authError.textContent = error.message || 'Login failed.';
@@ -1959,19 +2157,41 @@ async function handleLogin(event) {
 async function handleRegister(event) {
   event.preventDefault();
   if (!ui.registerName || !ui.registerEmail || !ui.registerPassword) return;
+  const rememberEl = document.getElementById('registerRememberMe');
+  const shouldRemember = !rememberEl || rememberEl.checked;
+  const email = ui.registerEmail.value.trim();
   try {
-    const payload = await apiFetch('/auth/register', {
-      method: 'POST',
-      body: JSON.stringify({
-        name: ui.registerName.value.trim(),
-        email: ui.registerEmail.value.trim(),
-        password: ui.registerPassword.value
-      })
-    }, false);
-    setToken(payload.token);
+    let token;
+    if (window.__LOCAL_AUTH__) {
+      token = localRegister(ui.registerName.value.trim(), email, ui.registerPassword.value);
+    } else {
+      const payload = await apiFetch('/auth/register', {
+        method: 'POST',
+        body: JSON.stringify({
+          name: ui.registerName.value.trim(),
+          email,
+          password: ui.registerPassword.value
+        })
+      }, false);
+      token = payload.token;
+    }
+    setToken(token, shouldRemember);
+    sessionStorage.setItem('mt_session_active', '1'); // sprečava auth-guard da odmah obriše token
     window.location.href = '../dashboard/index.html';
   } catch (error) {
-    if (ui.authError) ui.authError.textContent = error.message || 'Registration failed.';
+    const msg = error.message || 'Registration failed.';
+    const isEmailTaken = msg.toLowerCase().includes('already registered') ||
+                         msg.toLowerCase().includes('already exists') ||
+                         error.status === 409;
+    if (isEmailTaken) {
+      // Prebaci na Login tab i prefill email
+      const loginEmailEl = document.getElementById('loginEmail');
+      if (loginEmailEl) loginEmailEl.value = email;
+      setAuthView('login');
+      if (ui.authError) ui.authError.textContent = 'This email already has an account. Please log in.';
+    } else {
+      if (ui.authError) ui.authError.textContent = msg;
+    }
   }
 }
 
@@ -1980,11 +2200,11 @@ async function init() {
     history.scrollRestoration = 'manual';
   }
   updateSidebarStats();
+  initWizard();
   setAuthView('login');
   ui.showLogin?.addEventListener('click', () => setAuthView('login'));
   ui.showRegister?.addEventListener('click', () => setAuthView('register'));
   ui.authLoginForm?.addEventListener('submit', handleLogin);
-  ui.authRegisterForm?.addEventListener('submit', handleRegister);
 
   const token = getToken();
   if (!token) {
@@ -1999,6 +2219,24 @@ async function init() {
     setLoggedIn(false);
     return;
   }
+
+  // Token postoji — obnovi session flag da navigacija unutar app-a ne briše token
+  sessionStorage.setItem('mt_session_active', '1');
+
+  // ── Local auth mode (no backend) ───────────────────────────────────────
+  if (window.__LOCAL_AUTH__) {
+    const localUser = parseLocalToken(token);
+    if (!localUser) {
+      setToken(null);
+      setLoggedIn(false);
+      return;
+    }
+    currentUser = localUser;
+    setLoggedIn(true);
+    // Local mode: no server data to load, skip loadAll
+    return;
+  }
+  // ── Real backend mode ──────────────────────────────────────────────────
   try {
     currentUser = await apiFetch('/me');
     setLoggedIn(true);

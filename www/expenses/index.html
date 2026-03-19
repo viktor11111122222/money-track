@@ -24,29 +24,29 @@
         <nav class="sidebar">
             <div class="top-title-wrap">
                 <img src="/public/wallet-logo.jpg" alt="logo">
-                <h2 data-i18n="sidebar.title">Expense Tracker</h2>
+                <h2>Expense Tracker</h2>
             </div>
 
             <hr>
 
             <div class="side-card" data-route="dashboard" onclick="window.location.href='../dashboard/index.html'">
                 <i class="fa-solid fa-house"></i>
-                <h3 data-i18n="sidebar.dashboard">Dashboard</h3>
+                <h3>Dashboard</h3>
             </div>
 
             <div class="side-card active" data-route="expenses" onclick="window.location.href='../expenses/index.html'">
                 <i class="fa-solid fa-money-check-dollar"></i>
-                <h3 data-i18n="sidebar.expenses">Expenses</h3>
+                <h3>Expenses</h3>
             </div>
 
             <div class="side-card" id="spendingsBtn" data-route="spendings">
                 <i class="fa-solid fa-chart-line"></i>
-                <h3 data-i18n="sidebar.spendings">Spendings</h3>
+                <h3>Spendings</h3>
             </div>
 
             <div class="side-card" id="familyBudgetBtn" data-route="shared" onclick="window.location.href='../shared/index.html'">
                 <i class="fa-solid fa-people-group"></i>
-                <h3 data-i18n="sidebar.familyBudget">Family Budget</h3>
+                <h3>Family Buget</h3>
             </div>
 
             <div class="sidebar-spacer"></div>
@@ -222,6 +222,8 @@
         </div>
     </main>
 
+    <div id="limitAlertBanner" class="limit-alert-banner" style="display:none;"></div>
+
     <footer class="dashboard-footer">
         <p class="footer-copyright">&copy; 2026 Money Tracker &middot; Smart expense tracking for better financial management</p>
     </footer>
@@ -232,7 +234,6 @@
     <script src="/public/notifications.js"></script>
     <script src="/public/sounds.js"></script>
     <script src="/public/admob.js"></script>
-    <script src="/public/swipe-nav.js"></script>
     <script src="script.js"></script>
     <script src="analytics.js"></script>
     <script>

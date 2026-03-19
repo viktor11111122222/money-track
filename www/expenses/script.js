@@ -314,6 +314,7 @@ expenseForm.onsubmit = async function(e) {
     renderExpenses();
     updateSidebarStats();
     renderKPI();
+    checkLimitAlert(category);
     if (typeof refreshAnalytics === 'function') refreshAnalytics();
 }
 
@@ -447,6 +448,89 @@ function getCategoryColor(category) {
   saveData();
   
   return availableColor;
+}
+
+// ── Category limit warnings ───────────────────────────────────
+function getSpendingByCategory() {
+    const now = new Date();
+    const result = {};
+    appData.expenses.forEach(exp => {
+        const d = exp.date ? new Date(exp.date) : null;
+        if (d && (d.getFullYear() !== now.getFullYear() || d.getMonth() !== now.getMonth())) return;
+        result[exp.category] = (result[exp.category] || 0) + exp.amount;
+    });
+    return result;
+}
+
+const LIMIT_SUGGESTIONS = {
+    'Food': 'Try meal prepping or cooking at home more often.',
+    'Transport': 'Consider public transport or carpooling to save money.',
+    'Entertainment': 'Look for free events or reduce subscriptions.',
+    'Shopping': 'Make a shopping list and stick to it before buying.',
+    'Health': 'Check if your insurance covers some of these expenses.',
+    'Rent': 'Review if any fixed costs could be renegotiated.',
+    'Education': 'Look for free or discounted learning resources.',
+    'Travel': 'Book in advance or look for off-season deals.',
+};
+
+let _limitAlertTimeout = null;
+
+function showLimitAlert(type, category, spent, limit) {
+    const banner = document.getElementById('limitAlertBanner');
+    if (!banner) return;
+    const color = getCategoryColor(category);
+    const cur = CURRENCY;
+    const over = spent - limit;
+    const pct = Math.round((spent / limit) * 100);
+    const suggestion = LIMIT_SUGGESTIONS[category] || 'Try reviewing your recent expenses and cutting back where possible.';
+
+    if (type === 'exceeded') {
+        banner.innerHTML = `
+            <div class="limit-alert-inner">
+                <div class="limit-alert-top">
+                    <span class="limit-alert-icon">⚠️</span>
+                    <div class="limit-alert-info">
+                        <div class="limit-alert-title">Limit exceeded — <span style="color:${color}">${category}</span></div>
+                        <div class="limit-alert-sub">Spent ${spent.toLocaleString()}${cur} · ${over.toLocaleString()}${cur} over the limit</div>
+                    </div>
+                    <button class="limit-alert-close" onclick="document.getElementById('limitAlertBanner').style.display='none'">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+                <div class="limit-alert-suggestion">💡 ${suggestion}</div>
+            </div>`;
+    } else {
+        banner.innerHTML = `
+            <div class="limit-alert-inner limit-alert-inner--warn">
+                <div class="limit-alert-top">
+                    <span class="limit-alert-icon">📊</span>
+                    <div class="limit-alert-info">
+                        <div class="limit-alert-title">Approaching limit — <span style="color:${color}">${category}</span></div>
+                        <div class="limit-alert-sub">Spent ${spent.toLocaleString()}${cur} of ${limit.toLocaleString()}${cur} (${pct}%)</div>
+                    </div>
+                    <button class="limit-alert-close" onclick="document.getElementById('limitAlertBanner').style.display='none'">
+                        <i class="fa-solid fa-xmark"></i>
+                    </button>
+                </div>
+            </div>`;
+    }
+
+    banner.style.display = 'block';
+    clearTimeout(_limitAlertTimeout);
+    _limitAlertTimeout = setTimeout(() => { banner.style.display = 'none'; }, 9000);
+}
+
+function checkLimitAlert(category) {
+    const limit = appData.categoryLimits[category];
+    if (!limit) return;
+    const spending = getSpendingByCategory();
+    const spent = spending[category] || 0;
+    if (spent > limit) {
+        showLimitAlert('exceeded', category, spent, limit);
+        if (typeof notifyLimitExceeded === 'function') notifyLimitExceeded(category, spent, limit, getCurrency());
+    } else if (spent / limit >= 0.8) {
+        showLimitAlert('approaching', category, spent, limit);
+    }
 }
 
 // Get category color class (deprecated, ali ostavljamo za kompatibilnost)
@@ -1128,5 +1212,12 @@ function handleFileImport(event) {
 document.getElementById('btnExportCSV').addEventListener('click', exportCSV);
 document.getElementById('btnImportCSV').addEventListener('click', importCSV);
 document.getElementById('fileInput').addEventListener('change', handleFileImport);
+
+// Expose globals needed by analytics.js
+window.appData = appData;
+window.getExpenseDateValue = getExpenseDateValue;
+window.DEFAULT_MONTHLY_INCOME = DEFAULT_MONTHLY_INCOME;
+window.getCategoryColor = getCategoryColor;
+window.getCurrency = getCurrency;
 
 })(); // end IIFE

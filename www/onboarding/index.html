@@ -173,7 +173,21 @@
       background: rgba(99,102,241,0.13);
       box-shadow: 0 0 0 3px rgba(99,102,241,0.1);
     }
-    .lang-option .flag { font-size: 1.5rem; line-height: 1; }
+    .lang-option .flag-badge {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      width: 38px;
+      height: 26px;
+      border-radius: 5px;
+      font-size: 0.65rem;
+      font-weight: 800;
+      letter-spacing: 0.05em;
+      flex-shrink: 0;
+    }
+    .flag-en { background: #012169; color: #fff; }
+    .flag-sr { background: #0C4076; color: #EDB92E; }
+    .flag-es { background: #AA151B; color: #F1BF00; }
     .lang-option .lang-name { font-size: 0.95rem; font-weight: 600; color: var(--text, #e6eef8); }
     .lang-option .lang-native { font-size: 0.77rem; color: var(--muted, rgba(230,238,248,0.45)); margin-top: 1px; }
     .lang-option input[type="radio"] { display: none; }
@@ -332,17 +346,17 @@
     <div class="lang-options">
       <label class="lang-option selected" id="lang-English">
         <input type="radio" name="lang" value="English" checked>
-        <span class="flag">🇬🇧</span>
+        <span class="flag-badge flag-en">EN</span>
         <div><div class="lang-name">English</div><div class="lang-native">English</div></div>
       </label>
       <label class="lang-option" id="lang-Serbian">
         <input type="radio" name="lang" value="Serbian">
-        <span class="flag">🇷🇸</span>
+        <span class="flag-badge flag-sr">SR</span>
         <div><div class="lang-name">Serbian</div><div class="lang-native">Srpski</div></div>
       </label>
       <label class="lang-option" id="lang-Spanish">
         <input type="radio" name="lang" value="Spanish">
-        <span class="flag">🇪🇸</span>
+        <span class="flag-badge flag-es">ES</span>
         <div><div class="lang-name">Spanish</div><div class="lang-native">Español</div></div>
       </label>
     </div>
@@ -436,10 +450,20 @@
     appData.income = income;
     localStorage.setItem(APP_DATA_KEY, JSON.stringify(appData));
 
-    // Save income to dashboard's data store (expenseTrackerData)
-    var expenseData;
-    try { expenseData = JSON.parse(localStorage.getItem('expenseTrackerData')) || {}; } catch(e) { expenseData = {}; }
-    expenseData.income = income;
+    // Save complete data to dashboard's data store (expenseTrackerData)
+    var expenseData = {
+      income: income,
+      currentBalance: income,
+      expenses: [],
+      categories: ['Food','Transport','Rent','Entertainment','Shopping','Health','Utilities'],
+      categoryLimits: {},
+      categoryColors: {},
+      savingsTotal: 0,
+      recurringExpenses: [],
+      lastMonthCheck: new Date().getMonth(),
+      lastPayDayMonth: '',
+      _cleared: true
+    };
     localStorage.setItem('expenseTrackerData', JSON.stringify(expenseData));
 
     localStorage.setItem(ONBOARDING_KEY, 'true');

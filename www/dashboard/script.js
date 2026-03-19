@@ -1,5 +1,15 @@
 // ===== DATA MANAGEMENT =====
 (function () {
+// === DEBUG: captures JS execution state — remove after diagnosis ===
+try {
+  var _dbg = document.getElementById('__js_debug');
+  if (_dbg) { _dbg.textContent = 'JS:init'; _dbg.style.background = '#f59e0b'; }
+  window.addEventListener('error', function(e) {
+    var d = document.getElementById('__js_debug');
+    if (d) { d.style.background = '#ef4444'; d.textContent = 'ERR:' + (e && e.message ? e.message.slice(0,25) : '?'); }
+  });
+} catch(_) {}
+// === END DEBUG ===
 const DEFAULT_MONTHLY_INCOME = 100000;
 function getCurrency(){ try { var s = JSON.parse(localStorage.getItem('mt_settings_v1')); var c = s && s.preferences && s.preferences.currency; var m = { RSD:' RSD', USD:' $', EUR:' €', GBP:' £', JPY:' ¥', AUD:' A$', CAD:' C$', CNY:' ¥', INR:' ₹', BRL:' R$', CHF:' CHF', SEK:' kr', NOK:' kr' }; return m[c] || ' €'; } catch(e){ return ' €'; } }
 const CURRENCY = getCurrency();
@@ -211,7 +221,12 @@ function initializeData() {
     };
     localStorage.setItem('expenseTrackerData', JSON.stringify(data));
   } else {
-    data = JSON.parse(data);
+    try { data = JSON.parse(data); } catch(e) {
+      // Corrupt localStorage data — reset to clean state
+      data = { income: DEFAULT_MONTHLY_INCOME, currentBalance: 0, expenses: [], categories: ["Food", "Transport", "Rent", "Entertainment"], categoryLimits: {}, categoryColors: {}, savingsTotal: 0, recurringExpenses: [], lastMonthCheck: new Date().getMonth(), lastPayDayMonth: '', _cleared: true };
+      localStorage.setItem('expenseTrackerData', JSON.stringify(data));
+      return data;
+    }
     // Clear old expenses only once
     if (!data._cleared) {
       data.expenses = [];
@@ -249,67 +264,42 @@ function saveData() {
   localStorage.setItem('expenseTrackerData', JSON.stringify(appData));
 }
 
-// Reset all data (for testing)
+// Reset all data
 function resetAllData() {
-  if (confirm('⚠️ Are you sure you want to reset ALL data? This will delete all expenses, transactions, friends, wallets, and settings!\n\nOnly your income and current balance will be kept.')) {
-    // Reset local data
-    appData = {
-      income: appData.income,
-      currentBalance: appData.currentBalance,
-      expenses: [],
-      categories: ["Food", "Transport", "Rent", "Entertainment"],
-      categoryLimits: {},
-      categoryColors: {},
-      savingsTotal: 0,
-      recurringExpenses: [],
-      lastMonthCheck: new Date().getMonth(),
-      lastPayDayMonth: '',
-      _cleared: true
-    };
-    saveData();
-    
-    // Reset backend data (friends, wallets, invites)
-    const token = localStorage.getItem(TOKEN_KEY);
-    if (token) {
-      fetch(`${API_BASE}/reset-all`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        }
-      }).then(res => {
-        if (res.ok) {
-          // Refresh all UI
-          updateDashboard();
-          updateChart();
-          updateSpendingCalendar();
-          updateTopSpendingDays();
-          initDailyChart();
-          updateBudgetProgress();
-          updateSmartSuggestions();
-          
-          // Reload page to refresh shared/friends data
-          setTimeout(() => {
-            window.location.reload();
-          }, 500);
-        }
-      }).catch(err => {
-        console.error('Reset error:', err);
-        alert('❌ Failed to reset some data. Please try again.');
-      });
-    } else {
-      // Offline mode - just refresh UI
-      updateDashboard();
-      updateChart();
-      updateSpendingCalendar();
-      updateTopSpendingDays();
-      initDailyChart();
-      updateBudgetProgress();
-      updateSmartSuggestions();
-      alert('✅ All local data has been reset!');
-    }
+  const overlay = document.getElementById('resetConfirmOverlay');
+  if (!overlay) {
+    // Fallback if overlay not found
+    localStorage.clear();
+    sessionStorage.clear();
+    window.location.href = '/onboarding/index.html';
+    return;
   }
+  overlay.style.display = 'flex';
 }
+
+function _doReset() {
+  localStorage.clear();
+  sessionStorage.clear();
+  window.location.href = '/onboarding/index.html';
+}
+
+// Wire up reset confirm overlay buttons
+(function() {
+  const overlay = document.getElementById('resetConfirmOverlay');
+  const confirmBtn = document.getElementById('resetConfirmBtn');
+  const cancelBtn = document.getElementById('resetCancelBtn');
+  if (overlay && confirmBtn) {
+    confirmBtn.addEventListener('click', _doReset);
+  }
+  if (overlay && cancelBtn) {
+    cancelBtn.addEventListener('click', () => { overlay.style.display = 'none'; });
+  }
+  if (overlay) {
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) overlay.style.display = 'none';
+    });
+  }
+})();
 
 // ===== CALCULATIONS =====
 function getTotalSpent() {
@@ -930,50 +920,52 @@ function updateSidebarStats() {
 
 // ===== UPDATE DASHBOARD =====
 function updateDashboard() {
-  // Update Total Spent (current month only)
-  const monthSpent = getCurrentMonthSpent();
-  document.querySelectorAll('.summary-cards .card:nth-child(1) .amount')[0].textContent =
-    monthSpent.toLocaleString() + getCurrency();
+  try {
+    // Update Total Spent (current month only)
+    const monthSpent = getCurrentMonthSpent();
+    const spentEl = document.querySelectorAll('.summary-cards .card:nth-child(1) .amount')[0];
+    if (spentEl) spentEl.textContent = monthSpent.toLocaleString() + getCurrency();
 
-  // Update Income (fixed, never changes from dashboard)
-  document.querySelectorAll('.summary-cards .card:nth-child(2) .amount')[0].textContent =
-    appData.income.toLocaleString() + getCurrency();
+    // Update Income (fixed, never changes from dashboard)
+    const incomeEl = document.querySelectorAll('.summary-cards .card:nth-child(2) .amount')[0];
+    if (incomeEl) incomeEl.textContent = (appData.income || 0).toLocaleString() + getCurrency();
 
-  // Update Balance (income + savings this month - spent this month)
-  const balance = appData.income + getCurrentMonthSavings() - monthSpent;
-  const balanceCard = document.querySelectorAll('.summary-cards .card:nth-child(3)')[0];
-  if (balanceCard) {
-    balanceCard.querySelector('.amount').textContent = balance.toLocaleString() + getCurrency();
-    balanceCard.classList.toggle('balance-negative', balance < 0);
-    balanceCard.classList.toggle('balance-positive', balance >= 0);
-  }
+    // Update Balance
+    const balance = (appData.income || 0) + getCurrentMonthSavings() - monthSpent;
+    const balanceCard = document.querySelectorAll('.summary-cards .card:nth-child(3)')[0];
+    if (balanceCard) {
+      balanceCard.querySelector('.amount').textContent = balance.toLocaleString() + getCurrency();
+      balanceCard.classList.toggle('balance-negative', balance < 0);
+      balanceCard.classList.toggle('balance-positive', balance >= 0);
+    }
+  } catch(e) { console.error('updateDashboard cards:', e); }
 
   // Update sidebar stats
-  updateSidebarStats();
+  try { updateSidebarStats(); } catch(e) {}
 
   // Update Recent Transactions
-  updateRecentTransactions();
+  try { updateRecentTransactions(); } catch(e) { console.error('updateRecentTransactions:', e); }
 
   // Update Chart Stats
-  updateChartStats();
+  try { updateChartStats(); } catch(e) { console.error('updateChartStats:', e); }
 
   // Update Category Limits
-  updateCategoryLimits();
+  try { updateCategoryLimits(); } catch(e) {}
 
   // Update Insights
-  updateInsights();
+  try { updateInsights(); } catch(e) { console.error('updateInsights:', e); }
 
   // Update Spending Calendar
-  updateSpendingCalendar();
+  try { updateSpendingCalendar(); } catch(e) { console.error('updateSpendingCalendar:', e); }
 
   // Update Top Spending Days
-  updateTopSpendingDays();
+  try { updateTopSpendingDays(); } catch(e) { console.error('updateTopSpendingDays:', e); }
 
   // Update Budget Progress
-  updateBudgetProgress();
+  try { updateBudgetProgress(); } catch(e) {}
 
   // Update Smart Suggestions
-  updateSmartSuggestions();
+  try { updateSmartSuggestions(); } catch(e) {}
 }
 
 function updateRecentTransactions() {
@@ -1093,10 +1085,12 @@ function updateChartStats() {
   const spending = getSpendingByCategory();
   const total = getCurrentMonthSpent();
 
+  if (!statsContainer) return;
   statsContainer.innerHTML = '';
 
   if (Object.keys(spending).length === 0) {
-    statsContainer.innerHTML = '<p style="grid-column: 1/-1; opacity: 0.5;">No expenses yet</p>';
+    const isDark = document.documentElement.classList.contains('dark-theme');
+    statsContainer.innerHTML = '<p style="grid-column:1/-1;padding:12px;border-radius:8px;text-align:center;font-size:13px;background:' + (isDark ? 'rgba(255,255,255,0.08)' : '#f8fafc') + ';color:' + (isDark ? '#b0bac4' : '#64748b') + ';">No expenses this month</p>';
     updateLimitWarnings([]);
     return;
   }
@@ -1104,24 +1098,32 @@ function updateChartStats() {
   const overLimit = getCategoriesOverLimit(spending);
   updateLimitWarnings(overLimit);
 
+  const isDark = document.documentElement.classList.contains('dark-theme');
+  const bg = isDark ? 'rgba(255,255,255,0.06)' : '#f8fafc';
+  const textMain = isDark ? '#e2e8f0' : '#0f1724';
+  const textSub = isDark ? '#94a3b8' : '#64748b';
+
   Object.keys(spending).forEach(category => {
     const amount = spending[category];
     const percentage = total > 0 ? ((amount / total) * 100).toFixed(1) : 0;
     const color = getCategoryColor(category);
 
     const statItem = document.createElement('div');
-    statItem.className = 'chart-stat-item';
+    statItem.setAttribute('style',
+      'padding:12px;border-radius:8px;text-align:center;' +
+      'background:' + bg + ';border:none;box-shadow:none;'
+    );
 
-    const label = document.createElement('span');
-    label.className = 'stat-label';
-    label.innerHTML = `<span class="stat-color" style="background: ${color}"></span>${category}`;
+    const label = document.createElement('div');
+    label.style.cssText = 'font-size:12px;margin-bottom:6px;font-weight:500;color:' + textSub + ';display:flex;align-items:center;justify-content:center;gap:6px;';
+    label.innerHTML = '<span style="display:inline-block;width:10px;height:10px;border-radius:3px;background:' + color + ';"></span>' + category;
 
-    const amountSpan = document.createElement('span');
-    amountSpan.className = 'stat-amount';
+    const amountSpan = document.createElement('div');
+    amountSpan.style.cssText = 'font-size:14px;font-weight:700;color:' + textMain + ';margin-bottom:4px;';
     amountSpan.textContent = amount.toLocaleString() + getCurrency();
 
-    const percentSpan = document.createElement('span');
-    percentSpan.className = 'stat-percent';
+    const percentSpan = document.createElement('div');
+    percentSpan.style.cssText = 'font-size:11px;color:' + textSub + ';';
     percentSpan.textContent = percentage + '% of total';
 
     statItem.appendChild(label);
@@ -1379,35 +1381,56 @@ function checkLimitAlert(category) {
   if (!limit) return;
   const spending = getSpendingByCategory();
   const spent = spending[category] || 0;
-  if (spent <= limit) return;
-  const over = spent - limit;
-  const suggestion = LIMIT_SUGGESTIONS[category] || 'Try reviewing your recent expenses and cutting back where possible.';
-  showLimitAlert(category, spent, limit, over, suggestion);
-  if (typeof notifyLimitExceeded === 'function') {
-    notifyLimitExceeded(category, spent, limit, getCurrency());
+  if (spent > limit) {
+    const over = spent - limit;
+    const suggestion = LIMIT_SUGGESTIONS[category] || 'Try reviewing your recent expenses and cutting back where possible.';
+    showLimitAlert('exceeded', category, spent, limit, over, suggestion);
+    if (typeof notifyLimitExceeded === 'function') {
+      notifyLimitExceeded(category, spent, limit, getCurrency());
+    }
+  } else if (spent / limit >= 0.8) {
+    showLimitAlert('approaching', category, spent, limit, 0, '');
   }
 }
 
-function showLimitAlert(category, spent, limit, over, suggestion) {
+function showLimitAlert(type, category, spent, limit, over, suggestion) {
   const banner = document.getElementById('limitAlertBanner');
   if (!banner) return;
   const color = getCategoryColor(category);
   const cur = getCurrency();
-  banner.innerHTML = `
-    <div class="limit-alert-inner">
-      <div class="limit-alert-top">
-        <span class="limit-alert-icon">⚠️</span>
-        <div class="limit-alert-info">
-          <div class="limit-alert-title">Limit exceeded — <span style="color:${color}">${category}</span></div>
-          <div class="limit-alert-sub">Spent ${spent.toLocaleString()}${cur} · ${over.toLocaleString()}${cur} over the limit</div>
+  const pct = Math.round((spent / limit) * 100);
+
+  if (type === 'exceeded') {
+    banner.innerHTML = `
+      <div class="limit-alert-inner">
+        <div class="limit-alert-top">
+          <span class="limit-alert-icon">⚠️</span>
+          <div class="limit-alert-info">
+            <div class="limit-alert-title">Limit exceeded — <span style="color:${color}">${category}</span></div>
+            <div class="limit-alert-sub">Spent ${spent.toLocaleString()}${cur} · ${over.toLocaleString()}${cur} over the limit</div>
+          </div>
+          <button class="limit-alert-close" onclick="document.getElementById('limitAlertBanner').style.display='none'">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
         </div>
-        <button class="limit-alert-close" onclick="document.getElementById('limitAlertBanner').style.display='none'">
-          <i class="fa-solid fa-xmark"></i>
-        </button>
-      </div>
-      <div class="limit-alert-suggestion">💡 ${suggestion}</div>
-    </div>
-  `;
+        <div class="limit-alert-suggestion">💡 ${suggestion}</div>
+      </div>`;
+  } else {
+    banner.innerHTML = `
+      <div class="limit-alert-inner limit-alert-inner--warn">
+        <div class="limit-alert-top">
+          <span class="limit-alert-icon">📊</span>
+          <div class="limit-alert-info">
+            <div class="limit-alert-title">Approaching limit — <span style="color:${color}">${category}</span></div>
+            <div class="limit-alert-sub">Spent ${spent.toLocaleString()}${cur} of ${limit.toLocaleString()}${cur} (${pct}%)</div>
+          </div>
+          <button class="limit-alert-close" onclick="document.getElementById('limitAlertBanner').style.display='none'">
+            <i class="fa-solid fa-xmark"></i>
+          </button>
+        </div>
+      </div>`;
+  }
+
   banner.style.display = 'block';
   clearTimeout(_limitAlertTimeout);
   _limitAlertTimeout = setTimeout(() => { banner.style.display = 'none'; }, 9000);
@@ -1652,10 +1675,16 @@ function updateInsights() {
 }
 
 function addInsight(listEl, text) {
+  const isDark = document.documentElement.classList.contains('dark-theme');
   const li = document.createElement('li');
-  li.className = 'insight-item';
+  // Use setAttribute to beat CSS !important overrides
+  li.setAttribute('style',
+    'display:flex;align-items:center;gap:10px;padding:10px 12px;border-radius:8px;font-size:14px;' +
+    (isDark ? 'background:rgba(255,255,255,0.08);color:#f0f5fb;' : 'background:#f8fafc;color:#344054;')
+  );
   const icon = document.createElement('i');
-  icon.className = 'fa-solid fa-brain insight-icon';
+  icon.className = 'fa-solid fa-brain';
+  icon.setAttribute('style', 'color:' + (isDark ? '#818cf8' : '#334155') + ';flex-shrink:0;');
   const span = document.createElement('span');
   span.textContent = text;
   li.appendChild(icon);
@@ -1703,7 +1732,7 @@ function initChart() {
 
   const isDark = document.documentElement.classList.contains('dark-theme');
   const bgColors = isEmpty ? [isDark ? 'rgba(255,255,255,0.22)' : '#e5e7eb'] : labels.map((_, i) => solidColors[i % solidColors.length]);
-  const borderCol = isEmpty ? (isDark ? '#1e293b' : '#e5e7eb') : (isDark ? '#1e293b' : '#ffffff');
+  const borderCol = isEmpty ? (isDark ? '#0f1724' : '#e5e7eb') : (isDark ? '#0f1724' : '#ffffff');
   const legendColor = isDark ? '#e2e8f0' : '#374151';
   const emptyState = document.getElementById('chartEmptyState');
   if (emptyState) {
@@ -1759,7 +1788,7 @@ function updateChart() {
     ];
     const isDark = document.documentElement.classList.contains('dark-theme');
     const bgColors = isEmpty ? [isDark ? 'rgba(255,255,255,0.22)' : '#e5e7eb'] : labels.map((_, i) => solidColors[i % solidColors.length]);
-    const borderCol = isEmpty ? (isDark ? '#1e293b' : '#e5e7eb') : (isDark ? '#1e293b' : '#ffffff');
+    const borderCol = isEmpty ? (isDark ? '#0f1724' : '#e5e7eb') : (isDark ? '#0f1724' : '#ffffff');
     const emptyState = document.getElementById('chartEmptyState');
     if (emptyState) {
       emptyState.style.display = isEmpty ? 'block' : 'none';
@@ -2859,21 +2888,38 @@ function updateSmartSuggestions() {
   if (!suggestionsList) return;
 
   const suggestions = generateSmartSuggestions();
-  
+
   if (suggestions.length === 0) {
-    suggestionsList.innerHTML = '<div class="suggestion-placeholder">' + t('js.noDataForSuggestions') + '</div>';
+    const isDark = document.documentElement.classList.contains('dark-theme');
+    suggestionsList.innerHTML = '<div style="padding:12px;border-radius:8px;text-align:center;font-size:13px;font-style:italic;background:' + (isDark ? 'rgba(255,255,255,0.05)' : '#f9fafb') + ';color:' + (isDark ? '#94a3b8' : '#9ca3af') + ';">Add expenses to see personalized insights</div>';
     return;
   }
 
   suggestionsList.innerHTML = '';
+  const isDark = document.documentElement.classList.contains('dark-theme');
   suggestions.forEach(suggestion => {
+    const isWarn = suggestion.type === 'warning';
+    const itemBg = isDark
+      ? (isWarn ? 'rgba(245,158,11,0.15)' : 'rgba(16,185,129,0.12)')
+      : (isWarn ? 'linear-gradient(135deg,#fef3c7,#fde68a)' : 'linear-gradient(135deg,#d1fae5,#a7f3d0)');
+    const itemBorder = isWarn ? '#f59e0b' : '#10b981';
+    const textColor = isDark
+      ? (isWarn ? '#fbbf24' : '#34d399')
+      : (isWarn ? '#92400e' : '#065f46');
+
     const item = document.createElement('div');
-    item.className = `suggestion-item ${suggestion.type}`;
-    
+    // Use setAttribute to avoid being overridden by CSS !important rules
+    item.setAttribute('style',
+      'padding:14px 16px;border-radius:10px;border-left:4px solid ' + itemBorder + ';' +
+      'background:' + itemBg + ';margin-bottom:4px;'
+    );
+
     const text = document.createElement('div');
-    text.className = 'suggestion-text';
+    text.setAttribute('style',
+      'font-size:14px;font-weight:600;line-height:1.5;color:' + textColor + ';'
+    );
     text.textContent = suggestion.text;
-    
+
     item.appendChild(text);
     suggestionsList.appendChild(item);
   });
@@ -2883,74 +2929,70 @@ function generateSmartSuggestions() {
   const suggestions = [];
   const expenses = appData.expenses.filter(exp => exp.type !== 'income' && exp.type !== 'savings');
   
-  if (expenses.length === 0 || appData.income === 0) {
+  if (expenses.length === 0) {
     return suggestions;
   }
 
-  // Calculate spending by category
+  // Calculate spending by category (all time)
   const categorySpending = {};
   expenses.forEach(exp => {
     categorySpending[exp.category] = (categorySpending[exp.category] || 0) + exp.amount;
   });
 
-  const totalSpent = getTotalSpent();
-  
+  const totalSpent = expenses.reduce((s, e) => s + e.amount, 0);
+
   // Sort categories by spending
   const sortedCategories = Object.entries(categorySpending)
     .sort((a, b) => b[1] - a[1]);
 
   // Suggestion 1: Reduce top spending category by 20%
   if (sortedCategories.length > 0) {
-    const topCategory = sortedCategories[0];
-    const categoryName = topCategory[0];
-    const categoryAmount = topCategory[1];
+    const [categoryName, categoryAmount] = sortedCategories[0];
     const savings = Math.round(categoryAmount * 0.2);
-    
-    if (categoryAmount > 1000) {
+    if (categoryAmount > 0) {
       suggestions.push({
         type: 'normal',
-        text: t('js.reduceSuggestion', [categoryName, savings.toLocaleString() + ' ' + getCurrency()])
+        text: t('js.reduceSuggestion', [categoryName, savings.toLocaleString() + getCurrency()])
       });
     }
   }
 
-  // Suggestion 2: Check if any category is above 30% of income
-  sortedCategories.forEach(([category, amount]) => {
-    const percentage = (amount / appData.income) * 100;
-    if (percentage > 30) {
+  // Suggestion 2: Income-based checks (only if income is set)
+  if (appData.income > 0) {
+    sortedCategories.forEach(([category, amount]) => {
+      const percentage = (amount / appData.income) * 100;
+      if (percentage > 30) {
+        suggestions.push({
+          type: 'warning',
+          text: t('js.aboveRecommended', [category, percentage.toFixed(0)])
+        });
+      }
+    });
+
+    const spendingPercentage = (totalSpent / appData.income) * 100;
+    if (spendingPercentage > 80) {
       suggestions.push({
         type: 'warning',
-        text: t('js.aboveRecommended', [category, percentage.toFixed(0)])
+        text: t('js.spendingTooHigh', [spendingPercentage.toFixed(0)])
       });
     }
-  });
 
-  // Suggestion 3: Total spending vs income
-  const spendingPercentage = (totalSpent / appData.income) * 100;
-  if (spendingPercentage > 80) {
-    suggestions.push({
-      type: 'warning',
-      text: t('js.spendingTooHigh', [spendingPercentage.toFixed(0)])
-    });
+    const currentSavings = getSavings();
+    const recommendedSavings = Math.round(appData.income * 0.2);
+    if (currentSavings < recommendedSavings) {
+      const difference = recommendedSavings - currentSavings;
+      suggestions.push({
+        type: 'normal',
+        text: t('js.savingsGoal', [difference.toLocaleString() + getCurrency()])
+      });
+    }
   }
 
-  // Suggestion 4: Savings suggestion
-  const currentSavings = getSavings();
-  const recommendedSavings = Math.round(appData.income * 0.2);
-  if (currentSavings < recommendedSavings) {
-    const difference = recommendedSavings - currentSavings;
-    suggestions.push({
-      type: 'normal',
-      text: t('js.savingsGoal', [difference.toLocaleString() + ' ' + getCurrency()])
-    });
-  }
-
-  // Suggestion 5: Analyze recurring vs one-time expenses
+  // Suggestion 3: Recurring expenses
   const recurringTotal = appData.recurringExpenses
     .filter(r => r.isActive)
     .reduce((sum, r) => sum + r.amount, 0);
-  
-  if (recurringTotal > 0) {
+  if (recurringTotal > 0 && totalSpent > 0) {
     const recurringPercentage = (recurringTotal / totalSpent) * 100;
     if (recurringPercentage > 60) {
       suggestions.push({
@@ -2960,7 +3002,17 @@ function generateSmartSuggestions() {
     }
   }
 
-  return suggestions.slice(0, 4); // Show max 4 suggestions
+  // Fallback: always show at least one insight
+  if (suggestions.length === 0 && sortedCategories.length > 0) {
+    const [topCat, topAmt] = sortedCategories[0];
+    const pct = totalSpent > 0 ? ((topAmt / totalSpent) * 100).toFixed(0) : 0;
+    suggestions.push({
+      type: 'normal',
+      text: `${topCat} is your top spending category at ${pct}% of total spending.`
+    });
+  }
+
+  return suggestions.slice(0, 4);
 }
 
 function updateMonthlySummary() {
@@ -2976,46 +3028,54 @@ function updateMonthlySummary() {
 }
 
 // Initial dashboard update
-loadCalendarState(); // Load saved calendar state
-checkOnboarding(); // Check if user needs onboarding
-updateDashboard();
+try { loadCalendarState(); } catch(e) {}
+checkOnboarding();
+try { updateDashboard(); } catch(e) { console.error('Initial updateDashboard error:', e); }
+// === DEBUG badge ===
+try { var _d=document.getElementById('__js_debug'); if(_d){_d.style.background='#22c55e';_d.textContent='JS:OK \u2713';} } catch(_) {}
+// === END DEBUG ===
 
-// Re-render dynamic JS content when language changes
-window.addEventListener('languageChanged', () => {
-  renderMenu();
-  updateDashboard();
-  updateInsights();
-  updateSpendingCalendar();
-  updateTopSpendingDays();
-  updateRecurringExpensesList();
-  updateRecurringInsight();
-  updateCategoryLimits();
-  updateTagsUI();
-  updateSmartSuggestions();
-  if (typeof updateChart === 'function') updateChart();
-  if (typeof initComparisonChart === 'function') initComparisonChart();
-  if (typeof applyI18n === 'function') applyI18n();
-});
+// WKWebView repaint fix: re-render after first paint to ensure dynamic content is visible
+// (WKWebView sometimes skips painting JS-inserted DOM nodes added during script execution)
+setTimeout(() => {
+  try { updateDashboard(); } catch(e) {}
+}, 80);
 
-enqueueMissingWalletSync();
-flushWalletSyncQueue();
-setInterval(() => {
-  flushWalletSyncQueue();
-}, 8000);
-
-// Initialize chart after a small delay to ensure DOM is ready
+// Initialize chart after a small delay — runs unconditionally regardless of above errors
 function initAllCharts() {
-  initChart(); // test: bypass Chart check
-  initDailyChart();
-  initComparisonChart();
-  initRecurringExpenses();
-  updateTagsUI();
-  // Force resize for Android WebView after layout settles
+  try { initChart(); } catch(e) { console.error('initChart:', e); }
+  try { initDailyChart(); } catch(e) {}
+  try { initComparisonChart(); } catch(e) {}
+  try { initRecurringExpenses(); } catch(e) {}
+  try { updateTagsUI(); } catch(e) {}
+  // Force resize for Android/iOS WebView after layout settles
   setTimeout(() => {
-    if (chartInstance) chartInstance.resize();
+    try { if (chartInstance) chartInstance.resize(); } catch(e) {}
   }, 300);
 }
 setTimeout(initAllCharts, 400);
+
+// Re-render dynamic JS content when language changes
+window.addEventListener('languageChanged', () => {
+  try { renderMenu(); } catch(e) {}
+  try { updateDashboard(); } catch(e) {}
+  try { updateInsights(); } catch(e) {}
+  try { updateSpendingCalendar(); } catch(e) {}
+  try { updateTopSpendingDays(); } catch(e) {}
+  try { updateRecurringExpensesList(); } catch(e) {}
+  try { updateRecurringInsight(); } catch(e) {}
+  try { updateCategoryLimits(); } catch(e) {}
+  try { updateTagsUI(); } catch(e) {}
+  try { updateSmartSuggestions(); } catch(e) {}
+  if (typeof updateChart === 'function') try { updateChart(); } catch(e) {}
+  if (typeof initComparisonChart === 'function') try { initComparisonChart(); } catch(e) {}
+});
+
+try { enqueueMissingWalletSync(); } catch(e) {}
+try { flushWalletSyncQueue(); } catch(e) {}
+setInterval(() => {
+  try { flushWalletSyncQueue(); } catch(e) {}
+}, 8000);
 // Footer navigation - smooth scroll
 document.querySelectorAll('.footer-link').forEach(link => {
   link.addEventListener('click', function(e) {
@@ -3170,7 +3230,28 @@ function showOnboardingModal(user) {
 function toggleCharts() {
   const modal = document.getElementById('chartsModal');
   if (!modal) return;
-  modal.style.display = 'flex';
+  modal.classList.add('active');
+
+  // Use fixed positioning on the content card directly —
+  // this bypasses the parent layout mode entirely
+  const content = modal.querySelector('.charts-modal-content');
+  if (content) {
+    content.style.position = 'fixed';
+    content.style.left = '0';
+    content.style.right = '0';
+    content.style.transform = 'none';
+    content.style.width = '92vw';
+    content.style.marginLeft = 'auto';
+    content.style.marginRight = 'auto';
+    content.style.bottom = '20px';
+    content.style.top = 'auto';
+    content.style.maxHeight = '60vh';
+    content.style.height = 'auto';
+    content.style.borderRadius = '18px 18px 0 0';
+    content.style.zIndex = '1001';
+    content.style.overflowY = 'hidden';
+  }
+
   setTimeout(() => {
     if (typeof initDailyChart === 'function') initDailyChart();
     if (typeof initComparisonChart === 'function') initComparisonChart();
@@ -3178,17 +3259,37 @@ function toggleCharts() {
 }
 
 document.addEventListener('DOMContentLoaded', () => {
-  const closeBtn = document.getElementById('chartsModalClose');
-  if (closeBtn) {
-    closeBtn.addEventListener('click', () => {
-      const modal = document.getElementById('chartsModal');
-      if (modal) modal.style.display = 'none';
-    });
+  function closeChartsModal() {
+    const modal = document.getElementById('chartsModal');
+    if (!modal) return;
+    modal.classList.remove('active');
+    modal.style.alignItems = '';
+    modal.style.paddingTop = '';
+    modal.style.paddingBottom = '';
+    const content = modal.querySelector('.charts-modal-content');
+    if (content) {
+      content.style.position = '';
+      content.style.left = '';
+      content.style.right = '';
+      content.style.transform = '';
+      content.style.width = '';
+      content.style.marginLeft = '';
+      content.style.marginRight = '';
+      content.style.bottom = '';
+      content.style.top = '';
+      content.style.maxHeight = '';
+      content.style.height = '';
+      content.style.borderRadius = '';
+      content.style.zIndex = '';
+      content.style.overflowY = '';
+    }
   }
+  const closeBtn = document.getElementById('chartsModalClose');
+  if (closeBtn) closeBtn.addEventListener('click', closeChartsModal);
   const chartsModal = document.getElementById('chartsModal');
   if (chartsModal) {
     chartsModal.addEventListener('click', (e) => {
-      if (e.target === chartsModal) chartsModal.style.display = 'none';
+      if (e.target === chartsModal) closeChartsModal();
     });
   }
   const trackLimitsModal = document.getElementById('trackLimitsModal');

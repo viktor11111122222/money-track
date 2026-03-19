@@ -264,7 +264,7 @@ body, .main-container, .shared-hero, .shared-card, .setting-card, .auth-card, .m
 }
 .dark-theme .limit-category-name { color: var(--text) !important; }
 .dark-theme .limit-value { color: #34d399 !important; }
-.dark-theme .limit-value.unset { color: #475569 !important; }
+.dark-theme .limit-value.unset { color: #94a3b8 !important; }
 .dark-theme .limit-mini-bar { background: rgba(255,255,255,0.08) !important; }
 .dark-theme .edit-limit-row { border-bottom-color: rgba(255,255,255,0.06) !important; }
 .dark-theme .edit-limit-label { color: var(--text) !important; }
@@ -1039,4 +1039,18 @@ button.primary:hover,
     background: var(--accent) !important;
     border-color: var(--accent) !important;
     color: #fff !important;
+}
+
+/* ── Balance card gradient must survive dark-mode overrides ── */
+.summary-cards .card:nth-child(3),
+.dark-theme .summary-cards .card:nth-child(3),
+.dark-theme .summary-cards .card:nth-child(3).balance-positive {
+    background: linear-gradient(135deg, var(--accent) 0%, var(--accent-grad) 100%) !important;
+    filter: drop-shadow(0 4px 10px rgba(var(--accent-rgb),0.5)) !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+.dark-theme .summary-cards .card:nth-child(3).balance-negative {
+    background: linear-gradient(135deg, #ef4444 0%, #b91c1c 100%) !important;
+    filter: drop-shadow(0 4px 10px rgba(180,20,20,0.5)) !important;
 }

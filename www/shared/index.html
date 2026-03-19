@@ -24,29 +24,29 @@
         <nav class="sidebar">
             <div class="top-title-wrap">
                 <img src="/public/wallet-logo.jpg" alt="logo">
-                <h2 data-i18n="sidebar.title">Expense Tracker</h2>
+                <h2>Expense Tracker</h2>
             </div>
 
             <hr>
 
             <div class="side-card" onclick="window.location.href='../dashboard/index.html'">
                 <i class="fa-solid fa-house"></i>
-                <h3 data-i18n="sidebar.dashboard">Dashboard</h3>
+                <h3>Dashboard</h3>
             </div>
 
             <div class="side-card" onclick="window.location.href='../expenses/index.html'">
                 <i class="fa-solid fa-money-check-dollar"></i>
-                <h3 data-i18n="sidebar.expenses">Expenses</h3>
+                <h3>Expenses</h3>
             </div>
 
             <div class="side-card" id="spendingsBtn" data-route="spendings">
                 <i class="fa-solid fa-chart-line"></i>
-                <h3 data-i18n="sidebar.spendings">Spendings</h3>
+                <h3>Spendings</h3>
             </div>
 
             <div class="side-card active" id="familyBudgetBtn">
                 <i class="fa-solid fa-people-group"></i>
-                <h3 data-i18n="sidebar.familyBudget">Family Budget</h3>
+                <h3>Family Buget</h3>
             </div>
 
             <div class="sidebar-spacer"></div>
@@ -107,21 +107,115 @@
                 <button class="primary" type="submit" data-i18n="shared.loginBtn">Login</button>
             </form>
 
-            <form id="authRegisterForm" class="auth-form is-hidden">
-                <div class="form-row">
-                    <label for="registerName" data-i18n="shared.fullName">Full name</label>
-                    <input type="text" id="registerName" required>
+            <!-- Register Wizard (replaces simple register form) -->
+            <div id="registerWizard" class="register-wizard is-hidden">
+
+                <!-- Step indicators -->
+                <div class="wizard-steps">
+                    <div class="wizard-step-item active" id="wStepDot1">
+                        <div class="step-dot">1</div>
+                        <span>Account</span>
+                    </div>
+                    <div class="wizard-connector" id="wConn1"></div>
+                    <div class="wizard-step-item" id="wStepDot2">
+                        <div class="step-dot">2</div>
+                        <span>Preferences</span>
+                    </div>
+                    <div class="wizard-connector" id="wConn2"></div>
+                    <div class="wizard-step-item" id="wStepDot3">
+                        <div class="step-dot">3</div>
+                        <span>Income</span>
+                    </div>
                 </div>
-                <div class="form-row">
-                    <label for="registerEmail" data-i18n="shared.email">Email</label>
-                    <input type="email" id="registerEmail" required>
+
+                <!-- Step 1: Account -->
+                <div class="wizard-page" id="wizardPage1">
+                    <div class="form-row">
+                        <label for="registerName" data-i18n="shared.fullName">Full name</label>
+                        <input type="text" id="registerName" autocomplete="name">
+                    </div>
+                    <div class="form-row">
+                        <label for="registerEmail" data-i18n="shared.email">Email</label>
+                        <input type="email" id="registerEmail" autocomplete="email">
+                    </div>
+                    <div class="form-row">
+                        <label for="registerPassword" data-i18n="shared.password">Password</label>
+                        <input type="password" id="registerPassword" autocomplete="new-password">
+                    </div>
+                    <div class="form-row remember-row">
+                        <label class="remember-label">
+                            <input type="checkbox" id="registerRememberMe" checked>
+                            <span data-i18n="shared.rememberMe">Remember me</span>
+                        </label>
+                    </div>
+                    <div class="form-error wizard-error" id="wizardError1"></div>
+                    <button type="button" class="primary" id="wizardNext1">Continue →</button>
                 </div>
-                <div class="form-row">
-                    <label for="registerPassword" data-i18n="shared.password">Password</label>
-                    <input type="password" id="registerPassword" required>
+
+                <!-- Step 2: Language & Currency -->
+                <div class="wizard-page is-hidden" id="wizardPage2">
+                    <p class="wizard-step-desc">Choose your preferred language and currency. You can change these later in Settings.</p>
+                    <div class="form-row">
+                        <label for="wizardLanguage">Language</label>
+                        <select id="wizardLanguage" class="wizard-select">
+                            <option value="English">English</option>
+                            <option value="Serbian">Serbian (Srpski)</option>
+                            <option value="Spanish">Spanish (Español)</option>
+                        </select>
+                    </div>
+                    <div class="form-row">
+                        <label for="wizardCurrency">Currency</label>
+                        <select id="wizardCurrency" class="wizard-select">
+                            <option value="EUR">€  Euro</option>
+                            <option value="USD">$  US Dollar</option>
+                            <option value="RSD">RSD  Serbian Dinar</option>
+                            <option value="GBP">£  British Pound</option>
+                            <option value="JPY">¥  Japanese Yen</option>
+                            <option value="AUD">A$  Australian Dollar</option>
+                            <option value="CAD">C$  Canadian Dollar</option>
+                            <option value="CHF">CHF  Swiss Franc</option>
+                            <option value="SEK">kr  Swedish Krona</option>
+                            <option value="NOK">kr  Norwegian Krone</option>
+                            <option value="BRL">R$  Brazilian Real</option>
+                            <option value="INR">₹  Indian Rupee</option>
+                            <option value="CNY">¥  Chinese Yuan</option>
+                        </select>
+                    </div>
+                    <div class="wizard-nav">
+                        <button type="button" class="wizard-back" id="wizardBack2">← Back</button>
+                        <button type="button" class="primary" id="wizardNext2">Continue →</button>
+                    </div>
                 </div>
-                <button class="primary" type="submit" data-i18n="shared.createAccountBtn">Create account</button>
-            </form>
+
+                <!-- Step 3: Income -->
+                <div class="wizard-page is-hidden" id="wizardPage3">
+                    <p class="wizard-step-desc">Set your monthly income so the app can track your budget accurately.</p>
+                    <div class="form-row">
+                        <label for="wizardIncome">Monthly income</label>
+                        <div class="wizard-income-wrap">
+                            <span class="wizard-currency-badge" id="wizardCurrencyBadge">€</span>
+                            <input type="number" id="wizardIncome" class="wizard-income-input" min="0" step="1" placeholder="0">
+                        </div>
+                    </div>
+                    <div class="form-row">
+                        <label for="wizardIncomeDay">Income arrives on day</label>
+                        <select id="wizardIncomeDay" class="wizard-select">
+                            <option value="1">1st</option>
+                            <option value="5">5th</option>
+                            <option value="10">10th</option>
+                            <option value="15">15th</option>
+                            <option value="20">20th</option>
+                            <option value="25">25th</option>
+                            <option value="last">Last day of month</option>
+                        </select>
+                    </div>
+                    <div class="wizard-nav">
+                        <button type="button" class="wizard-back" id="wizardBack3">← Back</button>
+                        <button type="button" class="primary" id="wizardSubmit">Create Account</button>
+                    </div>
+                </div>
+
+            </div>
 
             <div class="form-error" id="authError" role="alert"></div>
         </section>
@@ -336,7 +430,6 @@
     <script src="/public/spendings-modal.js"></script>
     <script src="/public/sounds.js"></script>
     <script src="script.js?v=20260129"></script>
-    <script src="/public/swipe-nav.js"></script>
     <script>
       if ('serviceWorker' in navigator) {
         navigator.serviceWorker.register('/sw.js').catch(() => {});

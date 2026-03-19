@@ -23,6 +23,8 @@
     <link rel="stylesheet" href="/public/mobile-nav.css">
 </head>
 <body>
+    <!-- DEBUG BADGE: remove after diagnosis -->
+    <div id="__js_debug" style="position:fixed;bottom:90px;right:8px;padding:4px 10px;border-radius:6px;font-size:11px;font-weight:700;z-index:99999;background:#6366f1;color:white;pointer-events:none;letter-spacing:0.3px;">JS?</div>
     <header>
         <nav class="sidebar">
             <div class="top-title-wrap">
@@ -365,7 +367,7 @@
     </footer>
 
     <!-- Charts Popup Modal -->
-    <div class="modal-overlay" id="chartsModal" style="display:none;" role="dialog" aria-modal="true">
+    <div class="modal-overlay" id="chartsModal" role="dialog" aria-modal="true">
         <div class="modal-content charts-modal-content" role="document">
             <div class="modal-header">
                 <h2><i class="fa-solid fa-chart-bar" style="margin-right:8px;"></i><span data-i18n="dash.showCharts">Charts</span></h2>
@@ -414,6 +416,19 @@
             </div>
             <div class="modal-body" style="overflow-y:auto;padding:16px;">
                 <div class="progress-list" id="progressList"></div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Reset confirm overlay -->
+    <div id="resetConfirmOverlay" style="display:none;position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:9999;display:none;align-items:center;justify-content:center;padding:20px;">
+        <div style="background:var(--card-bg,#1a2234);border-radius:18px;padding:24px 20px;max-width:320px;width:100%;box-shadow:0 12px 40px rgba(0,0,0,0.4);">
+            <div style="font-size:2rem;text-align:center;margin-bottom:12px;">⚠️</div>
+            <h3 style="color:var(--text,#e6eef8);font-size:1.1rem;font-weight:700;margin:0 0 8px;text-align:center;">Reset sve podatke?</h3>
+            <p style="color:var(--muted,#94a3b8);font-size:0.85rem;text-align:center;margin:0 0 20px;line-height:1.5;">Ovo će obrisati sve troškove, podešavanja i nalog — kao da si prvi put skinuo app.</p>
+            <div style="display:flex;gap:10px;">
+                <button id="resetCancelBtn" style="flex:1;padding:13px;border-radius:12px;border:1.5px solid rgba(255,255,255,0.12);background:transparent;color:var(--text,#e6eef8);font-size:0.9rem;font-weight:600;cursor:pointer;">Otkaži</button>
+                <button id="resetConfirmBtn" style="flex:1;padding:13px;border-radius:12px;border:none;background:#ef4444;color:#fff;font-size:0.9rem;font-weight:700;cursor:pointer;">Resetuj</button>
             </div>
         </div>
     </div>

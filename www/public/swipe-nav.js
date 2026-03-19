@@ -22,7 +22,36 @@
   if (idx === -1) return;
 
   var W  = window.innerWidth;
-  var bg = '#0b1220';
+  // Use the actual background colour so the iframe placeholder matches the theme
+  var bg = getComputedStyle(document.documentElement).getPropertyValue('--bg').trim() ||
+           getComputedStyle(document.body).backgroundColor || '#0b1220';
+
+  // ── Preload cache: url → hidden iframe (body-level, loaded in background) ─
+  var preloadCache = {};
+
+  function startPreload(url) {
+    if (!url || preloadCache[url]) return;
+    var f = document.createElement('iframe');
+    f.src = url;
+    f.setAttribute('scrolling', 'no');
+    f.style.cssText = 'position:fixed;left:-9999px;top:0;width:' + W + 'px;height:100%;border:none;background:' + bg + ';visibility:hidden;';
+    document.body.appendChild(f);
+    preloadCache[url] = f;
+  }
+
+  function takePreloaded(url) {
+    var f = preloadCache[url];
+    if (!f) return null;
+    delete preloadCache[url];
+    // Remove from body — caller will add it to the track
+    f.parentNode && f.parentNode.removeChild(f);
+    // Restore visibility and reset positioning for use in the track
+    f.style.cssText = [
+      'flex:0 0 ' + W + 'px;width:' + W + 'px;height:100%;',
+      'border:none;flex-shrink:0;background:' + bg + ';visibility:visible;'
+    ].join('');
+    return f;
+  }
 
   // ── Navigation generation counter (used to cancel stale timeouts) ─
   window._swipeNavGen = (window._swipeNavGen || 0) + 1;
@@ -91,6 +120,12 @@
     targetUrl = null;
     dragging  = false;
     blocked   = false;
+    // Discard any preloaded iframes from the previous touch (they'll be
+    // re-preloaded fresh on the next touchstart).
+    Object.keys(preloadCache).forEach(function (url) {
+      preloadCache[url].parentNode && preloadCache[url].parentNode.removeChild(preloadCache[url]);
+      delete preloadCache[url];
+    });
   }
 
   function snapBack() {
@@ -322,20 +357,41 @@
   function commit() {
     committed = true;
     setTrackX(goLeft ? -W : 0, true);
+
     var done = false;
-    function go() {
-      if (done) return; done = true;
-      try {
-        var ifrDoc = ifr.contentDocument;
-        if (!ifrDoc || !ifrDoc.body) throw new Error('not ready');
-        swapContent(ifrDoc, targetUrl);
-      } catch (e) {
-        sessionStorage.setItem('_sw_from', '1');
-        window.location.href = targetUrl;
-      }
+    var transitionReady = false;
+    var iframeReady     = false;
+
+    function trySwap() {
+      if (done || !transitionReady || !iframeReady) return;
+      done = true;
+      swapContent(ifr.contentDocument, targetUrl);
     }
-    track.addEventListener('transitionend', go, { once: true });
-    setTimeout(go, 400);
+
+    // Wait for slide transition to finish
+    track.addEventListener('transitionend', function () {
+      transitionReady = true;
+      trySwap();
+    }, { once: true });
+    // Safety: transitionend sometimes doesn't fire on iOS
+    setTimeout(function () { transitionReady = true; trySwap(); }, 320);
+
+    // Check iframe load state
+    function checkIframe() {
+      try {
+        var d = ifr.contentDocument;
+        if (d && d.readyState === 'complete' && d.body) {
+          iframeReady = true;
+          trySwap();
+          return;
+        }
+      } catch (e) { /* cross-origin guard — shouldn't happen for local files */ }
+      ifr.addEventListener('load', function () {
+        iframeReady = true;
+        trySwap();
+      }, { once: true });
+    }
+    checkIframe();
   }
 
   // ── Touch events ──────────────────────────────────────────────
@@ -344,6 +400,10 @@
     W      = window.innerWidth;
     startX = e.touches[0].clientX;
     startY = e.touches[0].clientY;
+    // Preload adjacent pages now — gives maximum time for iframes to load
+    // before the user's swipe reaches the commit threshold.
+    if (idx > 0)                startPreload(PAGES[idx - 1]);
+    if (idx < PAGES.length - 1) startPreload(PAGES[idx + 1]);
   }, { passive: true });
 
   document.addEventListener('touchmove', function (e) {
@@ -370,7 +430,8 @@
         : (idx > 0                ? PAGES[idx - 1] : null);
 
       if (targetUrl) {
-        ifr = spawnIframe(targetUrl);
+        // Reuse the preloaded iframe if available (already loading/loaded)
+        ifr = takePreloaded(targetUrl) || spawnIframe(targetUrl);
         track.style.width = (2 * W) + 'px';
         if (goLeft) {
           track.appendChild(ifr);
@@ -398,6 +459,4 @@
     if (!committed) snapBack();
   }, { passive: true });
 
-  var fromSwipe = sessionStorage.getItem('_sw_from');
-  if (fromSwipe) sessionStorage.removeItem('_sw_from');
 })();

@@ -13,6 +13,14 @@ const BACKEND_LOCAL_IP = '10.0.2.2'; // Specijalni IP za Android emulator → pr
 const BACKEND_LOCAL_PORT = '8080';
 const BACKEND_PROD_URL = ''; // npr. 'https://money-track-api.railway.app'
 
+// ─────────────────────────────────────────────────────────────────────────────
+// LOCAL_AUTH_MODE = true  → Login/Register rade lokalno (bez servera)
+//                           Korisnici se čuvaju u localStorage
+// LOCAL_AUTH_MODE = false → Koristi pravi backend (App Store / Play Store build)
+//                           Automatski se isključuje kada postaviš BACKEND_PROD_URL
+// ─────────────────────────────────────────────────────────────────────────────
+const LOCAL_AUTH_MODE = !BACKEND_PROD_URL; // promeni na false kada imaš pravi server
+
 (function () {
   const isCapacitor = typeof window !== 'undefined' && window.Capacitor !== undefined;
   const isLiveServer = typeof window !== 'undefined' &&
@@ -33,4 +41,5 @@ const BACKEND_PROD_URL = ''; // npr. 'https://money-track-api.railway.app'
   }
 
   window.__API_BASE__ = base;
+  window.__LOCAL_AUTH__ = LOCAL_AUTH_MODE;
 })();

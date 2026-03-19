@@ -256,20 +256,28 @@ function renderInsights() {
     }
 
     // Render insights
+    const isDark = document.documentElement.classList.contains('dark-theme');
+    const itemBg = isDark ? 'rgba(255,255,255,0.07)' : '#f8fafc';
+    const itemBorder = isDark ? '3px solid #6366f1' : '3px solid #6c63ff';
+    const titleColor = isDark ? '#e2e8f0' : '#1e293b';
+    const descColor = isDark ? '#94a3b8' : '#64748b';
+    const iconColors = { warning: '#f59e0b', success: '#10b981', info: '#6366f1' };
+
     if (insights.length === 0) {
-        insightsList.innerHTML = '<p style="color: #999; text-align: center; padding: 20px;">' + (typeof t === 'function' ? t('analytics.noInsights') : 'No insights available yet. Add more expenses to get personalized recommendations.') + '</p>';
+        insightsList.innerHTML = `<p style="color:${descColor};text-align:center;padding:20px;">${typeof t === 'function' ? t('analytics.noInsights') : 'No insights available yet. Add more expenses to get personalized recommendations.'}</p>`;
     } else {
-        insightsList.innerHTML = insights.map(insight => `
-            <div class="insight-item">
-                <div class="insight-icon ${insight.iconClass}">
+        insightsList.innerHTML = insights.map(insight => {
+            const iconColor = iconColors[insight.iconClass] || '#6366f1';
+            return `<div style="display:flex;align-items:flex-start;gap:12px;padding:12px 14px;margin-bottom:10px;background:${itemBg};border-left:${itemBorder};border-radius:8px;">
+                <div style="flex-shrink:0;width:32px;height:32px;border-radius:50%;background:${iconColor}22;display:flex;align-items:center;justify-content:center;color:${iconColor};font-size:14px;">
                     <i class="fa-solid ${insight.icon}"></i>
                 </div>
-                <div class="insight-content">
-                    <div class="insight-title">${insight.title}</div>
-                    <div class="insight-description">${insight.description}</div>
+                <div style="flex:1;min-width:0;">
+                    <div style="font-weight:600;font-size:13px;color:${titleColor};margin-bottom:3px;">${insight.title}</div>
+                    <div style="font-size:12px;color:${descColor};line-height:1.5;">${insight.description}</div>
                 </div>
-            </div>
-        `).join('');
+            </div>`;
+        }).join('');
     }
 }
 

@@ -306,6 +306,180 @@ header.is-hidden {
     cursor: pointer;
 }
 
+/* ── Register Wizard ─────────────────────────────────────────────────────── */
+.register-wizard { width: 100%; }
+.register-wizard.is-hidden { display: none; }
+
+/* Step indicators */
+.wizard-steps {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 24px;
+    gap: 0;
+}
+.wizard-step-item {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 5px;
+}
+.wizard-step-item span {
+    font-size: 10px;
+    font-weight: 600;
+    color: var(--muted, #94a3b8);
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+    transition: color 0.2s;
+}
+.wizard-step-item.active span { color: var(--accent, #6366f1); }
+.wizard-step-item.done span { color: #10b981; }
+
+.step-dot {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 13px;
+    font-weight: 700;
+    background: rgba(99,102,241,0.1);
+    color: var(--muted, #94a3b8);
+    border: 2px solid rgba(99,102,241,0.2);
+    transition: background 0.2s, color 0.2s, border-color 0.2s;
+}
+.wizard-step-item.active .step-dot {
+    background: var(--accent, #6366f1);
+    color: #fff;
+    border-color: var(--accent, #6366f1);
+    box-shadow: 0 0 0 4px rgba(99,102,241,0.18);
+}
+.wizard-step-item.done .step-dot {
+    background: #10b981;
+    color: #fff;
+    border-color: #10b981;
+}
+.wizard-connector {
+    flex: 1;
+    height: 2px;
+    background: rgba(99,102,241,0.15);
+    margin: 0 8px;
+    margin-bottom: 14px;
+    transition: background 0.2s;
+}
+.wizard-connector.done { background: #10b981; }
+
+/* Pages */
+.wizard-page { display: flex; flex-direction: column; gap: 0; }
+.wizard-page.is-hidden { display: none; }
+
+.wizard-step-desc {
+    font-size: 13px;
+    color: var(--muted, #64748b);
+    margin: 0 0 16px 0;
+    line-height: 1.5;
+}
+
+/* Select */
+.wizard-select {
+    width: 100%;
+    background: rgba(99,102,241,0.06);
+    border: 1.5px solid rgba(99,102,241,0.2);
+    border-radius: 11px;
+    padding: 12px 14px;
+    color: var(--text, #0f1724);
+    font-size: 15px;
+    font-family: inherit;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    box-sizing: border-box;
+    cursor: pointer;
+    transition: border-color 0.18s, box-shadow 0.18s;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='12' height='8' viewBox='0 0 12 8'%3E%3Cpath d='M1 1l5 5 5-5' stroke='%236366f1' stroke-width='1.8' fill='none' stroke-linecap='round'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 14px center;
+    padding-right: 36px;
+}
+.wizard-select:focus {
+    border-color: var(--accent, #6366f1);
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.14);
+}
+
+/* Income input with currency badge */
+.wizard-income-wrap {
+    position: relative;
+    display: flex;
+    align-items: center;
+}
+.wizard-currency-badge {
+    position: absolute;
+    left: 14px;
+    font-size: 14px;
+    font-weight: 700;
+    color: var(--accent, #6366f1);
+    pointer-events: none;
+    white-space: nowrap;
+    max-width: 50px;
+    overflow: hidden;
+}
+.wizard-income-input {
+    width: 100%;
+    background: rgba(99,102,241,0.06);
+    border: 1.5px solid rgba(99,102,241,0.2);
+    border-radius: 11px;
+    padding: 12px 14px 12px 54px;
+    color: var(--text, #0f1724);
+    font-size: 16px;
+    font-family: inherit;
+    outline: none;
+    -webkit-appearance: none;
+    appearance: none;
+    box-sizing: border-box;
+    transition: border-color 0.18s, box-shadow 0.18s;
+}
+.wizard-income-input:focus {
+    border-color: var(--accent, #6366f1);
+    box-shadow: 0 0 0 3px rgba(99,102,241,0.14);
+}
+
+/* Nav buttons */
+.wizard-nav {
+    display: flex;
+    gap: 10px;
+    margin-top: 6px;
+}
+.wizard-nav .primary { flex: 2; height: 48px; border-radius: 12px !important; font-weight: 700 !important; }
+.wizard-back {
+    flex: 1;
+    height: 48px;
+    border-radius: 12px;
+    border: 1.5px solid rgba(99,102,241,0.25);
+    background: transparent;
+    color: var(--muted, #64748b);
+    font-size: 0.9rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: background 0.18s, color 0.18s;
+    font-family: inherit;
+}
+.wizard-back:hover { background: rgba(99,102,241,0.07); color: var(--accent, #6366f1); }
+
+.wizard-error {
+    margin-bottom: 8px;
+    font-size: 13px;
+}
+
+/* Dark mode */
+.dark-theme .wizard-select,
+.dark-theme .wizard-income-input {
+    background: rgba(255,255,255,0.06);
+    border-color: rgba(99,102,241,0.3);
+    color: #e2e8f0;
+}
+.dark-theme .wizard-select option { background: #1e293b; color: #e2e8f0; }
+
 /* Light mode: slightly different card bg */
 html:not(.dark-theme) .auth-card {
     box-shadow: 0 8px 36px rgba(99,102,241,0.1), 0 2px 8px rgba(0,0,0,0.05);

@@ -234,6 +234,24 @@ footer.dashboard-footer,
   -webkit-backface-visibility: hidden;
 }
 
+/* Force GPU compositing on dynamic content containers — fixes WKWebView repaint bug
+   where JS-inserted content isn't painted until the user scrolls */
+.insights-list,
+.limits-list,
+.calendar-grid,
+.top-days-list,
+.chart-stats,
+.insights-card,
+.category-limits-compact,
+.calendar-card,
+.top-spending-days-card,
+.spending-by-category,
+.chart-card {
+  -webkit-transform: translateZ(0);
+  transform: translateZ(0);
+  -webkit-backface-visibility: hidden;
+}
+
 /* ---- DASHBOARD spendings grids ---- */
 .spendings-summary {
   grid-template-columns: 1fr 1fr !important;
