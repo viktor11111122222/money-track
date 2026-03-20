@@ -2208,14 +2208,7 @@ async function init() {
 
   const token = getToken();
   if (!token) {
-    // First time visitor → show Create account tab
-    const hasVisited = localStorage.getItem('mt_has_visited');
-    if (!hasVisited) {
-      setAuthView('register');
-      localStorage.setItem('mt_has_visited', '1');
-    } else {
-      setAuthView('login');
-    }
+    setAuthView('login');
     setLoggedIn(false);
     return;
   }
