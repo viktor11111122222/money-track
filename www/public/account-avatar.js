@@ -89,15 +89,18 @@
   }
 
   async function fetchMe() {
-    const token = getToken();
-    if (!token) return;
-    const res = await fetch(`${API_BASE}/me`, {
-      headers: { Authorization: `Bearer ${token}` }
-    });
-    if (!res.ok) return;
-    const user = await res.json();
-    if (user.avatar) applyAvatar(user.avatar);
-    if (user.name) applyUserName(user.name);
+    try {
+      const token = getToken();
+      if (!token) return;
+      const res = await fetch(`${API_BASE}/me`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      if (!res.ok) return;
+      const user = await res.json().catch(() => null);
+      if (!user) return;
+      if (user.avatar) applyAvatar(user.avatar);
+      if (user.name) applyUserName(user.name);
+    } catch (_) {}
   }
 
   async function uploadAvatar(file) {
@@ -105,17 +108,19 @@
     if (!token) return;
     const reader = new FileReader();
     reader.onload = async () => {
-      const dataUrl = reader.result;
-      if (typeof dataUrl !== 'string') return;
-      const res = await fetch(`${API_BASE}/me/avatar`, {
-        method: 'PATCH',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${token}`
-        },
-        body: JSON.stringify({ avatar: dataUrl })
-      });
-      if (res.ok) applyAvatar(dataUrl);
+      try {
+        const dataUrl = reader.result;
+        if (typeof dataUrl !== 'string') return;
+        const res = await fetch(`${API_BASE}/me/avatar`, {
+          method: 'PATCH',
+          headers: {
+            'Content-Type': 'application/json',
+            Authorization: `Bearer ${token}`
+          },
+          body: JSON.stringify({ avatar: dataUrl })
+        });
+        if (res.ok) applyAvatar(dataUrl);
+      } catch (_) {}
     };
     reader.readAsDataURL(file);
   }

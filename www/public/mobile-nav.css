@@ -137,7 +137,7 @@ main {
    ============================================ */
 
 .settings-grid { column-count: 1 !important; padding: 0 !important; }
-.main-container.settings-full { padding: calc(env(safe-area-inset-top, 20px) + 60px) 0 16px 0 !important; }
+.main-container.settings-full { padding: calc(env(safe-area-inset-top, 20px) + 16px) 0 16px 0 !important; }
 .settings-header { padding: 0 0 16px 0 !important; flex-wrap: wrap !important; }
 
 /* ============================================

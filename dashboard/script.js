@@ -1,14 +1,27 @@
 // ===== DATA MANAGEMENT =====
 (function () {
-// === DEBUG: captures JS execution state — remove after diagnosis ===
-try {
-  var _dbg = document.getElementById('__js_debug');
-  if (_dbg) { _dbg.textContent = 'JS:init'; _dbg.style.background = '#f59e0b'; }
-  window.addEventListener('error', function(e) {
-    var d = document.getElementById('__js_debug');
-    if (d) { d.style.background = '#ef4444'; d.textContent = 'ERR:' + (e && e.message ? e.message.slice(0,25) : '?'); }
-  });
-} catch(_) {}
+// === DEBUG step-counter — remove after diagnosis ===
+var _dbg = document.getElementById('__js_debug');
+function _step(n) { try { if(_dbg){_dbg.textContent='step:'+n;_dbg.style.background='#f59e0b';} } catch(e){} }
+_step(1);
+window.addEventListener('error', function(e) {
+  try {
+    if(_dbg){
+      _dbg.style.background='#ef4444';
+      _dbg.style.fontSize='8px';
+      _dbg.textContent=(e.message||'?').slice(0,18)+' L'+(e.lineno||'?');
+    }
+  } catch(_){}
+});
+window.addEventListener('unhandledrejection', function(e) {
+  try {
+    if(_dbg){
+      _dbg.style.background='#f97316';
+      _dbg.style.fontSize='8px';
+      _dbg.textContent='PROM:'+(e.reason&&e.reason.message||String(e.reason)).slice(0,18);
+    }
+  } catch(_){}
+});
 // === END DEBUG ===
 const DEFAULT_MONTHLY_INCOME = 100000;
 function getCurrency(){ try { var s = JSON.parse(localStorage.getItem('mt_settings_v1')); var c = s && s.preferences && s.preferences.currency; var m = { RSD:' RSD', USD:' $', EUR:' €', GBP:' £', JPY:' ¥', AUD:' A$', CAD:' C$', CNY:' ¥', INR:' ₹', BRL:' R$', CHF:' CHF', SEK:' kr', NOK:' kr' }; return m[c] || ' €'; } catch(e){ return ' €'; } }
@@ -247,8 +260,14 @@ function initializeData() {
     if (typeof data.savingsTotal !== 'number') {
       data.savingsTotal = 0;
     }
+    if (!Array.isArray(data.categories) || data.categories.length === 0) {
+      data.categories = ["Food", "Transport", "Rent", "Entertainment"];
+    }
     if (!Array.isArray(data.recurringExpenses)) {
       data.recurringExpenses = [];
+    }
+    if (!Array.isArray(data.expenses)) {
+      data.expenses = [];
     }
     if (typeof data.lastMonthCheck !== 'number') {
       data.lastMonthCheck = new Date().getMonth();
@@ -633,7 +652,9 @@ document.addEventListener('keydown', (e) => {
 
 // ===== DROPDOWN MENU =====
 function renderMenu() {
+  if (!menu) return;
   menu.innerHTML = '';
+  if (!Array.isArray(appData.categories)) return;
   appData.categories.forEach(cat => {
     const d = document.createElement('div');
     d.className = 'option';
@@ -648,13 +669,13 @@ function renderMenu() {
   menu.appendChild(add);
 }
 
-renderMenu();
+_step(2); renderMenu(); _step(3);
 // Set initial data-value for the default selected category
 if (selected && appData.categories.length > 0) {
   selected.dataset.value = appData.categories[0];
 }
 
-btn.addEventListener("click", (e) => {
+_step(4); btn.addEventListener("click", (e) => {
   e.stopPropagation();
   const isOpen = menu.style.display === "block";
   menu.style.display = isOpen ? "none" : "block";
@@ -779,123 +800,210 @@ document.addEventListener("click", (e) => {
 
 
 // ===== ADD EXPENSE FUNCTIONALITY =====
-addExpenseBtn.addEventListener('click', async () => {
-  const amount = parseFloat(amountInput.value);
-  const category = selected.dataset.value || selected.textContent;
+_step(5); addExpenseBtn.addEventListener('click', async () => {
+  try {
+    const amount = parseFloat(amountInput.value);
+    const category = selected.dataset.value || selected.textContent;
 
-  if (!amount || amount <= 0) {
-    alert('Please enter a valid amount');
-    return;
-  }
-
-  if (category === 'Category') {
-    alert('Please select a category');
-    return;
-  }
-
-  const friendLimit = await getFriendLimit();
-  if (friendLimit && friendLimit > 0) {
-    const currentSpent = getCurrentMonthSpent();
-    if (currentSpent + amount > friendLimit) {
-      alert(`Limit reached. You can spend up to ${friendLimit.toLocaleString()}${CURRENCY} this month.`);
+    if (!amount || amount <= 0) {
+      alert('Please enter a valid amount');
       return;
     }
-  }
 
-  // Add expense
-  const now = new Date();
-  const tagsInput = document.getElementById('tagsInput');
-  const tagsText = tagsInput ? tagsInput.value.trim() : '';
-  
-  // Parse tags: split by comma, trim, add # if missing, filter empty
-  const tags = tagsText
-    .split(',')
-    .map(t => t.trim())
-    .filter(t => t.length > 0)
-    .map(t => t.startsWith('#') ? t : '#' + t);
-  
-  const expense = {
-    id: Date.now(),
-    amount: amount,
-    category: category,
-    date: now.toLocaleDateString(getLocale()),
-    time: now.toLocaleTimeString(getLocale(), { hour: '2-digit', minute: '2-digit' }),
-    timestamp: now.getTime(),
-    tags: tags
-  };
+    if (category === 'Category') {
+      alert('Please select a category');
+      return;
+    }
 
-  appData.expenses.push(expense);
-  saveData();
-  await syncWalletTransaction({
-    amount,
-    category,
-    note: tagsText || '',
-    expenseId: expense.id
-  });
+    // Use cached limit (loaded in background on startup) — never await network here
+    const friendLimit = cachedFriendLimit;
+    if (friendLimit && friendLimit > 0) {
+      const currentSpent = getCurrentMonthSpent();
+      if (currentSpent + amount > friendLimit) {
+        alert(`Limit reached. You can spend up to ${friendLimit.toLocaleString()}${CURRENCY} this month.`);
+        return;
+      }
+    }
 
-  // Reset form
-  amountInput.value = '';
-  if (tagsInput) tagsInput.value = '';
-  selected.textContent = 'Category';
-  menu.style.display = 'none';
-  arrow.style.transform = 'rotate(0deg)';
+    // Add expense
+    const now = new Date();
+    const tagsInput = document.getElementById('tagsInput');
+    const tagsText = tagsInput ? tagsInput.value.trim() : '';
 
-  // Update UI
-  updateDashboard();
-  updateChart();
-  updateTagsUI();
-  checkLimitAlert(category);
+    // Parse tags: split by comma, trim, add # if missing, filter empty
+    const tags = tagsText
+      .split(',')
+      .map(t => t.trim())
+      .filter(t => t.length > 0)
+      .map(t => t.startsWith('#') ? t : '#' + t);
 
-  // Native notification
-  if (typeof notifyExpenseAdded === 'function') {
-    notifyExpenseAdded(amount, category, getCurrency());
-  }
+    const expense = {
+      id: Date.now(),
+      amount: amount,
+      category: category,
+      date: now.toLocaleDateString(getLocale()),
+      time: now.toLocaleTimeString(getLocale(), { hour: '2-digit', minute: '2-digit' }),
+      timestamp: now.getTime(),
+      tags: tags
+    };
+
+    appData.expenses.push(expense);
+    saveData();
+
+    // Reset form immediately
+    amountInput.value = '';
+    if (tagsInput) tagsInput.value = '';
+    selected.textContent = 'Category';
+    menu.style.display = 'none';
+    arrow.style.transform = 'rotate(0deg)';
+
+    // Update UI immediately (don't wait for sync)
+    updateDashboard();
+    updateChart();
+    updateTagsUI();
+    checkLimitAlert(category);
+
+    // Native notification
+    if (typeof notifyExpenseAdded === 'function') {
+      notifyExpenseAdded(amount, category, getCurrency());
+    }
+
+    // Sync in background (non-blocking)
+    syncWalletTransaction({
+      amount,
+      category,
+      note: tagsText || '',
+      expenseId: expense.id
+    }).catch(() => {});
+  } catch(e) { console.error('addExpense error:', e); }
 });
 
+// ===== SUCCESS TOAST =====
+function showSavingsToast(amount) {
+  let toast = document.getElementById('__savingsToast');
+  if (!toast) {
+    toast = document.createElement('div');
+    toast.id = '__savingsToast';
+    toast.className = 'success-toast';
+    toast.innerHTML = '<i class="fa-solid fa-circle-check"></i><span></span>';
+    document.body.appendChild(toast);
+  }
+  toast.querySelector('span').textContent = amount.toLocaleString() + getCurrency() + ' saved!';
+  toast.classList.add('show');
+  clearTimeout(toast._hideTimer);
+  toast._hideTimer = setTimeout(() => { toast.classList.remove('show'); }, 2500);
+}
+
 // ===== ADD SAVINGS FUNCTIONALITY =====
+_step(6);
 const savingsInput = document.getElementById('savingsInput');
 const addSavingsBtn = document.querySelector('.add-savings .primary-success');
 
-if (addSavingsBtn) addSavingsBtn.addEventListener('click', async () => {
-  const amount = parseFloat(savingsInput.value);
+function doAddSavings(amount) {
+  try {
+    const now = new Date();
+    const savingsTransaction = {
+      id: Date.now(),
+      amount: amount,
+      category: 'Savings',
+      date: now.toLocaleDateString(getLocale()),
+      time: now.toLocaleTimeString(getLocale(), { hour: '2-digit', minute: '2-digit' }),
+      timestamp: now.getTime(),
+      type: 'savings'
+    };
 
-  if (!amount || amount <= 0) {
-    alert('Please enter a valid amount');
-    return;
+    appData.expenses.push(savingsTransaction);
+    appData.savingsTotal = (appData.savingsTotal || 0) + amount;
+    saveData();
+    savingsInput.value = '';
+    updateDashboard();
+    updateChart();
+    showSavingsToast(amount);
+
+    syncWalletTransaction({
+      amount,
+      category: 'Savings',
+      note: 'Savings',
+      expenseId: savingsTransaction.id
+    }).catch(() => {});
+  } catch(e) { console.error('addSavings error:', e); }
+}
+
+// Savings confirm modal — built in JS so it exists before DOMContentLoaded
+(function () {
+  // Build modal DOM
+  const modal = document.createElement('div');
+  modal.style.cssText = 'display:none;position:fixed;inset:0;z-index:99990;align-items:center;justify-content:center;';
+
+  const overlay = document.createElement('div');
+  overlay.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);';
+
+  const box = document.createElement('div');
+  box.style.cssText = 'position:relative;background:var(--card-bg,#fff);border-radius:20px;padding:28px 24px 20px;width:min(320px,88vw);box-shadow:0 20px 60px rgba(0,0,0,0.35);text-align:center;z-index:1;';
+
+  const iconWrap = document.createElement('div');
+  iconWrap.style.cssText = 'width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;';
+  iconWrap.innerHTML = '<i class="fa-solid fa-piggy-bank" style="font-size:24px;color:#fff;"></i>';
+
+  const title = document.createElement('h3');
+  title.style.cssText = 'margin:0 0 6px;font-size:18px;font-weight:700;color:var(--text,#0f1724);';
+  title.textContent = 'Add Savings';
+
+  const amountLabel = document.createElement('p');
+  amountLabel.style.cssText = 'margin:0 0 24px;font-size:15px;color:var(--muted,#64748b);';
+
+  const btnRow = document.createElement('div');
+  btnRow.style.cssText = 'display:flex;gap:10px;';
+
+  const cancelBtn = document.createElement('button');
+  cancelBtn.style.cssText = 'flex:1;padding:12px;border-radius:12px;border:1.5px solid var(--border,#e2e8f0);background:none;font-size:15px;font-weight:600;cursor:pointer;color:var(--text,#0f1724);font-family:inherit;';
+  cancelBtn.textContent = 'Cancel';
+
+  const confirmBtn = document.createElement('button');
+  confirmBtn.style.cssText = 'flex:1;padding:12px;border-radius:12px;border:none;background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-size:15px;font-weight:700;cursor:pointer;box-shadow:0 4px 14px rgba(16,185,129,0.4);font-family:inherit;';
+  confirmBtn.textContent = 'Add';
+
+  btnRow.appendChild(cancelBtn);
+  btnRow.appendChild(confirmBtn);
+  box.appendChild(iconWrap);
+  box.appendChild(title);
+  box.appendChild(amountLabel);
+  box.appendChild(btnRow);
+  modal.appendChild(overlay);
+  modal.appendChild(box);
+  document.body.appendChild(modal);
+
+  let pendingAmount = 0;
+
+  function openModal(amount) {
+    pendingAmount = amount;
+    amountLabel.textContent = 'Add ' + amount.toLocaleString() + getCurrency() + ' to savings?';
+    modal.style.display = 'flex';
   }
 
-  // Add savings as income transaction
-  const now = new Date();
-  const savingsTransaction = {
-    id: Date.now(),
-    amount: amount,
-    category: 'Savings',
-    date: now.toLocaleDateString(getLocale()),
-    time: now.toLocaleTimeString(getLocale(), { hour: '2-digit', minute: '2-digit' }),
-    timestamp: now.getTime(),
-    type: 'savings'
-  };
+  function closeModal() {
+    modal.style.display = 'none';
+    pendingAmount = 0;
+  }
 
-  appData.expenses.push(savingsTransaction);
-  appData.savingsTotal = (appData.savingsTotal || 0) + amount;
-  saveData();
-  await syncWalletTransaction({
-    amount,
-    category: 'Savings',
-    note: 'Savings',
-    expenseId: savingsTransaction.id
+  overlay.addEventListener('click', closeModal);
+  cancelBtn.addEventListener('click', closeModal);
+  confirmBtn.addEventListener('click', () => {
+    const amt = pendingAmount;
+    closeModal();
+    doAddSavings(amt);
   });
 
-  // Show notification about added savings
-  alert(t('js.savingsAdded') + amount.toLocaleString() + getCurrency());
+  if (addSavingsBtn) addSavingsBtn.addEventListener('click', () => {
+    const amount = parseFloat(savingsInput.value);
+    if (!amount || amount <= 0) {
+      alert('Please enter a valid amount');
+      return;
+    }
+    openModal(amount);
+  });
+})();
 
-  // Reset form
-  savingsInput.value = '';
-
-  // Update UI
-  updateDashboard();
-  updateChart();
-});
 
 // ===== RESET FUNCTIONALITY =====
 if (resetBtn) {
@@ -1652,11 +1760,17 @@ function updateInsights() {
       const color = getCategoryColor(t.category);
       return `<span style="display: inline-block; padding: 2px 6px; border-radius: 3px; background: ${color}; color: white; font-weight: 500; font-size: 12px;">${t.category}</span>: ${t.amount.toLocaleString()}${CURRENCY}`;
     });
+    const isDark3 = document.documentElement.classList.contains('dark-theme');
     const insightLi = document.createElement('li');
-    insightLi.className = 'insight-item';
+    insightLi.setAttribute('style',
+      'display:flex;align-items:flex-start;gap:10px;padding:10px 12px;border-radius:8px;font-size:14px;' +
+      (isDark3 ? 'background:rgba(255,255,255,0.08);color:#f0f5fb;' : 'background:#f8fafc;color:#344054;')
+    );
     const icon = document.createElement('i');
-    icon.className = 'fa-solid fa-brain insight-icon';
+    icon.className = 'fa-solid fa-brain';
+    icon.setAttribute('style', 'color:' + (isDark3 ? '#818cf8' : '#334155') + ';flex-shrink:0;margin-top:2px;');
     const span = document.createElement('span');
+    span.style.lineHeight = '1.6';
     span.innerHTML = t('js.top3Transactions') + items.join(' • ');
     insightLi.appendChild(icon);
     insightLi.appendChild(span);
@@ -2770,8 +2884,11 @@ function updateChartWithTagFilter(tag) {
     const engKeys = Object.keys(categorySpending);
     labels = engKeys.map(cat => typeof tCat === 'function' ? tCat(cat) : cat);
     data = Object.values(categorySpending);
-    colors = engKeys.map(cat => chartColors[cat] || '#95a5a6');
+    colors = engKeys.map(cat => (appData.categoryColors && appData.categoryColors[cat]) || '#95a5a6');
   }
+
+  const isDark = document.documentElement.classList.contains('dark-theme');
+  const borderCol = isDark ? '#0f1724' : '#ffffff';
 
   if (chartInstance) {
     chartInstance.destroy();
@@ -2784,8 +2901,8 @@ function updateChartWithTagFilter(tag) {
       datasets: [{
         data: data,
         backgroundColor: colors,
-        borderColor: '#fff',
-        borderWidth: 3,
+        borderColor: borderCol,
+        borderWidth: 2,
         hoverOffset: 10
       }]
     },
@@ -2798,7 +2915,7 @@ function updateChartWithTagFilter(tag) {
           labels: {
             padding: 15,
             font: { size: 12, family: 'Inter' },
-            color: '#374151'
+            color: isDark ? '#e2e8f0' : '#374151'
           }
         },
         tooltip: {
@@ -3028,11 +3145,15 @@ function updateMonthlySummary() {
 }
 
 // Initial dashboard update
+_step(7);
 try { loadCalendarState(); } catch(e) {}
-checkOnboarding();
+checkOnboarding().catch(() => {});
+// Pre-warm friend limit cache so first Add Expense click is instant
+getFriendLimit().catch(() => {});
+_step(8);
 try { updateDashboard(); } catch(e) { console.error('Initial updateDashboard error:', e); }
 // === DEBUG badge ===
-try { var _d=document.getElementById('__js_debug'); if(_d){_d.style.background='#22c55e';_d.textContent='JS:OK \u2713';} } catch(_) {}
+try { if(_dbg){_dbg.style.background='#22c55e';_dbg.textContent='JS:OK \u2713';_dbg.style.fontSize='11px';} } catch(_) {}
 // === END DEBUG ===
 
 // WKWebView repaint fix: re-render after first paint to ensure dynamic content is visible
@@ -3072,9 +3193,10 @@ window.addEventListener('languageChanged', () => {
 });
 
 try { enqueueMissingWalletSync(); } catch(e) {}
-try { flushWalletSyncQueue(); } catch(e) {}
+// flushWalletSyncQueue is async — use .catch() to prevent unhandled Promise rejection
+flushWalletSyncQueue().catch(() => {});
 setInterval(() => {
-  try { flushWalletSyncQueue(); } catch(e) {}
+  flushWalletSyncQueue().catch(() => {});
 }, 8000);
 // Footer navigation - smooth scroll
 document.querySelectorAll('.footer-link').forEach(link => {
