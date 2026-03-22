@@ -210,6 +210,7 @@
     'settings.notifFamily':   { en: 'Family invite received', sr: 'Porodična pozivnica primljena', es: 'Invitación familiar recibida' },
     'settings.notifWallet':   { en: 'Wallet updates',    sr: 'Ažuriranja novčanika', es: 'Actualizaciones de billetera' },
     'settings.notifWeekly':   { en: 'Weekly summary email', sr: 'Nedeljni pregled email', es: 'Correo resumen semanal' },
+    'settings.uiSounds':      { en: 'UI Sounds',            sr: 'Zvukovi aplikacije',    es: 'Sonidos de interfaz' },
     'settings.preferences':   { en: 'Preferences',       sr: 'Preference',           es: 'Preferencias' },
     'settings.monthlyIncome': { en: 'Monthly Income',    sr: 'Mesečni prihod',       es: 'Ingreso Mensual' },
     'settings.defaultCurrency': { en: 'Default Currency', sr: 'Podrazumevana valuta', es: 'Moneda Predeterminada' },

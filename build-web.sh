@@ -11,6 +11,7 @@ cp -r public www/
 cp -r dashboard www/
 cp -r expenses www/
 cp -r shared www/
+cp -r onboarding www/
 cp manifest.json www/
 cp sw.js www/
 

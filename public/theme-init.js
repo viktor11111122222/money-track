@@ -1,8 +1,52 @@
 (function(){
     try{
+        // Force sidebar width to 0 immediately — prevents FOUC where margin-left: var(--sidebar-width)
+        // resolves to 360px or 100% before mobile-nav.css overrides kick in on Android WebView
+        document.documentElement.style.setProperty('--sidebar-width', '0px');
+
+        // Inline !important beats all author stylesheet !important — definitive layout fix
+        document.addEventListener('DOMContentLoaded', function(){
+            var main = document.querySelector('main');
+            if(main){
+                main.style.setProperty('margin-left', '0px', 'important');
+                main.style.setProperty('margin-right', '0px', 'important');
+                main.style.setProperty('width', '100%', 'important');
+                main.style.setProperty('max-width', '100vw', 'important');
+                main.style.setProperty('overflow-x', 'hidden', 'important');
+                main.style.setProperty('flex', '0 1 auto', 'important');
+            }
+            var mc = document.querySelector('.main-container');
+            if(mc){
+                mc.style.setProperty('grid-template-columns', '1fr', 'important');
+                mc.style.setProperty('overflow-x', 'hidden', 'important');
+                mc.style.setProperty('width', '100%', 'important');
+                mc.style.setProperty('max-width', '100%', 'important');
+            }
+            var html = document.documentElement;
+            html.style.setProperty('height', 'auto', 'important');
+            html.style.setProperty('overflow', 'visible', 'important');
+            var body = document.body;
+            if(body) body.style.setProperty('height', 'auto', 'important');
+        });
+
+        // One-time migration: previous buggy code could have written 'dark' to
+        // mt_theme_pref by reading stale mt_settings_v1 data. Reset it on first
+        // run of this version so the user's explicit setting (or light default) wins.
+        if (!localStorage.getItem('mt_theme_v3')) {
+            try {
+                var raw0 = localStorage.getItem('mt_settings_v1');
+                var p0 = raw0 ? JSON.parse(raw0) : null;
+                var migrated = (p0 && p0.appearance && p0.appearance.theme) || 'light';
+                localStorage.setItem('mt_theme_pref', migrated);
+                localStorage.setItem('mt_theme_v3', '1');
+            } catch(e) {}
+        }
+
         var raw = localStorage.getItem('mt_settings_v1');
         var parsed = raw ? JSON.parse(raw) : null;
-        var theme = parsed && parsed.appearance && parsed.appearance.theme ? parsed.appearance.theme : 'light';
+        var theme = localStorage.getItem('mt_theme_pref') || 'light';
+        // Always persist so the next cold start reads the correct value
+        try { localStorage.setItem('mt_theme_pref', theme); } catch(e) {}
         var root = document.documentElement;
         function setMode(mode){
             if(mode === 'dark') root.classList.add('dark-theme');

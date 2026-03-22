@@ -1,0 +1,24 @@
+<svg viewBox="0 0 100 100" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="b1" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#7b8cff"/><stop offset="100%" stop-color="#6272f5"/></linearGradient>
+    <linearGradient id="b2" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#8a68f8"/><stop offset="100%" stop-color="#7758ee"/></linearGradient>
+    <linearGradient id="b3" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#944ae8"/><stop offset="100%" stop-color="#8038da"/></linearGradient>
+    <linearGradient id="b4" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="#a030d8"/><stop offset="100%" stop-color="#8c20c8"/></linearGradient>
+  </defs>
+  <!-- Background rounded square -->
+  <rect width="100" height="100" rx="21" fill="#1a1d2e"/>
+  <!-- Baseline pill -->
+  <rect x="16" y="82" width="61" height="5" rx="2.5" fill="rgba(255,255,255,0.88)"/>
+  <!-- Bar 1 -->
+  <rect x="16" y="67" width="12" height="15" rx="3" fill="url(#b1)"/>
+  <!-- Bar 2 -->
+  <rect x="31" y="53" width="12" height="29" rx="3" fill="url(#b2)"/>
+  <!-- Bar 3 -->
+  <rect x="46" y="39" width="12" height="43" rx="3" fill="url(#b3)"/>
+  <!-- Bar 4 -->
+  <rect x="61" y="20" width="12" height="62" rx="3" fill="url(#b4)"/>
+  <!-- Trend line -->
+  <line x1="21" y1="71" x2="67" y2="23" stroke="white" stroke-width="4.2" stroke-linecap="round"/>
+  <!-- Trend dot -->
+  <circle cx="67" cy="22" r="7" fill="white"/>
+</svg>

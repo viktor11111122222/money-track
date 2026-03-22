@@ -2081,8 +2081,10 @@ async function handleWizardSubmit() {
       token = payload.token;
     }
 
-    // Save settings — startMonth is the key used by settings.js and dashboard
-    const settings = { preferences: { language, currency, monthlyIncome: income, startMonth: incomeDay, dateFormat: 'DD/MM/YYYY' } };
+    // Save settings — preserve existing appearance/theme/profile while updating preferences
+    let existingSettings = {};
+    try { const _r = localStorage.getItem('mt_settings_v1'); if (_r) existingSettings = JSON.parse(_r); } catch(e) {}
+    const settings = Object.assign({}, existingSettings, { preferences: { language, currency, monthlyIncome: income, startMonth: incomeDay, dateFormat: 'DD/MM/YYYY' } });
     localStorage.setItem('mt_settings_v1', JSON.stringify(settings));
 
     // Save full expenseTrackerData — income + currentBalance so dashboard shows correct values

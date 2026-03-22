@@ -1,20 +1,13 @@
-const CACHE_NAME = 'money-track-v1';
+const CACHE_NAME = 'money-track-v4';
 
 const STATIC_ASSETS = [
-  '/dashboard/',
-  '/dashboard/index.html',
   '/dashboard/style.css',
   '/dashboard/script.js',
-  '/expenses/',
-  '/expenses/index.html',
   '/expenses/style.css',
   '/expenses/script.js',
   '/expenses/analytics.js',
-  '/shared/',
-  '/shared/index.html',
   '/shared/style.css',
   '/shared/script.js',
-  '/shared/settings.html',
   '/public/theme.css',
   '/public/theme-init.js',
   '/public/i18n.js',
@@ -48,24 +41,28 @@ self.addEventListener('activate', (event) => {
 
 self.addEventListener('fetch', (event) => {
   const { request } = event;
-  const url = new URL(request.url);
 
-  // Always go to network for API calls (backend)
-  if (url.pathname.startsWith('/api/')) {
-    event.respondWith(fetch(request));
-    return;
-  }
+  // CRITICAL: Do NOT intercept navigation requests.
+  // In Capacitor Android, SW fetch() for https://localhost/* is not intercepted
+  // by the native shouldInterceptRequest handler, causing a ~20s TCP timeout
+  // before every page navigation. Let the browser handle navigations natively.
+  if (request.mode === 'navigate') return;
 
-  // For everything else: network first, fall back to cache
+  // Skip non-GET and cross-origin requests
+  if (request.method !== 'GET') return;
+  if (!request.url.startsWith(self.location.origin)) return;
+
+  // Static assets: cache-first
   event.respondWith(
-    fetch(request)
-      .then((response) => {
+    caches.match(request).then((cached) => {
+      if (cached) return cached;
+      return fetch(request).then((response) => {
         if (response && response.status === 200) {
-          const responseClone = response.clone();
-          caches.open(CACHE_NAME).then((cache) => cache.put(request, responseClone));
+          const clone = response.clone();
+          caches.open(CACHE_NAME).then((cache) => cache.put(request, clone));
         }
         return response;
-      })
-      .catch(() => caches.match(request))
+      }).catch(() => cached);
+    })
   );
 });

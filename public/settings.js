@@ -7,7 +7,7 @@
   const defaults = {
     profile: { fullName: '', email: '', username: '', avatar: '/public/avatar-default.svg' },
     account: { twoFactor: true },
-    notifications: { expense: true, monthly: true, family: true, wallet: true, weekly: true },
+    notifications: { expense: true, monthly: true, family: true, wallet: true, weekly: true, sounds: true },
     preferences: { currency: 'EUR', dateFormat: 'DD/MM/YYYY', startMonth: '1', monthlyIncome: 0, language: 'English' },
     appearance: { theme: 'light', accent: 'indigo' }
   };
@@ -111,7 +111,7 @@
 
     // Also update server-side income and balance
     var token = getToken();
-    if (token) {
+    if (token && !isLocal(token)) {
       fetch(API_BASE + '/me/finances', {
         method: 'PATCH',
         headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
@@ -125,6 +125,7 @@
 
   /* ── Helpers ── */
   function getToken() { return localStorage.getItem(TOKEN_KEY); }
+  function isLocal(token) { return !token || token.startsWith('local_'); }
   function qs(sel, ctx = document) { return ctx.querySelector(sel); }
 
   function readStorage() {
@@ -259,7 +260,7 @@
   /* ── Load profile from server ── */
   function loadProfile() {
     var token = getToken();
-    if (!token) return;
+    if (!token || isLocal(token)) return;
     fetch(API_BASE + '/me', { headers: { Authorization: 'Bearer ' + token } })
       .then(function(res) { return res.ok ? res.json() : null; })
       .then(function(user) {
@@ -302,6 +303,8 @@
     qs('#notifFamily').checked = !!state.notifications.family;
     qs('#notifWallet').checked = !!state.notifications.wallet;
     qs('#notifWeekly').checked = !!state.notifications.weekly;
+    var soundToggle = qs('#soundToggle');
+    if (soundToggle) soundToggle.checked = state.notifications.sounds !== false;
 
     qs('#currencySelect').value = state.preferences.currency || 'EUR';
     qs('#dateFormatSelect').value = state.preferences.dateFormat || 'DD/MM/YYYY';
@@ -320,7 +323,14 @@
       } catch(e) { /* */ }
     }
 
-    var theme = state.appearance.theme || 'light';
+    // mt_theme_pref is the sole authoritative source for theme
+    var theme = 'light';
+    try { theme = localStorage.getItem('mt_theme_pref') || 'light'; } catch(e) {}
+    // Keep mt_settings_v1 in sync
+    if (state.appearance.theme !== theme) {
+      state.appearance.theme = theme;
+      writeStorage(state);
+    }
     var themeRadio = qs('input[name=theme][value=' + theme + ']');
     if (themeRadio) themeRadio.checked = true;
 
@@ -340,6 +350,8 @@
     state.notifications.family = !!qs('#notifFamily').checked;
     state.notifications.wallet = !!qs('#notifWallet').checked;
     state.notifications.weekly = !!qs('#notifWeekly').checked;
+    var soundToggleEl = qs('#soundToggle');
+    if (soundToggleEl) state.notifications.sounds = !!soundToggleEl.checked;
     state.preferences.currency = qs('#currencySelect').value;
     state.preferences.dateFormat = qs('#dateFormatSelect').value;
     state.preferences.startMonth = qs('#startMonthSelect').value;
@@ -379,7 +391,7 @@
         showToast('Profile saved ✓');
       };
 
-      if (token) {
+      if (token && !isLocal(token)) {
         fetch(API_BASE + '/me/profile', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
@@ -409,6 +421,7 @@
 
         var token = getToken();
         if (!token) return showToast('Not logged in', 'error');
+        if (isLocal(token)) return showToast('Password change not available in local mode', 'info');
         fetch(API_BASE + '/me/password', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
@@ -450,7 +463,7 @@
           writeStorage(state);
 
           var token = getToken();
-          if (token) {
+          if (token && !isLocal(token)) {
             fetch(API_BASE + '/me/avatar', {
               method: 'PATCH',
               headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
@@ -472,7 +485,7 @@
         writeStorage(state);
 
         var token = getToken();
-        if (token && state.profile.fullName) {
+        if (token && !isLocal(token) && state.profile.fullName) {
           fetch(API_BASE + '/me/profile', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
@@ -502,6 +515,8 @@
         var state = readStorage();
         state.appearance.theme = val;
         writeStorage(state);
+        // Also write to backup key so theme survives any mt_settings_v1 reset
+        try { localStorage.setItem('mt_theme_pref', val); } catch(e) {}
       });
     });
 
@@ -526,6 +541,15 @@
       });
     });
 
+    // ═══ Sound toggle – auto-save ═══
+    var soundToggleEl = qs('#soundToggle');
+    if (soundToggleEl) {
+      soundToggleEl.addEventListener('change', function () {
+        var state = collectFromUI();
+        writeStorage(state);
+      });
+    }
+
     // ═══ Monthly Income – save on change ═══
     var incomeEl = qs('#monthlyIncomeInput');
     if (incomeEl) {
@@ -541,7 +565,7 @@
         } catch(e) { /* */ }
         // Update server
         var token = getToken();
-        if (token) {
+        if (token && !isLocal(token)) {
           fetch(API_BASE + '/me/finances', {
             method: 'PATCH',
             headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
@@ -567,6 +591,15 @@
           if (oldCurrency !== newCurrency) {
             // Convert all monetary data
             convertAppData(oldCurrency, newCurrency);
+            // Refresh income input from converted data
+            var incomeInp = qs('#monthlyIncomeInput');
+            if (incomeInp) {
+              try {
+                var appRaw2 = localStorage.getItem('expenseTrackerData');
+                var appD2 = appRaw2 ? JSON.parse(appRaw2) : null;
+                if (appD2 && typeof appD2.income === 'number') incomeInp.value = appD2.income;
+              } catch(e) { /* */ }
+            }
             // Save the new currency preference
             var state = collectFromUI();
             writeStorage(state);
@@ -589,12 +622,15 @@
     });
 
     // ═══ Active Sessions link ═══
-    var activeSessionsLink = document.querySelector('a.link[href="#"]');
+    var activeSessionsLink = document.querySelector('#activeSessionsLink') ||
+      document.querySelector('[data-action="active-sessions"]') ||
+      document.querySelector('a[href="#active-sessions"]');
     if (activeSessionsLink) {
       activeSessionsLink.addEventListener('click', function(e) {
         e.preventDefault();
         var token = getToken();
         if (!token) return showToast('Not logged in', 'error');
+        if (isLocal(token)) return showToast('1 active session (local)', 'info');
         fetch(API_BASE + '/me/sessions', {
           headers: { Authorization: 'Bearer ' + token }
         })
@@ -604,7 +640,7 @@
           var count = Array.isArray(sessions) ? sessions.length : 1;
           showToast('You have ' + count + ' active session(s)', 'info');
         })
-        .catch(function() { showToast('Could not load sessions', 'error'); });
+        .catch(function() { showToast('1 active session', 'info'); });
       });
     }
 
@@ -619,6 +655,7 @@
           if (!confirmed) return;
           var token = getToken();
           if (!token) return showToast('Not logged in', 'error');
+          if (isLocal(token)) return showToast('No family budget in local mode', 'info');
           fetch(API_BASE + '/me/leave-family', {
             method: 'POST',
             headers: { Authorization: 'Bearer ' + token }
@@ -650,7 +687,7 @@
             showToast('Account deleted');
             setTimeout(function() { window.location.href = '../shared/index.html'; }, 1500);
           };
-          if (token) {
+          if (token && !isLocal(token)) {
             fetch(API_BASE + '/me', {
               method: 'DELETE',
               headers: { Authorization: 'Bearer ' + token }

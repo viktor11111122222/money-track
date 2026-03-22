@@ -2,6 +2,16 @@
 (function () {
     var _ctx = null;
 
+    function soundsEnabled() {
+        try {
+            var raw = localStorage.getItem('mt_settings_v1');
+            if (!raw) return true;
+            var parsed = JSON.parse(raw);
+            if (parsed && parsed.notifications && parsed.notifications.sounds === false) return false;
+        } catch (e) {}
+        return true;
+    }
+
     function ctx() {
         if (!_ctx) {
             try { _ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
@@ -13,6 +23,7 @@
 
     // Short soft "tick" – for button clicks
     function playClick() {
+        if (!soundsEnabled()) return;
         var c = ctx(); if (!c) return;
         try {
             var osc  = c.createOscillator();
@@ -30,6 +41,7 @@
 
     // Rising soft blip – toggle ON
     function playToggleOn() {
+        if (!soundsEnabled()) return;
         var c = ctx(); if (!c) return;
         try {
             var osc  = c.createOscillator();
@@ -47,6 +59,7 @@
 
     // Falling soft blip – toggle OFF
     function playToggleOff() {
+        if (!soundsEnabled()) return;
         var c = ctx(); if (!c) return;
         try {
             var osc  = c.createOscillator();

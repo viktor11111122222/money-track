@@ -1,16 +1,32 @@
 // ── Google AdMob banner helper ──
 // Uses @capacitor-community/admob via native Capacitor bridge
 //
-// SETUP: Replace the IDs below with your real AdMob IDs from console.admob.google.com
-// Test IDs are used until you replace them (safe for development/TestFlight).
+// SETUP: Replace Android IDs below with your real Android AdMob IDs from console.admob.google.com
+// iOS IDs and Android IDs are separate — register your app on each platform in AdMob.
 
 (function () {
-    // ─── YOUR ADMOB IDs ───────────────────────────────────────────────
-    var APP_ID        = 'ca-app-pub-4263612271170636~7236104838';
-    var AD_UNIT_DASHBOARD = 'ca-app-pub-4263612271170636/5737487618';
-    var AD_UNIT_EXPENSES  = 'ca-app-pub-4263612271170636/5482336749';
-    var AD_UNIT_SETTINGS  = 'ca-app-pub-4263612271170636/4646799627';
+    var platform = (window.Capacitor && window.Capacitor.getPlatform) ? window.Capacitor.getPlatform() : 'web';
+    var isAndroid = platform === 'android';
+
+    // ─── iOS AdMob IDs ────────────────────────────────────────────────
+    var IOS_APP_ID        = 'ca-app-pub-4263612271170636~7236104838';
+    var IOS_AD_DASHBOARD  = 'ca-app-pub-4263612271170636/5737487618';
+    var IOS_AD_EXPENSES   = 'ca-app-pub-4263612271170636/5482336749';
+    var IOS_AD_SETTINGS   = 'ca-app-pub-4263612271170636/4646799627';
+
+    // ─── Android AdMob IDs ────────────────────────────────────────────
+    // TODO: Replace these with your real Android AdMob IDs from admob.google.com
+    // Currently using Google's official test IDs for development.
+    var ANDROID_APP_ID       = 'ca-app-pub-3940256099942544~3347511713'; // test — replace with real
+    var ANDROID_AD_DASHBOARD = 'ca-app-pub-3940256099942544/6300978111'; // test — replace with real
+    var ANDROID_AD_EXPENSES  = 'ca-app-pub-3940256099942544/6300978111'; // test — replace with real
+    var ANDROID_AD_SETTINGS  = 'ca-app-pub-3940256099942544/6300978111'; // test — replace with real
     // ─────────────────────────────────────────────────────────────────
+
+    var APP_ID        = isAndroid ? ANDROID_APP_ID        : IOS_APP_ID;
+    var AD_UNIT_DASHBOARD = isAndroid ? ANDROID_AD_DASHBOARD : IOS_AD_DASHBOARD;
+    var AD_UNIT_EXPENSES  = isAndroid ? ANDROID_AD_EXPENSES  : IOS_AD_EXPENSES;
+    var AD_UNIT_SETTINGS  = isAndroid ? ANDROID_AD_SETTINGS  : IOS_AD_SETTINGS;
 
     function getPlugin() {
         return window.Capacitor &&
