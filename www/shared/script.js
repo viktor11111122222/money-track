@@ -321,7 +321,7 @@ async function apiFetch(path, options = {}, withAuth = true) {
       headers
     });
   } catch {
-    const error = new Error('Backend is not reachable. Start the server on http://localhost:8080.');
+    const error = new Error('No internet connection.');
     error.status = 0;
     throw error;
   }
@@ -656,8 +656,19 @@ function openPrompt({ title = 'Input', text = 'Enter value:', defaultValue = '',
   });
 }
 
+const _emptyStates = {
+  'No invites yet.':      { icon: '<i class="fa-solid fa-envelope"></i>',        text: 'No invites yet',  sub: 'Tap "+ New Invite" to invite someone' },
+  'No friends yet.':      { icon: '<i class="fa-solid fa-users"></i>',           text: 'No friends yet',  sub: 'Accept an invite to add friends' },
+  'No wallets created.':  { icon: '<i class="fa-solid fa-wallet"></i>',          text: 'No wallets yet',  sub: 'Tap "+ New Wallet" to create one' },
+  'No splits created yet.': { icon: '<i class="fa-solid fa-scale-balanced"></i>', text: 'No splits yet',  sub: 'Tap "+ New Split" to split a bill' }
+};
 function renderEmpty(container, text) {
-  container.innerHTML = `<div class="shared-empty">${text}</div>`;
+  const s = _emptyStates[text] || { icon: '<i class="fa-solid fa-inbox"></i>', text: text, sub: '' };
+  container.innerHTML = `<div class="shared-empty">
+    <span class="shared-empty-icon">${s.icon}</span>
+    <span class="shared-empty-text">${s.text}</span>
+    ${s.sub ? `<span class="shared-empty-sub">${s.sub}</span>` : ''}
+  </div>`;
 }
 
 function getPrimaryScrollElement() {
@@ -1943,6 +1954,12 @@ ui.walletMemberPicker?.addEventListener('click', (event) => {
 });
 
 async function loadAll() {
+  // Local auth mode — no server, just render empty lists
+  if (window.__LOCAL_AUTH__) {
+    sharedData = sharedData || { invites: [], wallets: [], splits: [], friends: [], walletTransactions: {} };
+    renderAll();
+    return;
+  }
   try {
     const [invites, wallets, splits, friends] = await Promise.all([
       apiFetch('/invites'),
@@ -1966,17 +1983,14 @@ async function loadAll() {
     renderAll();
   } catch (error) {
     if (error.status === 401) {
+      // Only log out on explicit auth rejection from server
       setToken(null);
       setLoggedIn(false);
     } else {
-      sharedData = { invites: [], wallets: [], splits: [], friends: [], walletTransactions: {} };
+      // Network error or other — keep user logged in, show empty state
+      sharedData = sharedData || { invites: [], wallets: [], splits: [], friends: [], walletTransactions: {} };
       renderAll();
-      showNotification(error.message || 'Failed to load shared data.', 'error');
-      if (error.status === 0) {
-        setLoggedIn(false);
-      } else {
-        setLoggedIn(true);
-      }
+      setLoggedIn(true);
     }
   }
 }
@@ -2061,6 +2075,7 @@ function initWizard() {
 
 async function handleWizardSubmit() {
   const name     = document.getElementById('registerName')?.value.trim();
+  const username = document.getElementById('registerUsername')?.value.trim();
   const email    = document.getElementById('registerEmail')?.value.trim();
   const pass     = document.getElementById('registerPassword')?.value;
   const remember = document.getElementById('registerRememberMe')?.checked !== false;
@@ -2081,10 +2096,13 @@ async function handleWizardSubmit() {
       token = payload.token;
     }
 
-    // Save settings — preserve existing appearance/theme/profile while updating preferences
+    // Save settings — preserve existing appearance/theme while updating profile + preferences
     let existingSettings = {};
     try { const _r = localStorage.getItem('mt_settings_v1'); if (_r) existingSettings = JSON.parse(_r); } catch(e) {}
-    const settings = Object.assign({}, existingSettings, { preferences: { language, currency, monthlyIncome: income, startMonth: incomeDay, dateFormat: 'DD/MM/YYYY' } });
+    const settings = Object.assign({}, existingSettings, {
+      profile: Object.assign({}, (existingSettings.profile || {}), { fullName: name, username: username || '', email: email }),
+      preferences: { language, currency, monthlyIncome: income, startMonth: incomeDay, dateFormat: 'DD/MM/YYYY' }
+    });
     localStorage.setItem('mt_settings_v1', JSON.stringify(settings));
 
     // Save full expenseTrackerData — income + currentBalance so dashboard shows correct values
@@ -2177,6 +2195,13 @@ async function handleRegister(event) {
       }, false);
       token = payload.token;
     }
+    // Save name + email to profile so settings/avatar show correct data immediately
+    try {
+      const _r = localStorage.getItem('mt_settings_v1');
+      const _s = _r ? JSON.parse(_r) : {};
+      _s.profile = Object.assign({}, (_s.profile || {}), { fullName: ui.registerName.value.trim(), email });
+      localStorage.setItem('mt_settings_v1', JSON.stringify(_s));
+    } catch(e) {}
     setToken(token, shouldRemember);
     sessionStorage.setItem('mt_session_active', '1'); // sprečava auth-guard da odmah obriše token
     window.location.href = '../dashboard/index.html';
@@ -2228,7 +2253,7 @@ async function init() {
     }
     currentUser = localUser;
     setLoggedIn(true);
-    // Local mode: no server data to load, skip loadAll
+    await loadAll(); // renders empty states for invites/wallets/splits/friends
     return;
   }
   // ── Real backend mode ──────────────────────────────────────────────────
@@ -2238,14 +2263,14 @@ async function init() {
     await loadAll();
   } catch (error) {
     if (error.status === 401) {
-      // Only log out on explicit auth failure
+      // Only log out on explicit auth rejection from server
       setToken(null);
       setLoggedIn(false);
       return;
     }
-    // Network error - keep user logged in, show warning
+    // Network error — keep user logged in silently
     setLoggedIn(true);
-    showNotification('No connection to server. Some data may be outdated.', 'error');
+    await loadAll();
   }
 }
 
@@ -2276,7 +2301,7 @@ setInterval(() => {
 
 let isWalletRefreshing = false;
 setInterval(() => {
-  if (!getToken() || isWalletRefreshing) return;
+  if (!getToken() || isWalletRefreshing || window.__LOCAL_AUTH__) return;
   isWalletRefreshing = true;
   loadAll().finally(() => {
     isWalletRefreshing = false;

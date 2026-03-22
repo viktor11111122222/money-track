@@ -4,6 +4,7 @@ import cors from 'cors';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import nodemailer from 'nodemailer';
+import rateLimit from 'express-rate-limit';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { all, get, run } from './db.js';
@@ -14,8 +15,18 @@ const PROJECT_ROOT = path.join(__dirname, '..');
 
 const app = express();
 const PORT = process.env.PORT || 8080;
-const JWT_SECRET = process.env.JWT_SECRET || 'change_me_secret';
-const APP_BASE_URL = process.env.APP_BASE_URL || 'http://127.0.0.1:5500';
+const IS_PROD = process.env.NODE_ENV === 'production';
+
+// ── JWT_SECRET — crash on startup if missing in production ──
+if (IS_PROD && !process.env.JWT_SECRET) {
+  console.error('FATAL: JWT_SECRET environment variable is not set. Refusing to start in production without it.');
+  process.exit(1);
+}
+const JWT_SECRET = process.env.JWT_SECRET || 'dev_only_secret_change_before_prod';
+
+const APP_BASE_URL = process.env.APP_BASE_URL || (IS_PROD
+  ? (() => { console.warn('WARNING: APP_BASE_URL is not set — invite email links will be broken.'); return 'https://localhost'; })()
+  : 'http://localhost:5500');
 
 const smtpConfig = {
   host: process.env.SMTP_HOST,
@@ -63,8 +74,42 @@ async function sendInviteEmail(invite) {
   await mailer.sendMail(buildInviteEmail(invite));
 }
 
-app.use(cors({ origin: true }));
-app.use(express.json());
+// ── CORS — allow only known origins ──
+const ALLOWED_ORIGINS = [
+  // Capacitor mobile (Android + iOS)
+  'https://localhost',
+  'capacitor://localhost',
+  'http://localhost',
+  // Local dev (Live Server, browser)
+  'http://localhost:5500',
+  'http://localhost:5501',
+  'http://127.0.0.1:5500',
+  'http://127.0.0.1:5501',
+  // Android emulator → Mac localhost
+  'http://10.0.2.2:8080',
+];
+if (process.env.APP_BASE_URL) ALLOWED_ORIGINS.push(process.env.APP_BASE_URL);
+
+app.use(cors({
+  origin: function (origin, callback) {
+    // Allow requests with no origin (mobile apps, curl, Postman)
+    if (!origin) return callback(null, true);
+    if (ALLOWED_ORIGINS.includes(origin)) return callback(null, true);
+    callback(new Error('CORS: origin not allowed — ' + origin));
+  },
+  credentials: true
+}));
+
+// ── Rate limiting — auth endpoints only ──
+const authLimiter = rateLimit({
+  windowMs: 15 * 60 * 1000, // 15 minutes
+  max: IS_PROD ? 20 : 1000, // 20 attempts in prod, effectively unlimited in dev
+  message: { message: 'Too many attempts, please try again in 15 minutes.' },
+  standardHeaders: true,
+  legacyHeaders: false
+});
+
+app.use(express.json({ limit: '5mb' })); // 5mb za base64 avatar slike
 
 // Serve frontend static files
 app.use('/dashboard', express.static(path.join(PROJECT_ROOT, 'dashboard')));
@@ -99,7 +144,7 @@ async function authMiddleware(req, res, next) {
   }
 }
 
-app.post('/api/auth/register', async (req, res) => {
+app.post('/api/auth/register', authLimiter, async (req, res) => {
   const { name, email, password } = req.body || {};
   if (!name || !email || !password) return res.status(400).json({ message: 'Missing fields.' });
 
@@ -117,7 +162,7 @@ app.post('/api/auth/register', async (req, res) => {
   res.json({ token });
 });
 
-app.post('/api/auth/login', async (req, res) => {
+app.post('/api/auth/login', authLimiter, async (req, res) => {
   const { email, password } = req.body || {};
   if (!email || !password) return res.status(400).json({ message: 'Missing fields.' });
 
@@ -135,6 +180,11 @@ app.get('/api/me', authMiddleware, async (req, res) => {
   const user = await get('SELECT id, name, email, avatar, monthly_income, current_balance, onboarding_completed FROM users WHERE id = ?', [req.userId]);
   if (!user) return res.status(404).json({ message: 'User not found.' });
   res.json(user);
+});
+
+// ── Active sessions — JWT is stateless, return the current session only ──
+app.get('/api/me/sessions', authMiddleware, async (req, res) => {
+  res.json({ sessions: [{ id: 1, current: true, created_at: Date.now() }] });
 });
 
 app.post('/api/onboarding', authMiddleware, async (req, res) => {

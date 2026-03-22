@@ -289,21 +289,17 @@ header.is-hidden {
 
 /* Remember me */
 .remember-row {
-    margin-top: -4px;
+    margin-top: 4px;
 }
 .remember-label {
     display: flex;
     align-items: center;
-    gap: 8px;
+    gap: 10px;
     font-size: 0.875rem;
     cursor: pointer;
-    color: var(--muted, #9ca3af);
-}
-.remember-label input[type="checkbox"] {
-    width: 16px;
-    height: 16px;
-    accent-color: var(--accent, #6366f1);
-    cursor: pointer;
+    color: var(--text, #1e293b);
+    user-select: none;
+    -webkit-user-select: none;
 }
 
 /* ── Register Wizard ─────────────────────────────────────────────────────── */
@@ -634,57 +630,74 @@ html:not(.dark-theme) .auth-form input[type="text"] {
 
 .shared-section {
     background: #ffffff;
-    border-radius: 16px;
-    padding: 20px;
-    box-shadow: 0 8px 20px rgba(15, 23, 36, 0.06);
+    border-radius: 20px;
+    padding: 0;
+    box-shadow: 0 2px 16px rgba(15, 23, 36, 0.08);
+    border: 1px solid rgba(226, 232, 240, 0.8);
+    overflow: hidden;
 }
+
+/* Colored accent header bar per section */
+.shared-section-header-bar {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 16px 18px 14px;
+}
+
+#invitesSection  .shared-section-header-bar { background: linear-gradient(135deg, #eef2ff 0%, #e0e7ff 100%); border-bottom: 1px solid #c7d2fe; }
+#friendsSection  .shared-section-header-bar { background: linear-gradient(135deg, #eff6ff 0%, #dbeafe 100%); border-bottom: 1px solid #bfdbfe; }
+#walletsSection  .shared-section-header-bar { background: linear-gradient(135deg, #f0fdf4 0%, #dcfce7 100%); border-bottom: 1px solid #bbf7d0; }
+#splitsSection   .shared-section-header-bar { background: linear-gradient(135deg, #fff7ed 0%, #ffedd5 100%); border-bottom: 1px solid #fed7aa; }
+
+.shared-section-body {
+    padding: 14px 18px 18px;
+}
+
+/* Legacy .section-header still used for non-hero sections */
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 12px;
+    margin-bottom: 0;
+    padding-bottom: 0;
+    border-bottom: none;
+}
+
+.section-header h2 {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 700;
+    color: #0f1724;
+    letter-spacing: -0.2px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+/* Section icon badges */
+.section-icon {
+    width: 28px;
+    height: 28px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    flex-shrink: 0;
+}
+#invitesSection  .section-icon { background: rgba(99,102,241,0.15); }
+#friendsSection  .section-icon { background: rgba(59,130,246,0.15); }
+#walletsSection  .section-icon { background: rgba(16,185,129,0.15); }
+#splitsSection   .section-icon { background: rgba(249,115,22,0.15); }
 
 #invitesSection,
 #friendsSection,
 #walletsSection,
 #splitsSection {
     position: relative;
-    overflow: hidden;
-}
-
-#invitesSection::before,
-#friendsSection::before,
-#walletsSection::before,
-#splitsSection::before {
-    content: '';
-    position: absolute;
-    inset: 0 0 auto 0;
-    height: 4px;
-}
-
-#invitesSection::before {
-    background: linear-gradient(90deg, #c7d2fe 0%, #a5b4fc 50%, #c4b5fd 100%);
-}
-
-#friendsSection::before {
-    background: linear-gradient(90deg, #bfdbfe 0%, #93c5fd 50%, #c7d2fe 100%);
-}
-
-#walletsSection::before {
-    background: linear-gradient(90deg, #bbf7d0 0%, #86efac 50%, #d9f99d 100%);
-}
-
-#splitsSection::before {
-    background: linear-gradient(90deg, #fed7aa 0%, #fde68a 50%, #fde2e2 100%);
-}
-
-.section-header {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    margin-bottom: 12px;
-}
-
-.section-header h2 {
-    margin: 0;
-    font-size: 18px;
-    color: #0f1724;
 }
 
 .shared-list {
@@ -1184,12 +1197,35 @@ html:not(.dark-theme) .auth-form input[type="text"] {
 }
 
 .shared-empty {
-    text-align: center;
-    padding: 20px;
-    color: #94a3b8;
-    border: 1px dashed #e2e8f0;
-    border-radius: 12px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    padding: 32px 20px 28px;
+    border-radius: 14px;
     background: #f8fafc;
+    border: 1.5px dashed #cbd5e1;
+    text-align: center;
+}
+
+.shared-empty-icon {
+    font-size: 34px;
+    line-height: 1;
+    opacity: 0.55;
+}
+
+.shared-empty-text {
+    font-size: 14px;
+    color: #64748b;
+    font-weight: 500;
+    line-height: 1.4;
+}
+
+.shared-empty-sub {
+    font-size: 12px;
+    color: #94a3b8;
+    font-weight: 400;
+    margin-top: -4px;
 }
 
 .modal-overlay {
@@ -1747,6 +1783,14 @@ body, .main-container, .shared-hero, .shared-card, .setting-card, .auth-card, .m
 }
 
 .notif-item, .wallet-panel, .shared-empty { background: var(--surface); border-color: var(--border); }
+.shared-empty-text { color: var(--muted); }
+.dark-theme .shared-section { border-color: var(--border); }
+.dark-theme .section-header { border-bottom-color: var(--border); }
+.dark-theme #invitesSection  .shared-section-header-bar { background: rgba(99,102,241,0.12); border-bottom-color: rgba(99,102,241,0.2); }
+.dark-theme #friendsSection  .shared-section-header-bar { background: rgba(59,130,246,0.12); border-bottom-color: rgba(59,130,246,0.2); }
+.dark-theme #walletsSection  .shared-section-header-bar { background: rgba(16,185,129,0.12); border-bottom-color: rgba(16,185,129,0.2); }
+.dark-theme #splitsSection   .shared-section-header-bar { background: rgba(249,115,22,0.12); border-bottom-color: rgba(249,115,22,0.2); }
+.dark-theme .section-icon { opacity: 0.85; }
 
 .link, .chip, .shared-card-icon, .wallet-chip { color: var(--accent); }
 
@@ -2082,6 +2126,17 @@ body, .main-container, .shared-hero, .shared-card, .setting-card, .auth-card, .m
 .section-header-buttons {
     display: flex;
     gap: 8px;
+}
+
+/* Compact pill buttons inside section headers */
+.section-header > button,
+.section-header-buttons > button {
+    padding: 7px 14px !important;
+    font-size: 13px !important;
+    border-radius: 999px !important;
+    font-weight: 600 !important;
+    min-width: unset !important;
+    height: auto !important;
 }
 
 .all-splits-list {

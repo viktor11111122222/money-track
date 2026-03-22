@@ -133,30 +133,31 @@
     <main>
         <section class="auth-card" id="authCard">
             <div class="auth-header">
-                <h1 data-i18n="shared.welcomeBack">Welcome back</h1>
-                <p data-i18n="shared.loginDesc">Log in to manage shared budgets.</p>
+                <h1>Welcome back</h1>
+                <p>Log in to your Money Tracker account.</p>
             </div>
             <div class="auth-toggle">
-                <button type="button" class="auth-tab active" id="showLogin" data-i18n="shared.login">Login</button>
-                <button type="button" class="auth-tab" id="showRegister" data-i18n="shared.createAccount">Create account</button>
+                <button type="button" class="auth-tab active" id="showLogin">Login</button>
+                <button type="button" class="auth-tab" id="showRegister">Create account</button>
             </div>
 
             <form id="authLoginForm" class="auth-form">
                 <div class="form-row">
-                    <label for="loginEmail" data-i18n="shared.email">Email</label>
-                    <input type="email" id="loginEmail" required>
+                    <label for="loginEmail">Email</label>
+                    <input type="email" id="loginEmail" placeholder="your@email.com" required>
                 </div>
                 <div class="form-row">
-                    <label for="loginPassword" data-i18n="shared.password">Password</label>
-                    <input type="password" id="loginPassword" required>
+                    <label for="loginPassword">Password</label>
+                    <input type="password" id="loginPassword" placeholder="••••••••" required>
                 </div>
                 <div class="form-row remember-row">
-                    <label class="remember-label">
+                    <label class="remember-label toggle">
                         <input type="checkbox" id="rememberMe" checked>
-                        <span data-i18n="shared.rememberMe">Remember me</span>
+                        <span class="toggle-switch"></span>
+                        <span>Remember me</span>
                     </label>
                 </div>
-                <button class="primary" type="submit" data-i18n="shared.loginBtn">Login</button>
+                <button class="primary" type="submit">Login</button>
             </form>
 
             <!-- Register Wizard (replaces simple register form) -->
@@ -183,21 +184,26 @@
                 <!-- Step 1: Account -->
                 <div class="wizard-page" id="wizardPage1">
                     <div class="form-row">
-                        <label for="registerName" data-i18n="shared.fullName">Full name</label>
-                        <input type="text" id="registerName" autocomplete="name">
+                        <label for="registerName">Full name</label>
+                        <input type="text" id="registerName" placeholder="John Smith" autocomplete="name">
                     </div>
                     <div class="form-row">
-                        <label for="registerEmail" data-i18n="shared.email">Email</label>
-                        <input type="email" id="registerEmail" autocomplete="email">
+                        <label for="registerUsername">Username</label>
+                        <input type="text" id="registerUsername" placeholder="johnsmith" autocomplete="username" autocapitalize="none">
                     </div>
                     <div class="form-row">
-                        <label for="registerPassword" data-i18n="shared.password">Password</label>
-                        <input type="password" id="registerPassword" autocomplete="new-password">
+                        <label for="registerEmail">Email</label>
+                        <input type="email" id="registerEmail" placeholder="your@email.com" autocomplete="email">
+                    </div>
+                    <div class="form-row">
+                        <label for="registerPassword">Password</label>
+                        <input type="password" id="registerPassword" placeholder="Min. 6 characters" autocomplete="new-password">
                     </div>
                     <div class="form-row remember-row">
-                        <label class="remember-label">
+                        <label class="remember-label toggle">
                             <input type="checkbox" id="registerRememberMe" checked>
-                            <span data-i18n="shared.rememberMe">Remember me</span>
+                            <span class="toggle-switch"></span>
+                            <span>Remember me</span>
                         </label>
                     </div>
                     <div class="form-error wizard-error" id="wizardError1"></div>
@@ -307,38 +313,53 @@
             </div>
 
             <section class="shared-section" id="invitesSection">
-                <div class="section-header">
-                    <h2 data-i18n="shared.invites">Invites</h2>
-                    <button class="ghost" id="openInviteSection" data-i18n="shared.newInvite">New Invite</button>
+                <div class="shared-section-header-bar">
+                    <div class="section-header">
+                        <h2><span class="section-icon"><i class="fa-solid fa-envelope"></i></span> Invites</h2>
+                    </div>
+                    <button class="ghost" id="openInviteSection">+ New Invite</button>
                 </div>
-                <div class="shared-list" id="invitesList"></div>
+                <div class="shared-section-body">
+                    <div class="shared-list" id="invitesList"></div>
+                </div>
             </section>
 
             <section class="shared-section" id="friendsSection">
-                <div class="section-header">
-                    <h2 data-i18n="shared.friends">Friends</h2>
-                    <span class="shared-hint" data-i18n="shared.friendsHint">Accepted invites appear here.</span>
+                <div class="shared-section-header-bar">
+                    <div class="section-header">
+                        <h2><span class="section-icon"><i class="fa-solid fa-users"></i></span> Friends</h2>
+                    </div>
                 </div>
-                <div class="shared-list" id="friendsList"></div>
+                <div class="shared-section-body">
+                    <div class="shared-list" id="friendsList"></div>
+                </div>
             </section>
 
             <section class="shared-section" id="walletsSection">
-                <div class="section-header">
-                    <h2 data-i18n="shared.wallets">Wallets</h2>
-                    <button class="ghost" id="openWalletSection" data-i18n="shared.newWallet">New Wallet</button>
+                <div class="shared-section-header-bar">
+                    <div class="section-header">
+                        <h2><span class="section-icon"><i class="fa-solid fa-wallet"></i></span> Wallets</h2>
+                    </div>
+                    <button class="ghost" id="openWalletSection">+ New Wallet</button>
                 </div>
-                <div class="shared-list" id="walletsList"></div>
+                <div class="shared-section-body">
+                    <div class="shared-list" id="walletsList"></div>
+                </div>
             </section>
 
             <section class="shared-section" id="splitsSection">
-                <div class="section-header">
-                    <h2 data-i18n="shared.splitExpenses">Split Expenses</h2>
+                <div class="shared-section-header-bar">
+                    <div class="section-header">
+                        <h2><span class="section-icon"><i class="fa-solid fa-scale-balanced"></i></span> Split Expenses</h2>
+                    </div>
                     <div class="section-header-buttons">
-                        <button class="ghost" id="openSplitsAllButton" data-i18n="shared.viewAll">View All</button>
-                        <button class="ghost" id="openSplitSection" data-i18n="shared.newSplit">New Split</button>
+                        <button class="ghost" id="openSplitsAllButton">View All</button>
+                        <button class="ghost" id="openSplitSection">+ New Split</button>
                     </div>
                 </div>
-                <div class="shared-list" id="splitsList"></div>
+                <div class="shared-section-body">
+                    <div class="shared-list" id="splitsList"></div>
+                </div>
             </section>
 
         </div>

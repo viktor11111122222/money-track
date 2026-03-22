@@ -352,8 +352,17 @@
   function applyI18n(root) {
     root = root || document;
 
+    // The auth card (login/signup) must always stay in English —
+    // it is the entry point and is shown before the user's language preference is known.
+    var authCard = document.getElementById('authCard');
+
+    function isInsideAuthCard(el) {
+      return authCard && authCard.contains(el);
+    }
+
     // Text content
     root.querySelectorAll('[data-i18n]').forEach(function (el) {
+      if (isInsideAuthCard(el)) return;
       var key = el.getAttribute('data-i18n');
       var val = t(key);
       if (val !== key) el.textContent = val;
@@ -361,6 +370,7 @@
 
     // Placeholders
     root.querySelectorAll('[data-i18n-placeholder]').forEach(function (el) {
+      if (isInsideAuthCard(el)) return;
       var key = el.getAttribute('data-i18n-placeholder');
       var val = t(key);
       if (val !== key) el.placeholder = val;
@@ -368,6 +378,7 @@
 
     // innerHTML (for elements with icons etc)
     root.querySelectorAll('[data-i18n-html]').forEach(function (el) {
+      if (isInsideAuthCard(el)) return;
       var key = el.getAttribute('data-i18n-html');
       var val = t(key);
       if (val !== key) el.innerHTML = val;

@@ -1,6 +1,21 @@
 (() => {
-  const API_BASE = (window.location.port === '5500' || window.location.port === '5501') ? 'http://localhost:8080/api' : '/api';
+  const API_BASE = window.__API_BASE__ || ((window.location.port === '5500' || window.location.port === '5501') ? 'http://localhost:8080/api' : '/api');
   const TOKEN_KEY = 'sharedBudgetToken';
+
+  function parseLocalToken(token) {
+    try {
+      if (!token || !token.startsWith('local_')) return null;
+      return JSON.parse(atob(token.slice(6)));
+    } catch { return null; }
+  }
+
+  function readLocalProfile() {
+    try {
+      const raw = localStorage.getItem('mt_settings_v1');
+      const s = raw ? JSON.parse(raw) : {};
+      return s.profile || {};
+    } catch { return {}; }
+  }
   const chip = document.getElementById('accountChip');
   if (!chip) return;
 
@@ -92,6 +107,18 @@
     try {
       const token = getToken();
       if (!token) return;
+
+      // Local auth mode — read from token + localStorage, no server call
+      if (token.startsWith('local_')) {
+        const localUser = parseLocalToken(token);
+        const profile = readLocalProfile();
+        const name = (profile.fullName) || (localUser && localUser.name) || '';
+        const avatar = profile.avatar || '';
+        if (avatar) applyAvatar(avatar);
+        if (name) applyUserName(name);
+        return;
+      }
+
       const res = await fetch(`${API_BASE}/me`, {
         headers: { Authorization: `Bearer ${token}` }
       });
