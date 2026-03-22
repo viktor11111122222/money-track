@@ -292,15 +292,17 @@ function parseLocalToken(token) {
 
 function localLogin(email, password) {
   const users = _getLocalUsers();
-  const user = users.find(u => u.email === email && u.password === password);
+  const normalEmail = email.toLowerCase().trim();
+  const user = users.find(u => u.email.toLowerCase() === normalEmail && u.password === password);
   if (!user) throw new Error('Invalid email or password.');
   return _makeLocalToken(user);
 }
 
 function localRegister(name, email, password) {
   const users = _getLocalUsers();
-  if (users.find(u => u.email === email)) throw new Error('This email is already registered.');
-  const user = { id: Date.now().toString(), name, email, password };
+  const normalEmail = email.toLowerCase().trim();
+  if (users.find(u => u.email.toLowerCase() === normalEmail)) throw new Error('This email is already registered.');
+  const user = { id: Date.now().toString(), name, email: normalEmail, password };
   users.push(user);
   _saveLocalUsers(users);
   return _makeLocalToken(user);
@@ -1997,6 +1999,9 @@ async function loadAll() {
 
 // ── Register Wizard ───────────────────────────────────────────────────────────
 
+// Cache step-1 values so display:none doesn't clear password on iOS/Android
+let _wizardStep1 = {};
+
 const _CURRENCY_SYMBOLS = {
   EUR: '€', USD: '$', RSD: 'RSD', GBP: '£', JPY: '¥',
   AUD: 'A$', CAD: 'C$', CHF: 'CHF', SEK: 'kr', NOK: 'kr',
@@ -2051,12 +2056,16 @@ function initWizard() {
   // Step 1 → 2
   document.getElementById('wizardNext1')?.addEventListener('click', () => {
     const name = document.getElementById('registerName')?.value.trim();
+    const username = document.getElementById('registerUsername')?.value.trim();
     const email = document.getElementById('registerEmail')?.value.trim();
     const pass = document.getElementById('registerPassword')?.value;
+    const remember = document.getElementById('registerRememberMe')?.checked !== false;
     if (!name) { _wizardError('wizardError1', 'Please enter your full name.'); return; }
     if (!email || !email.includes('@')) { _wizardError('wizardError1', 'Please enter a valid email.'); return; }
     if (!pass || pass.length < 4) { _wizardError('wizardError1', 'Password must be at least 4 characters.'); return; }
     _wizardError('wizardError1', '');
+    // Save values now — display:none on step 1 can clear inputs on iOS/Android WebView
+    _wizardStep1 = { name, username, email, pass, remember };
     showWizardStep(2);
   });
 
@@ -2074,11 +2083,13 @@ function initWizard() {
 }
 
 async function handleWizardSubmit() {
-  const name     = document.getElementById('registerName')?.value.trim();
-  const username = document.getElementById('registerUsername')?.value.trim();
-  const email    = document.getElementById('registerEmail')?.value.trim();
-  const pass     = document.getElementById('registerPassword')?.value;
-  const remember = document.getElementById('registerRememberMe')?.checked !== false;
+  // Use values saved when user clicked Continue — DOM inputs may be cleared by
+  // display:none on step 1 in iOS/Android WebView.
+  const name     = _wizardStep1.name     || document.getElementById('registerName')?.value.trim();
+  const username = _wizardStep1.username || document.getElementById('registerUsername')?.value.trim();
+  const email    = _wizardStep1.email    || document.getElementById('registerEmail')?.value.trim();
+  const pass     = _wizardStep1.pass     || document.getElementById('registerPassword')?.value;
+  const remember = _wizardStep1.remember !== undefined ? _wizardStep1.remember : (document.getElementById('registerRememberMe')?.checked !== false);
   const language = document.getElementById('wizardLanguage')?.value || 'English';
   const currency = document.getElementById('wizardCurrency')?.value || 'EUR';
   const income   = parseFloat(document.getElementById('wizardIncome')?.value) || 0;
@@ -2126,6 +2137,8 @@ async function handleWizardSubmit() {
 
     setToken(token, remember);
     sessionStorage.setItem('mt_session_active', '1');
+    localStorage.setItem('mt_theme_pref', 'light');
+    document.documentElement.classList.remove('dark-theme');
     window.location.href = '../dashboard/index.html';
 
   } catch (error) {
@@ -2168,6 +2181,8 @@ async function handleLogin(event) {
     }
     setToken(token, shouldRemember);
     sessionStorage.setItem('mt_session_active', '1'); // sprečava auth-guard da odmah obriše token
+    localStorage.setItem('mt_theme_pref', 'light');
+    document.documentElement.classList.remove('dark-theme');
     window.location.href = '../dashboard/index.html';
   } catch (error) {
     if (ui.authError) ui.authError.textContent = error.message || 'Login failed.';
@@ -2204,6 +2219,8 @@ async function handleRegister(event) {
     } catch(e) {}
     setToken(token, shouldRemember);
     sessionStorage.setItem('mt_session_active', '1'); // sprečava auth-guard da odmah obriše token
+    localStorage.setItem('mt_theme_pref', 'light');
+    document.documentElement.classList.remove('dark-theme');
     window.location.href = '../dashboard/index.html';
   } catch (error) {
     const msg = error.message || 'Registration failed.';

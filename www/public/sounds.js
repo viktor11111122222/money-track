@@ -1,6 +1,7 @@
 // ── Subtle UI sounds via Web Audio API (no external files) ──
 (function () {
     var _ctx = null;
+    var _unlocked = false;
 
     function soundsEnabled() {
         try {
@@ -12,20 +13,44 @@
         return true;
     }
 
-    function ctx() {
+    function getCtx() {
         if (!_ctx) {
             try { _ctx = new (window.AudioContext || window.webkitAudioContext)(); } catch (e) {}
         }
-        // iOS / Safari require resume after a user gesture
-        if (_ctx && _ctx.state === 'suspended') { try { _ctx.resume(); } catch (e) {} }
         return _ctx;
+    }
+
+    // Android WebView keeps AudioContext suspended until explicitly resumed
+    // after a real user gesture. Unlock on first touchstart/click.
+    function unlockAudio() {
+        if (_unlocked) return;
+        var c = getCtx();
+        if (!c) return;
+        if (c.state === 'suspended') {
+            c.resume().then(function () { _unlocked = true; }).catch(function () {});
+        } else {
+            _unlocked = true;
+        }
+    }
+
+    document.addEventListener('touchstart', unlockAudio, { passive: true, capture: true });
+    document.addEventListener('click', unlockAudio, { capture: true });
+
+    // Resume if suspended, then run fn(context)
+    function play(fn) {
+        if (!soundsEnabled()) return;
+        var c = getCtx();
+        if (!c) return;
+        if (c.state === 'suspended') {
+            c.resume().then(function () { try { fn(c); } catch (e) {} }).catch(function () {});
+        } else {
+            try { fn(c); } catch (e) {}
+        }
     }
 
     // Short soft "tick" – for button clicks
     function playClick() {
-        if (!soundsEnabled()) return;
-        var c = ctx(); if (!c) return;
-        try {
+        play(function (c) {
             var osc  = c.createOscillator();
             var gain = c.createGain();
             osc.connect(gain); gain.connect(c.destination);
@@ -36,14 +61,12 @@
             gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.055);
             osc.start(c.currentTime);
             osc.stop(c.currentTime + 0.055);
-        } catch (e) {}
+        });
     }
 
     // Rising soft blip – toggle ON
     function playToggleOn() {
-        if (!soundsEnabled()) return;
-        var c = ctx(); if (!c) return;
-        try {
+        play(function (c) {
             var osc  = c.createOscillator();
             var gain = c.createGain();
             osc.connect(gain); gain.connect(c.destination);
@@ -54,14 +77,12 @@
             gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.09);
             osc.start(c.currentTime);
             osc.stop(c.currentTime + 0.09);
-        } catch (e) {}
+        });
     }
 
     // Falling soft blip – toggle OFF
     function playToggleOff() {
-        if (!soundsEnabled()) return;
-        var c = ctx(); if (!c) return;
-        try {
+        play(function (c) {
             var osc  = c.createOscillator();
             var gain = c.createGain();
             osc.connect(gain); gain.connect(c.destination);
@@ -72,7 +93,7 @@
             gain.gain.exponentialRampToValueAtTime(0.001, c.currentTime + 0.09);
             osc.start(c.currentTime);
             osc.stop(c.currentTime + 0.09);
-        } catch (e) {}
+        });
     }
 
     // ── Wire via event delegation (catches dynamic elements too) ──
