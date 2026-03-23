@@ -117,28 +117,40 @@
 
   // ── Scroll detection ─────────────────────────────────────────────────────────
   function getScrollTop() {
+    // Check window/body first — this is the real scroll position on mobile.
+    // Do NOT rely on main.overflowY: setting overflow-x:hidden forces
+    // overflow-y to 'auto' by spec, making main.scrollTop always return 0
+    // even when the page has scrolled.
+    const winScroll = window.scrollY
+      || document.documentElement.scrollTop
+      || document.body.scrollTop
+      || 0;
+    if (winScroll > 0) return winScroll;
+    // Fallback: a fixed-height inner scroll container (if present)
     const main = document.querySelector('main');
-    if (main) {
-      const ov = window.getComputedStyle(main).overflowY;
-      if (ov === 'auto' || ov === 'scroll') return main.scrollTop;
-    }
-    return window.scrollY || document.documentElement.scrollTop || document.body.scrollTop || 0;
+    if (main && main.scrollTop > 0) return main.scrollTop;
+    return 0;
   }
 
   // ── Touch state ───────────────────────────────────────────────────────────────
-  let startY    = 0;
-  let active    = false;
-  let triggered = false;
+  let startY        = 0;
+  let startedAtTop  = false;
+  let active        = false;
+  let triggered     = false;
 
   document.addEventListener('touchstart', e => {
-    if (getScrollTop() > 4) return;
-    startY    = e.touches[0].clientY;
-    active    = false;
-    triggered = false;
+    // Always capture startY so it's fresh for every new gesture.
+    // Only allow pull-to-refresh if the gesture begins while already at the top.
+    startY       = e.touches[0].clientY;
+    startedAtTop = getScrollTop() <= 4;
+    active       = false;
+    triggered    = false;
   }, { passive: true });
 
   document.addEventListener('touchmove', e => {
-    if (triggered || getScrollTop() > 4) return;
+    if (triggered || !startedAtTop) return;
+    // If user scrolled away from top during this gesture, cancel
+    if (getScrollTop() > 4) { startedAtTop = false; return; }
     const dy = e.touches[0].clientY - startY;
 
     if (dy <= 0) {
@@ -174,7 +186,7 @@
     const dy = e.changedTouches[0].clientY - startY;
     active = false;
 
-    if (dy >= THRESHOLD && getScrollTop() <= 4) {
+    if (startedAtTop && dy >= THRESHOLD && getScrollTop() <= 4) {
       triggered = true;
       doRefresh();
     } else {

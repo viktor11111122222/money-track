@@ -22,6 +22,8 @@
 	<string>$(CURRENT_PROJECT_VERSION)</string>
 	<key>GADApplicationIdentifier</key>
 	<string>ca-app-pub-4263612271170636~7236104838</string>
+	<key>NSUserNotificationUsageDescription</key>
+	<string>Money Tracker sends daily budget reminders and smart spending tips to help you stay on track with your finances.</string>
 	<key>LSRequiresIPhoneOS</key>
 	<true/>
 	<key>UILaunchStoryboardName</key>

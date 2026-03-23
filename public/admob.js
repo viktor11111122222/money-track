@@ -15,12 +15,17 @@
     var IOS_AD_SETTINGS   = 'ca-app-pub-4263612271170636/4646799627';
 
     // ─── Android AdMob IDs ────────────────────────────────────────────
-    // TODO: Replace these with your real Android AdMob IDs from admob.google.com
-    // Currently using Google's official test IDs for development.
-    var ANDROID_APP_ID       = 'ca-app-pub-3940256099942544~3347511713'; // test — replace with real
-    var ANDROID_AD_DASHBOARD = 'ca-app-pub-3940256099942544/6300978111'; // test — replace with real
-    var ANDROID_AD_EXPENSES  = 'ca-app-pub-3940256099942544/6300978111'; // test — replace with real
-    var ANDROID_AD_SETTINGS  = 'ca-app-pub-3940256099942544/6300978111'; // test — replace with real
+    // TEMP: Using Google test IDs while new Android app awaits AdMob approval (403 error).
+    // Switch back to real IDs once approved (usually within 24h).
+    var ANDROID_APP_ID       = 'ca-app-pub-3940256099942544~3347511713';
+    var ANDROID_AD_DASHBOARD = 'ca-app-pub-3940256099942544/6300978111';
+    var ANDROID_AD_EXPENSES  = 'ca-app-pub-3940256099942544/6300978111';
+    var ANDROID_AD_SETTINGS  = 'ca-app-pub-3940256099942544/6300978111';
+    // Real IDs (use after AdMob approves the app):
+    // var ANDROID_APP_ID       = 'ca-app-pub-4263612271170636~8522750868';
+    // var ANDROID_AD_DASHBOARD = 'ca-app-pub-4263612271170636/7209669199';
+    // var ANDROID_AD_EXPENSES  = 'ca-app-pub-4263612271170636/3324729656';
+    // var ANDROID_AD_SETTINGS  = 'ca-app-pub-4263612271170636/4004921356';
     // ─────────────────────────────────────────────────────────────────
 
     var APP_ID        = isAndroid ? ANDROID_APP_ID        : IOS_APP_ID;
