@@ -359,17 +359,6 @@ const selected = document.getElementById("selectedCategory");
 const amountInput = document.querySelector('.form-row input[type="number"]');
 const addExpenseBtn = document.querySelector('.primary');
 const resetBtn = document.getElementById("resetBtn");
-const spendingsBtn = document.getElementById('spendingsBtn');
-const spendingsModal = document.getElementById('spendingsModal');
-const spendingsClose = document.getElementById('spendingsClose');
-const spendingsFrom = document.getElementById('spendingsFrom');
-const spendingsTo = document.getElementById('spendingsTo');
-const spendingsCategory = document.getElementById('spendingsCategory');
-const spendingsCategories = document.getElementById('spendingsCategories');
-const spendingsTransactions = document.getElementById('spendingsTransactions');
-const spendingsTotal = document.getElementById('spendingsTotal');
-const spendingsTopCategory = document.getElementById('spendingsTopCategory');
-const spendingsCount = document.getElementById('spendingsCount');
 const openMonthSpendings = document.getElementById('openMonthSpendings');
 const calendarDateLabel = document.getElementById('calendarDateLabel');
 
@@ -396,178 +385,16 @@ function parseInputDate(value, endOfDay = false) {
   return date.getTime();
 }
 
-function getFilteredSpendings() {
-  const fromTs = parseInputDate(spendingsFrom?.value, false);
-  const toTs = parseInputDate(spendingsTo?.value, true);
-  const category = spendingsCategory?.value || 'all';
-
-  return appData.expenses
-    .filter(exp => exp.type !== 'income' && exp.type !== 'savings')
-    .filter(exp => (fromTs === null || exp.timestamp >= fromTs))
-    .filter(exp => (toTs === null || exp.timestamp <= toTs))
-    .filter(exp => (category === 'all' || exp.category === category))
-    .sort((a, b) => b.timestamp - a.timestamp);
-}
-
-function renderSpendingsSummary(expenses) {
-  if (spendingsCount) spendingsCount.textContent = expenses.length.toString();
-
-  const total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-  if (spendingsTotal) {
-    spendingsTotal.textContent = `${total.toLocaleString()}${CURRENCY}`;
-  }
-
-  const categoryTotals = {};
-  expenses.forEach(exp => {
-    categoryTotals[exp.category] = (categoryTotals[exp.category] || 0) + exp.amount;
-  });
-  const top = Object.entries(categoryTotals).sort((a, b) => b[1] - a[1])[0];
-  if (spendingsTopCategory) {
-    const topCatName = top ? (typeof tCat === 'function' ? tCat(top[0]) : top[0]) : null;
-    spendingsTopCategory.textContent = top ? `${topCatName} · ${top[1].toLocaleString()}${CURRENCY}` : '—';
-  }
-}
-
-function renderSpendingsCategories(expenses) {
-  if (!spendingsCategories) return;
-  const totals = {};
-  expenses.forEach(exp => {
-    totals[exp.category] = (totals[exp.category] || 0) + exp.amount;
-  });
-  const entries = Object.entries(totals).sort((a, b) => b[1] - a[1]);
-  if (entries.length === 0) {
-    spendingsCategories.innerHTML = '<div class="spendings-empty">' + t('js.noDataForFilters') + '</div>';
-    return;
-  }
-  spendingsCategories.innerHTML = entries.map(([name, amount]) => {
-    const displayName = typeof tCat === 'function' ? tCat(name) : name;
-    return `
-      <div class="spendings-category-item">
-        <span class="spendings-category-name">${displayName}</span>
-        <span class="spendings-category-amount">-${amount.toLocaleString()}${CURRENCY}</span>
-      </div>
-    `;
-  }).join('');
-}
-
-function renderSpendingsTransactions(expenses) {
-  if (!spendingsTransactions) return;
-  if (expenses.length === 0) {
-    spendingsTransactions.innerHTML = '<li class="spendings-empty">' + t('js.noTxForFilters') + '</li>';
-    return;
-  }
-  spendingsTransactions.innerHTML = expenses.map(exp => {
-    const date = exp.date || new Date(exp.timestamp).toLocaleDateString(getLocale());
-    const time = exp.time || new Date(exp.timestamp).toLocaleTimeString(getLocale(), { hour: '2-digit', minute: '2-digit' });
-    return `
-      <li class="spendings-transaction-item">
-        <div class="spendings-transaction-meta">
-          <span class="spendings-transaction-title">${typeof tCat === 'function' ? tCat(exp.category) : exp.category}</span>
-          <span class="spendings-transaction-sub">${date} · ${time}</span>
-        </div>
-        <span class="spendings-transaction-amount">-${exp.amount.toLocaleString()}${CURRENCY}</span>
-      </li>
-    `;
-  }).join('');
-}
-
-function renderSpendingsModal() {
-  if (spendingsCategory) {
-    const current = spendingsCategory.value || 'all';
-    const options = ['all', ...appData.categories];
-    spendingsCategory.innerHTML = options.map(opt => {
-      const label = opt === 'all' ? (typeof t === 'function' ? t('dash.all') : 'All') : (typeof tCat === 'function' ? tCat(opt) : opt);
-      return `<option value="${opt}">${label}</option>`;
-    }).join('');
-    spendingsCategory.value = current;
-  }
-
-  const filtered = getFilteredSpendings();
-  renderSpendingsSummary(filtered);
-  renderSpendingsCategories(filtered);
-  renderSpendingsTransactions(filtered);
-}
-
-function openSpendingsModal() {
-  if (!spendingsModal) return;
-  spendingsModal.classList.remove('closing');
-  spendingsModal.classList.add('active');
-  spendingsModal.setAttribute('aria-hidden', 'false');
-  document.body.style.overflow = 'hidden';
-  renderSpendingsModal();
-}
 
 function openSpendingsForDate(year, month, day) {
-  if (spendingsFrom && spendingsTo) {
-    const dateValue = toInputDate(new Date(year, month, day));
-    spendingsFrom.value = dateValue;
-    spendingsTo.value = dateValue;
-  }
-  if (spendingsCategory) {
-    spendingsCategory.value = 'all';
-  }
-  openSpendingsModal();
+  const dateValue = toInputDate(new Date(year, month, day));
+  window.location.href = '../spendings/index.html?from=' + dateValue + '&to=' + dateValue;
 }
 
 function openSpendingsForMonth(year, month) {
-  if (spendingsFrom && spendingsTo) {
-    const start = new Date(year, month, 1);
-    const end = new Date(year, month + 1, 0);
-    spendingsFrom.value = toInputDate(start);
-    spendingsTo.value = toInputDate(end);
-  }
-  if (spendingsCategory) {
-    spendingsCategory.value = 'all';
-  }
-  openSpendingsModal();
-}
-
-function closeSpendingsModal() {
-  if (!spendingsModal) return;
-  if (!spendingsModal.classList.contains('active')) return;
-  spendingsModal.classList.add('closing');
-  spendingsModal.setAttribute('aria-hidden', 'true');
-  document.body.style.overflow = '';
-
-  const finishClose = () => {
-    spendingsModal.classList.remove('active');
-    spendingsModal.classList.remove('closing');
-    spendingsModal.removeEventListener('animationend', finishClose);
-  };
-
-  spendingsModal.addEventListener('animationend', finishClose);
-
-  if (window.location.hash === '#spendings') {
-    const returnUrl = sessionStorage.getItem('spendingsReturn');
-    if (returnUrl) {
-      sessionStorage.removeItem('spendingsReturn');
-      setTimeout(() => {
-        window.location.href = returnUrl;
-      }, 150);
-    }
-  }
-}
-
-if (spendingsBtn) {
-  spendingsBtn.addEventListener('click', openSpendingsModal);
-}
-
-if (spendingsClose) {
-  spendingsClose.addEventListener('click', closeSpendingsModal);
-}
-
-if (spendingsModal) {
-  spendingsModal.addEventListener('click', (e) => {
-    if (e.target === spendingsModal) {
-      closeSpendingsModal();
-    }
-  });
-}
-
-if (window.location.hash === '#spendings') {
-  setTimeout(() => {
-    openSpendingsModal();
-  }, 0);
+  const start = toInputDate(new Date(year, month, 1));
+  const end   = toInputDate(new Date(year, month + 1, 0));
+  window.location.href = '../spendings/index.html?from=' + start + '&to=' + end;
 }
 
 if (openMonthSpendings) {
@@ -638,17 +465,6 @@ function loadCalendarState() {
   }
 }
 
-[spendingsFrom, spendingsTo, spendingsCategory].forEach((el) => {
-  if (!el) return;
-  el.addEventListener('input', renderSpendingsModal);
-  el.addEventListener('change', renderSpendingsModal);
-});
-
-document.addEventListener('keydown', (e) => {
-  if (e.key === 'Escape') {
-    closeSpendingsModal();
-  }
-});
 
 // ===== DROPDOWN MENU =====
 function renderMenu() {

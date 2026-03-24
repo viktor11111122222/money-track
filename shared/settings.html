@@ -27,17 +27,17 @@
                 <h2 data-i18n="sidebar.title">Expense Tracker</h2>
             </div>
             <hr>
-            <div class="side-card" onclick="window.location.href='../dashboard/index.html'">
-                <i class="fa-solid fa-house"></i>
-                <h3 data-i18n="sidebar.dashboard">Dashboard</h3>
+            <div class="side-card" data-route="spendings" onclick="window.location.href='../spendings/index.html'">
+                <i class="fa-solid fa-chart-line"></i>
+                <h3 data-i18n="sidebar.spendings">Spendings</h3>
             </div>
             <div class="side-card" onclick="window.location.href='../expenses/index.html'">
                 <i class="fa-solid fa-money-check-dollar"></i>
                 <h3 data-i18n="sidebar.expenses">Expenses</h3>
             </div>
-            <div class="side-card" id="spendingsBtn" onclick="window.openSpendingsModal()">
-                <i class="fa-solid fa-chart-line"></i>
-                <h3 data-i18n="sidebar.spendings">Spendings</h3>
+            <div class="side-card" data-route="dashboard" onclick="window.location.href='../dashboard/index.html'">
+                <i class="fa-solid fa-house"></i>
+                <h3 data-i18n="sidebar.dashboard">Dashboard</h3>
             </div>
             <div class="side-card" onclick="window.location.href='../shared/index.html'">
                 <i class="fa-solid fa-people-group"></i>

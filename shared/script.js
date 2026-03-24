@@ -7,8 +7,6 @@ const _currencySymbols = { RSD: ' RSD', USD: ' $', EUR: ' €', GBP: ' £', JPY:
 function getCurrency() { try { const s = JSON.parse(localStorage.getItem('mt_settings_v1') || '{}'); return _currencySymbols[(s.preferences || {}).currency] || ' €'; } catch(e) { return ' €'; } }
 const CURRENCY = getCurrency();
 
-const spendingsBtn = document.getElementById('spendingsBtn');
-
 function getExpenseData() {
   try {
     const raw = localStorage.getItem('expenseTrackerData');
@@ -67,12 +65,6 @@ function updateSidebarStats() {
   if (sidebarRemaining) {
     sidebarRemaining.textContent = remaining.toLocaleString() + CURRENCY;
   }
-}
-
-if (spendingsBtn) {
-  spendingsBtn.addEventListener('click', () => {
-    window.openSpendingsModal();
-  });
 }
 
 function getApiBaseUrl() {

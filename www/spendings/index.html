@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover">
+    <title>Spendings - Money Tracker</title>
+    <link rel="manifest" href="/manifest.json">
+    <meta name="theme-color" content="#6c63ff">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="apple-mobile-web-app-title" content="MoneyTrack">
+    <link rel="apple-touch-icon" href="/public/wallet-logo.jpg">
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="/public/fontawesome/css/all.min.css">
+    <script src="/public/app-config.js"></script>
+    <script src="/public/i18n.js"></script>
+    <script src="/public/theme-init.js"></script>
+    <link rel="stylesheet" href="/public/theme.css">
+    <link rel="stylesheet" href="/public/mobile-nav.css">
+</head>
+<body>
+<style>
+@keyframes _mt_dot{0%,55%,100%{transform:translateY(0);opacity:.35}27%{transform:translateY(-7px);opacity:1}}
+@keyframes _mt_glow{0%,100%{opacity:.45;transform:scale(1)}50%{opacity:.75;transform:scale(1.08)}}
+@keyframes _mt_fade{0%{opacity:0;transform:translateY(10px)}100%{opacity:1;transform:translateY(0)}}
+#_mt_loader{position:fixed;inset:0;z-index:99999;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;background:linear-gradient(150deg,#eef2ff 0%,#f8faff 55%,#f0f4ff 100%);transition:opacity .5s ease}
+#_mt_logo_wrap{position:relative;display:flex;align-items:center;justify-content:center;animation:_mt_fade .6s ease both}
+#_mt_glow_blob{position:absolute;width:260px;height:140px;background:radial-gradient(ellipse,rgba(99,102,241,.14) 0%,transparent 70%);animation:_mt_glow 2.2s ease infinite;pointer-events:none}
+#_mt_logo_wrap svg{display:block;width:200px;height:auto;filter:drop-shadow(0 0 14px rgba(99,102,241,.55)) drop-shadow(0 0 4px rgba(255,255,255,.12))}
+#_mt_tagline{animation:_mt_fade .6s ease .15s both;text-align:center}
+#_mt_dots{animation:_mt_fade .6s ease .3s both;display:flex;gap:8px}
+</style>
+<div id="_mt_loader">
+  <div id="_mt_logo_wrap">
+    <div id="_mt_glow_blob"></div>
+    <img src="/public/app-icon.svg" alt="Money Tracker" style="display:block;width:120px;height:120px;filter:drop-shadow(0 0 18px rgba(100,80,255,.6)) drop-shadow(0 0 6px rgba(255,255,255,.1))">
+  </div>
+  <div id="_mt_tagline">
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;font-size:20px;font-weight:700;color:#1a1d2e;letter-spacing:-.3px">Money Tracker</div>
+    <div style="font-family:-apple-system,BlinkMacSystemFont,'Inter',sans-serif;font-size:11px;color:rgba(26,29,46,.5);margin-top:5px;letter-spacing:.5px;text-transform:uppercase">Smart expense tracking</div>
+  </div>
+  <div id="_mt_dots">
+    <div style="width:7px;height:7px;border-radius:50%;background:#6366f1;animation:_mt_dot 1.5s ease infinite 0s"></div>
+    <div style="width:7px;height:7px;border-radius:50%;background:#6366f1;animation:_mt_dot 1.5s ease infinite .22s"></div>
+    <div style="width:7px;height:7px;border-radius:50%;background:#6366f1;animation:_mt_dot 1.5s ease infinite .44s"></div>
+  </div>
+</div>
+<script>
+(function(){
+  var el=document.getElementById('_mt_loader');
+  if(sessionStorage.getItem('mt_app_loaded')){if(el)el.remove();return;}
+  sessionStorage.setItem('mt_app_loaded','1');
+  var dark=document.documentElement.classList.contains('dark-theme');
+  if(el&&dark){
+    el.style.background='linear-gradient(150deg,#070c18 0%,#0f1623 50%,#0b1220 100%)';
+    var blob=document.getElementById('_mt_glow_blob');
+    if(blob)blob.style.background='radial-gradient(ellipse,rgba(99,102,241,.28) 0%,transparent 70%)';
+    var t1=document.querySelector('#_mt_tagline div:first-child');
+    var t2=document.querySelector('#_mt_tagline div:last-child');
+    if(t1)t1.style.color='#fff';
+    if(t2)t2.style.color='rgba(255,255,255,.38)';
+  }
+  var _s=Date.now(),_MIN=1500;
+  function _hide(){
+    var e=document.getElementById('_mt_loader');if(!e)return;
+    var d=Math.max(0,_MIN-(Date.now()-_s));
+    setTimeout(function(){e.style.opacity='0';setTimeout(function(){e.remove()},520)},d);
+  }
+  if(document.readyState==='complete')_hide();
+  else window.addEventListener('load',_hide);
+})();
+</script>
+    <header>
+        <nav class="sidebar">
+            <div class="top-title-wrap">
+                <img src="/public/wallet-logo.jpg" alt="logo">
+                <h2>Expense Tracker</h2>
+            </div>
+
+            <hr>
+
+            <div class="side-card active" data-route="spendings">
+                <i class="fa-solid fa-chart-line"></i>
+                <h3 data-i18n="sidebar.spendings">Spendings</h3>
+            </div>
+
+            <div class="side-card" data-route="expenses" onclick="window.location.href='../expenses/index.html'">
+                <i class="fa-solid fa-money-check-dollar"></i>
+                <h3 data-i18n="sidebar.expenses">Expenses</h3>
+            </div>
+
+            <div class="side-card" data-route="dashboard" onclick="window.location.href='../dashboard/index.html'">
+                <i class="fa-solid fa-house"></i>
+                <h3 data-i18n="sidebar.dashboard">Dashboard</h3>
+            </div>
+
+            <div class="side-card" data-route="shared" onclick="window.location.href='../shared/index.html'">
+                <i class="fa-solid fa-people-group"></i>
+                <h3 data-i18n="sidebar.familyBudget">Family Budget</h3>
+            </div>
+
+            <div class="sidebar-spacer"></div>
+
+            <div class="sidebar-footer">
+                <div class="quick-stats">
+                    <h4 data-i18n="sidebar.thisMonth">This Month</h4>
+                    <div class="stat-item">
+                        <span class="stat-label" data-i18n="sidebar.spent">Spent</span>
+                        <span class="stat-value" id="sidebarSpent">0 RSD</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-label" data-i18n="sidebar.remaining">Remaining</span>
+                        <span class="stat-value remaining" id="sidebarRemaining">0 RSD</span>
+                    </div>
+                </div>
+                <div class="sidebar-info">
+                    <p>Version 1.0.0</p>
+                </div>
+            </div>
+            <div class="side-card" onclick="window.location.href='../shared/settings.html'">
+                <i class="fa-solid fa-gear"></i>
+                <h3 data-i18n="sidebar.settings">Settings</h3>
+            </div>
+            <div class="account-chip" id="accountChip">
+                <img src="/public/avatar-default.svg" alt="Account">
+            </div>
+
+        </nav>
+    </header>
+
+    <main>
+        <div class="spendings-page">
+            <div class="spendings-page-header">
+                <h1 data-i18n="dash.spendingsTitle">Spendings</h1>
+            </div>
+
+            <div class="spendings-summary">
+                <div class="summary-box">
+                    <span data-i18n="dash.total">Total</span>
+                    <strong id="spendingsTotal">0</strong>
+                </div>
+                <div class="summary-box">
+                    <span data-i18n="dash.topCategory">Top Category</span>
+                    <strong id="spendingsTopCategory">—</strong>
+                </div>
+                <div class="summary-box">
+                    <span data-i18n="dash.transactions">Transactions</span>
+                    <strong id="spendingsCount">0</strong>
+                </div>
+            </div>
+
+            <div class="spendings-filters simple">
+                <div style="display:flex;gap:10px;">
+                    <div class="filter-group" style="flex:1;">
+                        <label for="spendingsFrom" data-i18n="dash.from">From</label>
+                        <input type="date" id="spendingsFrom">
+                    </div>
+                    <div class="filter-group" style="flex:1;">
+                        <label for="spendingsTo" data-i18n="dash.to">To</label>
+                        <input type="date" id="spendingsTo">
+                    </div>
+                </div>
+                <div class="filter-group">
+                    <label for="spendingsCategory" data-i18n="dash.category">Category</label>
+                    <select id="spendingsCategory">
+                        <option value="all" data-i18n="dash.all">All</option>
+                    </select>
+                </div>
+            </div>
+
+            <div class="spendings-content simple">
+                <section class="spendings-card">
+                    <h3 data-i18n="dash.categories">Categories</h3>
+                    <div class="spendings-categories" id="spendingsCategories"></div>
+                </section>
+                <section class="spendings-card">
+                    <h3 data-i18n="dash.latestTx">Latest Transactions</h3>
+                    <ul class="spendings-transactions" id="spendingsTransactions"></ul>
+                </section>
+            </div>
+        </div>
+    </main>
+
+    <footer class="dashboard-footer">
+        <p class="footer-copyright">© 2026 Money Tracker · Smart expense tracking for better financial management</p>
+    </footer>
+
+    <script src="/public/auth-guard.js"></script>
+    <script src="/public/account-avatar.js"></script>
+    <script src="/public/notifications.js"></script>
+    <script src="/public/sounds.js"></script>
+    <script src="/public/admob.js"></script>
+    <script src="script.js"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        navigator.serviceWorker.register('/sw.js').catch(() => {});
+      }
+    </script>
+    <script src="/public/pull-to-refresh.js" defer></script>
+</body>
+</html>

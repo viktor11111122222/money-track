@@ -6,7 +6,6 @@ const CURRENCY = getCurrency();
 const API_BASE = window.__API_BASE__ || ((window.location.port === '5500' || window.location.port === '5501') ? 'http://localhost:8080/api' : '/api');
 const TOKEN_KEY = 'sharedBudgetToken';
 
-const spendingsBtn = document.getElementById('spendingsBtn');
 const walletFilterClear = document.getElementById('walletFilterClear');
 
 let walletFilterActive = false;
@@ -234,11 +233,6 @@ function setActiveSidebarItem() {
 
 setActiveSidebarItem();
 
-if (spendingsBtn) {
-    spendingsBtn.addEventListener('click', () => {
-        window.openSpendingsModal();
-    });
-}
 
 btnAddExpense.onclick = function() {
     editingExpenseId = null;

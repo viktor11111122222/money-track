@@ -11,7 +11,7 @@ header {
   position: fixed !important;
   left: 0 !important;
   top: auto !important;
-  bottom: 0 !important;
+  bottom: -15px !important;
   width: 100% !important;
   height: auto !important;
   z-index: 100 !important;
@@ -26,6 +26,11 @@ nav.sidebar {
   padding: 4px 2px env(safe-area-inset-bottom) 2px !important;
   height: auto !important;
   gap: 0 !important;
+  overflow: visible !important;
+}
+
+header {
+  overflow: visible !important;
 }
 
 /* Hide desktop-only elements */
@@ -51,6 +56,21 @@ nav.sidebar > hr {
   border-radius: 8px !important;
   transition: background 0.15s ease !important;
   touch-action: manipulation !important;
+  position: relative !important;
+}
+
+/* Bump arc rising from nav bar above Dashboard item */
+.side-card[data-route="dashboard"]::before {
+  content: '' !important;
+  position: absolute !important;
+  top: 0 !important;
+  left: 50% !important;
+  transform: translateX(-50%) translateY(-100%) !important;
+  width: 100% !important;
+  height: 18px !important;
+  background: #0f1724 !important;
+  border-radius: 50% 50% 0 0 / 100% 100% 0 0 !important;
+  pointer-events: none !important;
 }
 
 .side-card:hover { transform: none !important; }
@@ -126,7 +146,7 @@ main {
   padding-bottom: 70px !important;
   padding-left: 16px !important;
   padding-right: 16px !important;
-  padding-top: calc(env(safe-area-inset-top, 20px) + 60px) !important;
+  padding-top: calc(env(safe-area-inset-top, 20px) + 18px) !important;
   background-color: var(--bg) !important;
   box-sizing: border-box !important;
 }
@@ -143,7 +163,7 @@ main {
    ============================================ */
 
 .settings-grid { column-count: 1 !important; padding: 0 !important; }
-.main-container.settings-full { padding: calc(env(safe-area-inset-top, 20px) + 16px) 0 16px 0 !important; }
+.main-container.settings-full { padding: 12px 0 16px 0 !important; }
 .settings-header { padding: 0 0 16px 0 !important; flex-wrap: wrap !important; }
 
 /* ============================================
@@ -193,7 +213,7 @@ footer.dashboard-footer,
   margin-left: 0 !important;
   width: 100% !important;
   padding: 12px 16px !important;
-  padding-bottom: calc(72px + env(safe-area-inset-bottom, 0px)) !important;
+  padding-bottom: calc(env(safe-area-inset-bottom, 0px) + 8px) !important;
   text-align: center !important;
 }
 .footer-copyright {
@@ -377,7 +397,7 @@ canvas {
 
 /* Push all modals down so the header + X button clears the AdMob banner */
 .modal-overlay {
-  padding-top: calc(env(safe-area-inset-top, 20px) + 60px) !important;
+  padding-top: calc(env(safe-area-inset-top, 20px) + 18px) !important;
   align-items: flex-start !important;
   overflow-y: auto !important;
 }
