@@ -1,5 +1,12 @@
 (function(){
     try{
+        // Detect Capacitor platform and add class to <html> immediately
+        try {
+            var _cap = window.Capacitor;
+            var _plat = (_cap && _cap.getPlatform) ? _cap.getPlatform() : 'web';
+            document.documentElement.classList.add('platform-' + _plat);
+        } catch(e) {}
+
         // Force sidebar width to 0 immediately — prevents FOUC where margin-left: var(--sidebar-width)
         // resolves to 360px or 100% before mobile-nav.css overrides kick in on Android WebView
         document.documentElement.style.setProperty('--sidebar-width', '0px');
