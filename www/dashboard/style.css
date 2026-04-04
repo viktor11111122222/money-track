@@ -2441,6 +2441,29 @@ button.primary-danger {
   filter: drop-shadow(0 4px 10px rgba(var(--accent-rgb),0.5)) drop-shadow(0 0 8px rgba(var(--accent-rgb),0.25));
 }
 
+/* ── Dark mode: summary-cards wrapper rounded + Total Spent / Income as cards ── */
+.dark-theme .summary-cards {
+  border-radius: 16px !important;
+  padding: 14px !important;
+}
+
+.dark-theme .summary-cards .card:nth-child(1),
+.dark-theme .summary-cards .card:nth-child(2) {
+  background: #131f2e !important;
+  border: 1px solid rgba(var(--accent-rgb),0.25) !important;
+  border-radius: 12px !important;
+}
+
+.dark-theme .summary-cards .card:nth-child(1) h4,
+.dark-theme .summary-cards .card:nth-child(2) h4 {
+  color: rgba(230,238,248,0.6) !important;
+}
+
+.dark-theme .summary-cards .card:nth-child(1) .amount,
+.dark-theme .summary-cards .card:nth-child(2) .amount {
+  color: #f0f5fb !important;
+}
+
 /* Onboarding Modal Styles */
 .onboarding-modal {
   max-width: 500px;

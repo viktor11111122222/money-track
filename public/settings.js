@@ -107,9 +107,35 @@
       });
     }
 
+    // Tag data with the new currency so dashboard knows which currency amounts are in
+    data._currency = newCurrency;
     localStorage.setItem('expenseTrackerData', JSON.stringify(data));
 
-    // Also update server-side income and balance
+    // Mark conversion timestamp so dashboard doesn't overwrite with stale server data
+    try { localStorage.setItem('mt_currency_converted_at', String(Date.now())); } catch(e) {}
+
+    // Convert local splits (LOCAL_AUTH_MODE)
+    var LOCAL_SPLITS_KEY = 'mt_local_splits';
+    try {
+      var rawSplits = localStorage.getItem(LOCAL_SPLITS_KEY);
+      if (rawSplits) {
+        var splits = JSON.parse(rawSplits);
+        splits.forEach(function(s) {
+          if (typeof s.amount === 'number') s.amount = convertAmount(s.amount, oldCurrency, newCurrency);
+          if (typeof s.monthly_amount === 'number') s.monthly_amount = convertAmount(s.monthly_amount, oldCurrency, newCurrency);
+          if (s.memberAmounts && typeof s.memberAmounts === 'object') {
+            Object.keys(s.memberAmounts).forEach(function(k) {
+              if (typeof s.memberAmounts[k] === 'number') {
+                s.memberAmounts[k] = convertAmount(s.memberAmounts[k], oldCurrency, newCurrency);
+              }
+            });
+          }
+        });
+        localStorage.setItem(LOCAL_SPLITS_KEY, JSON.stringify(splits));
+      }
+    } catch(e) { /* */ }
+
+    // Server-side: income/balance + wallets + splits + friend limits
     var token = getToken();
     if (token && !isLocal(token)) {
       fetch(API_BASE + '/me/finances', {
@@ -119,7 +145,13 @@
           monthlyIncome: data.income,
           currentBalance: data.currentBalance
         })
-      }).catch(function() { /* server may be down */ });
+      }).catch(function() { /* */ });
+
+      fetch(API_BASE + '/convert-currency', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token },
+        body: JSON.stringify({ oldCurrency: oldCurrency, newCurrency: newCurrency })
+      }).catch(function() { /* */ });
     }
   }
 
@@ -185,8 +217,9 @@
       overlay.style.inset = '0';
       overlay.style.background = 'rgba(0,0,0,0.5)';
       overlay.style.display = 'flex';
-      overlay.style.alignItems = 'center';
+      overlay.style.alignItems = 'flex-start';
       overlay.style.justifyContent = 'center';
+      overlay.style.paddingTop = 'max(calc(env(safe-area-inset-top,20px) + 62px),90px)';
       overlay.style.zIndex = '10000';
       overlay.style.backdropFilter = 'blur(4px)';
 
@@ -200,7 +233,9 @@
       card.style.boxShadow = '0 12px 40px rgba(0,0,0,0.3)';
       card.style.textAlign = 'center';
       card.style.color = isDark ? '#e6eefc' : '#0f1724';
+      card.style.position = 'relative';
       card.innerHTML =
+        '<button id="_confirmClose" style="position:absolute;top:10px;right:10px;width:30px;height:30px;border-radius:8px;border:none;background:rgba(0,0,0,0.06);color:inherit;font-size:14px;cursor:pointer;display:flex;align-items:center;justify-content:center;"><i class="fa-solid fa-xmark"></i></button>' +
         '<h3 style="margin:0 0 8px 0;font-size:18px;">' + title + '</h3>' +
         '<p style="margin:0 0 20px 0;color:' + (isDark ? '#9aa6b2' : '#64748b') + ';font-size:14px;">' + message + '</p>' +
         '<div style="display:flex;gap:10px;justify-content:center;">' +
@@ -211,6 +246,7 @@
       document.body.appendChild(overlay);
       overlay.querySelector('#_confirmYes').onclick = function() { overlay.remove(); resolve(true); };
       overlay.querySelector('#_confirmNo').onclick = function() { overlay.remove(); resolve(false); };
+      overlay.querySelector('#_confirmClose').onclick = function() { overlay.remove(); resolve(false); };
       overlay.addEventListener('click', function(e) { if (e.target === overlay) { overlay.remove(); resolve(false); } });
     });
   }
@@ -605,6 +641,8 @@
             writeStorage(state);
             // Update sidebar to reflect new values
             updateSidebarStats();
+            // Notify other open pages (same-tab custom event + cross-tab via storage)
+            try { window.dispatchEvent(new CustomEvent('currencyChanged', { detail: { from: oldCurrency, to: newCurrency } })); } catch(e) {}
             showToast(oldCurrency + ' → ' + newCurrency + ' (amounts converted)', 'info');
           }
         } else if (sel === '#languageSelect') {

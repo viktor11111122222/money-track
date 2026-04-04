@@ -25,7 +25,7 @@ window.addEventListener('unhandledrejection', function(e) {
 // === END DEBUG ===
 const DEFAULT_MONTHLY_INCOME = 100000;
 function getCurrency(){ try { var s = JSON.parse(localStorage.getItem('mt_settings_v1')); var c = s && s.preferences && s.preferences.currency; var m = { RSD:' RSD', USD:' $', EUR:' €', GBP:' £', JPY:' ¥', AUD:' A$', CAD:' C$', CNY:' ¥', INR:' ₹', BRL:' R$', CHF:' CHF', SEK:' kr', NOK:' kr' }; return m[c] || ' €'; } catch(e){ return ' €'; } }
-const CURRENCY = getCurrency();
+let CURRENCY = getCurrency();
 const API_BASE = window.__API_BASE__ || ((window.location.port === '5500' || window.location.port === '5501') ? 'http://localhost:8080/api' : '/api');
 const TOKEN_KEY = 'sharedBudgetToken';
 const WALLET_SYNC_QUEUE_KEY = 'walletSyncQueue';
@@ -388,13 +388,13 @@ function parseInputDate(value, endOfDay = false) {
 
 function openSpendingsForDate(year, month, day) {
   const dateValue = toInputDate(new Date(year, month, day));
-  window.location.href = '../spendings/index.html?from=' + dateValue + '&to=' + dateValue;
+  window.location.href = '/spendings/index.html?from=' + dateValue + '&to=' + dateValue;
 }
 
 function openSpendingsForMonth(year, month) {
   const start = toInputDate(new Date(year, month, 1));
   const end   = toInputDate(new Date(year, month + 1, 0));
-  window.location.href = '../spendings/index.html?from=' + start + '&to=' + end;
+  window.location.href = '/spendings/index.html?from=' + start + '&to=' + end;
 }
 
 if (openMonthSpendings) {
@@ -436,12 +436,49 @@ if (nextMonthBtn) {
 
 if (todayBtn) {
   todayBtn.addEventListener('click', () => {
-    const now = new Date();
-    currentCalendarYear = now.getFullYear();
-    currentCalendarMonth = now.getMonth();
-    saveCalendarState();
-    updateSpendingCalendar();
-    updateTopSpendingDays();
+    // Pre-fill with current calendar month and open date range modal
+    const from = new Date(currentCalendarYear, currentCalendarMonth, 1);
+    const to = new Date(currentCalendarYear, currentCalendarMonth + 1, 0);
+    const drFrom = document.getElementById('dateRangeFrom');
+    const drTo = document.getElementById('dateRangeTo');
+    if (drFrom) drFrom.value = toInputDate(from);
+    if (drTo) drTo.value = toInputDate(to);
+    const drModal = document.getElementById('dateRangeModal');
+    if (drModal) drModal.style.display = 'flex';
+  });
+}
+
+// Date range picker modal
+const dateRangeBtn = null; // removed extra button
+const dateRangeModal = document.getElementById('dateRangeModal');
+const dateRangeClose = document.getElementById('dateRangeClose');
+const dateRangeFrom = document.getElementById('dateRangeFrom');
+const dateRangeTo = document.getElementById('dateRangeTo');
+const dateRangeOpen = document.getElementById('dateRangeOpen');
+
+if (dateRangeBtn && dateRangeModal) {
+  dateRangeBtn.addEventListener('click', () => {
+    // Pre-fill with current calendar month
+    const from = new Date(currentCalendarYear, currentCalendarMonth, 1);
+    const to = new Date(currentCalendarYear, currentCalendarMonth + 1, 0);
+    dateRangeFrom.value = toInputDate(from);
+    dateRangeTo.value = toInputDate(to);
+    dateRangeModal.style.display = 'flex';
+  });
+}
+
+if (dateRangeClose) {
+  dateRangeClose.addEventListener('click', () => {
+    dateRangeModal.style.display = 'none';
+  });
+}
+
+if (dateRangeOpen) {
+  dateRangeOpen.addEventListener('click', () => {
+    const from = dateRangeFrom.value;
+    const to = dateRangeTo.value;
+    if (!from || !to) return;
+    window.location.href = '/spendings/index.html?from=' + from + '&to=' + to;
   });
 }
 
@@ -749,13 +786,17 @@ function doAddSavings(amount) {
 (function () {
   // Build modal DOM
   const modal = document.createElement('div');
-  modal.style.cssText = 'display:none;position:fixed;inset:0;z-index:99990;align-items:center;justify-content:center;';
+  modal.style.cssText = 'display:none;position:fixed;inset:0;z-index:99990;align-items:flex-start;justify-content:center;padding-top:max(calc(env(safe-area-inset-top,20px) + 62px),90px);';
 
   const overlay = document.createElement('div');
   overlay.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,0.55);backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);';
 
   const box = document.createElement('div');
   box.style.cssText = 'position:relative;background:var(--card-bg,#fff);border-radius:20px;padding:28px 24px 20px;width:min(320px,88vw);box-shadow:0 20px 60px rgba(0,0,0,0.35);text-align:center;z-index:1;';
+
+  const closeBtn = document.createElement('button');
+  closeBtn.style.cssText = 'position:absolute;top:12px;right:12px;width:32px;height:32px;border-radius:8px;border:none;background:rgba(0,0,0,0.06);color:var(--text,#374151);font-size:15px;cursor:pointer;display:flex;align-items:center;justify-content:center;font-family:inherit;';
+  closeBtn.innerHTML = '<i class="fa-solid fa-xmark"></i>';
 
   const iconWrap = document.createElement('div');
   iconWrap.style.cssText = 'width:56px;height:56px;border-radius:50%;background:linear-gradient(135deg,#10b981,#059669);display:flex;align-items:center;justify-content:center;margin:0 auto 16px;';
@@ -781,6 +822,7 @@ function doAddSavings(amount) {
 
   btnRow.appendChild(cancelBtn);
   btnRow.appendChild(confirmBtn);
+  box.appendChild(closeBtn);
   box.appendChild(iconWrap);
   box.appendChild(title);
   box.appendChild(amountLabel);
@@ -803,6 +845,7 @@ function doAddSavings(amount) {
   }
 
   overlay.addEventListener('click', closeModal);
+  closeBtn.addEventListener('click', closeModal);
   cancelBtn.addEventListener('click', closeModal);
   confirmBtn.addEventListener('click', () => {
     const amt = pendingAmount;
@@ -1698,7 +1741,7 @@ function initChart() {
             label: function(context) {
               const val = context.parsed;
               const total = context.dataset.data.reduce((a, b) => a + b, 0);
-              return context.label + ': ' + val.toLocaleString() + ' RSD (' + ((val/total)*100).toFixed(1) + '%)';
+              return context.label + ': ' + val.toLocaleString() + getCurrency() + ' (' + ((val/total)*100).toFixed(1) + '%)';
             }
           }
         }
@@ -2287,16 +2330,37 @@ function addRecurringExpense(name, amount, dayOfMonth) {
     return;
   }
 
+  const now = new Date();
+  const currentYear = now.getFullYear();
+  const currentMonth = now.getMonth();
+  const currentDay = now.getDate();
+  const day = Math.min(31, Math.max(1, parseInt(dayOfMonth) || 1));
+
   const recurring = {
     id: Date.now(),
     name: name,
     amount: parseFloat(amount),
-    dayOfMonth: Math.min(31, Math.max(1, parseInt(dayOfMonth) || 1)),
-    isActive: false
+    dayOfMonth: day,
+    isActive: true
   };
 
+  // If the scheduled day has already passed this month, add expense immediately
+  if (currentDay >= day) {
+    appData.expenses.push({
+      id: Date.now() + Math.random(),
+      amount: recurring.amount,
+      category: recurring.name,
+      date: now.toLocaleDateString(getLocale()),
+      time: now.toLocaleTimeString(getLocale(), { hour: '2-digit', minute: '2-digit' }),
+      timestamp: Date.now(),
+      type: 'recurring'
+    });
+    recurring.lastAddedYear = currentYear;
+    recurring.lastAddedMonth = currentMonth;
+  }
+
   appData.recurringExpenses.push(recurring);
-  
+
   saveData();
   updateRecurringExpensesList();
   updateRecurringInsight();
@@ -2567,6 +2631,28 @@ function updatePopularTags() {
   const prevCount = container.querySelectorAll('.tag-filter-btn:not(.tag-show-all-btn)').length;
 
   container.innerHTML = '';
+
+  // Remove any previous empty-state message
+  const parent = container.parentElement;
+  const prev = parent && parent.querySelector('#noTagsMsg');
+  if (prev) prev.remove();
+
+  const allBtn = document.getElementById('tagAllBtn');
+
+  if (allTags.length === 0) {
+    if (allBtn) allBtn.style.display = 'none';
+    const empty = document.createElement('div');
+    empty.id = 'noTagsMsg';
+    empty.style.cssText = 'display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;background:rgba(99,102,241,0.07);border:1px dashed rgba(99,102,241,0.25);margin-top:2px;';
+    empty.innerHTML = '<i class="fa-solid fa-tag" style="color:#6366f1;font-size:14px;opacity:0.7;"></i>'
+      + '<span style="color:var(--muted,#94a3b8);font-size:13px;">'
+      + (typeof t === 'function' ? t('js.noTags') : 'No tags yet. Add #tags to your expenses.')
+      + '</span>';
+    if (parent) parent.appendChild(empty);
+    return;
+  }
+
+  if (allBtn) allBtn.style.display = '';
 
   const tagsToShow = (isAll && !showExpanded && allTags.length > PREVIEW)
     ? allTags.slice(0, PREVIEW)
@@ -3008,12 +3094,57 @@ window.addEventListener('languageChanged', () => {
   if (typeof initComparisonChart === 'function') try { initComparisonChart(); } catch(e) {}
 });
 
+// Re-render when currency changes (from another tab via storage event, or same-tab dispatch)
+function _onCurrencyChanged() {
+  CURRENCY = getCurrency();
+  try { renderMenu(); } catch(e) {}
+  try { updateDashboard(); } catch(e) {}
+  try { updateInsights(); } catch(e) {}
+  try { updateSpendingCalendar(); } catch(e) {}
+  try { updateTopSpendingDays(); } catch(e) {}
+  try { updateRecurringExpensesList(); } catch(e) {}
+  try { updateRecurringInsight(); } catch(e) {}
+  try { updateCategoryLimits(); } catch(e) {}
+  try { updateTagsUI(); } catch(e) {}
+  try { updateSmartSuggestions(); } catch(e) {}
+  if (typeof updateChart === 'function') try { updateChart(); } catch(e) {}
+  if (typeof initComparisonChart === 'function') try { initComparisonChart(); } catch(e) {}
+}
+window.addEventListener('storage', (event) => {
+  if (event.key === 'mt_settings_v1') {
+    const newCurrency = getCurrency();
+    if (newCurrency !== CURRENCY) {
+      _onCurrencyChanged();
+    }
+  }
+});
+window.addEventListener('currencyChanged', _onCurrencyChanged);
+
 try { enqueueMissingWalletSync(); } catch(e) {}
 // flushWalletSyncQueue is async — use .catch() to prevent unhandled Promise rejection
 flushWalletSyncQueue().catch(() => {});
 setInterval(() => {
   flushWalletSyncQueue().catch(() => {});
 }, 8000);
+
+// ===== MOBILE FOREGROUND SYNC =====
+// When app returns to foreground (Capacitor / mobile), sync server data immediately
+let _lastSyncTime = 0;
+async function _foregroundSync() {
+  const token = localStorage.getItem(TOKEN_KEY);
+  if (!token || window.__LOCAL_AUTH__) return;
+  const now = Date.now();
+  if (now - _lastSyncTime < 5000) return; // debounce: max once per 5s
+  _lastSyncTime = now;
+  try {
+    // Flush any queued wallet transactions only — income/balance are local-owned
+    flushWalletSyncQueue().catch(() => {});
+  } catch(e) { /* offline — skip */ }
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') _foregroundSync();
+});
+window.addEventListener('focus', _foregroundSync);
 // Footer navigation - smooth scroll
 document.querySelectorAll('.footer-link').forEach(link => {
   link.addEventListener('click', function(e) {
@@ -3046,14 +3177,9 @@ async function checkOnboarding() {
     if (!user.onboarding_completed || user.onboarding_completed === 0) {
       showOnboardingModal(user);
     } else {
-      // If user has completed onboarding, sync income and current balance with app data
-      if (user.monthly_income) {
-        appData.income = user.monthly_income;
-      }
-      if (user.current_balance !== undefined && user.current_balance !== null) {
-        appData.currentBalance = user.current_balance;
-      }
-      saveData();
+      // Income and balance are owned locally — they are pushed to server via PATCH
+      // when the user changes them, not pulled from server on every load.
+      // Pulling would overwrite currency-converted values with stale server data.
       updateDashboard();
     }
   } catch (error) {
@@ -3084,7 +3210,16 @@ function showOnboardingModal(user) {
   modal.style.display = 'flex';
   modal.setAttribute('aria-hidden', 'false');
   setTimeout(() => modal.classList.add('active'), 10);
-  
+
+  // Close button
+  const closeBtn = document.getElementById('onboardingModalClose');
+  if (closeBtn) {
+    closeBtn.onclick = () => {
+      modal.style.display = 'none';
+      modal.setAttribute('aria-hidden', 'true');
+    };
+  }
+
   // Handle completion
   completeBtn.onclick = async () => {
     const name = nameInput.value.trim();

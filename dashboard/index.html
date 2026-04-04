@@ -88,7 +88,7 @@
 
             <hr>
 
-            <div class="side-card" data-route="spendings" onclick="window.location.href='../spendings/index.html'">
+            <div class="side-card" data-route="spendings" onclick="window.location.href='/spendings/index.html'">
                 <i class="fa-solid fa-chart-line"></i>
                 <h3 data-i18n="sidebar.spendings">Spendings</h3>
             </div>
@@ -220,7 +220,7 @@
                 <section class="tags-card" id="tagsCard">
                     <h3><i class="fa-solid fa-tags" style="margin-right:6px;"></i><span data-i18n="dash.transactionTags">Transaction Tags</span></h3>
                     <div class="tags-filter">
-                        <button class="tag-filter-btn active" data-tag="all"><i class="fa-solid fa-list" style="margin-right:4px;"></i><span data-i18n="dash.allTags">All</span></button>
+                        <button class="tag-filter-btn active" data-tag="all" id="tagAllBtn" style="display:none;"><i class="fa-solid fa-list" style="margin-right:4px;"></i><span data-i18n="dash.allTags">All</span></button>
                         <div id="popularTags"></div>
                     </div>
                     <div id="tagInsight" class="tag-insight"></div>
@@ -331,6 +331,7 @@
         <div class="modal-content onboarding-modal" role="document">
             <div class="modal-header">
                 <h2><i class="fa-solid fa-hand-wave" style="margin-right:8px;"></i><span data-i18n="dash.welcomeTitle">Welcome to Money Tracker!</span></h2>
+                <button class="modal-close" id="onboardingModalClose" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <div class="modal-body">
                 <p class="onboarding-description" data-i18n="dash.welcomeDesc">Let's set up your account to start tracking your expenses effectively.</p>
@@ -364,6 +365,29 @@
     <footer class="dashboard-footer">
         <p class="footer-copyright">© 2026 Money Tracker · Smart expense tracking for better financial management</p>
     </footer>
+
+    <!-- Date Range Picker Modal -->
+    <div class="modal-overlay" id="dateRangeModal" style="display:none;" role="dialog" aria-modal="true">
+        <div class="modal-content" style="max-width:340px;width:92vw;">
+            <div class="modal-header">
+                <h2><i class="fa-solid fa-calendar-range" style="margin-right:8px;"></i>Pick Date Range</h2>
+                <button class="modal-close" id="dateRangeClose" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
+            </div>
+            <div class="modal-body" style="padding:16px;">
+                <div class="form-group" style="margin-bottom:14px;">
+                    <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-muted,#8892a4);">From</label>
+                    <input type="date" id="dateRangeFrom" style="width:100%;padding:10px 12px;border-radius:8px;border:1.5px solid rgba(99,102,241,.3);background:var(--bg-secondary,#1a1d2e);color:var(--text,#e2e8f0);font-size:15px;box-sizing:border-box;">
+                </div>
+                <div class="form-group" style="margin-bottom:20px;">
+                    <label style="display:block;margin-bottom:6px;font-size:13px;font-weight:600;color:var(--text-muted,#8892a4);">To</label>
+                    <input type="date" id="dateRangeTo" style="width:100%;padding:10px 12px;border-radius:8px;border:1.5px solid rgba(99,102,241,.3);background:var(--bg-secondary,#1a1d2e);color:var(--text,#e2e8f0);font-size:15px;box-sizing:border-box;">
+                </div>
+                <button id="dateRangeOpen" class="primary" style="width:100%;padding:12px;border-radius:10px;font-size:15px;font-weight:600;">
+                    <i class="fa-solid fa-arrow-up-right-from-square" style="margin-right:6px;"></i>Open in Spendings
+                </button>
+            </div>
+        </div>
+    </div>
 
     <!-- Charts Popup Modal -->
     <div class="modal-overlay" id="chartsModal" role="dialog" aria-modal="true">

@@ -212,12 +212,14 @@ main {
 }
 
 .summary-box {
-    background: #f8fafc;
-    border-radius: 12px;
-    padding: 12px 14px;
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 14px 16px;
     display: flex;
     flex-direction: column;
     gap: 6px;
+    border: 1px solid #e6eefc;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
 }
 
 .summary-box span {
@@ -286,10 +288,11 @@ main {
 }
 
 .spendings-card {
-    border: 1px solid #eef2f7;
-    border-radius: 12px;
-    padding: 14px;
+    border: 1px solid #e6eefc;
+    border-radius: 14px;
+    padding: 16px;
     background: #ffffff;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.05);
 }
 
 .spendings-card h3 {
@@ -376,44 +379,58 @@ main {
 
 .dark-theme body { background: #070c18; }
 
-.dark-theme .spendings-page {
-    background: #0f1724;
-    box-shadow: 0 8px 32px rgba(0,0,0,0.4);
-}
-
 .dark-theme .spendings-page-header h1 { color: #f1f5f9; }
 
-.dark-theme .summary-box {
-    background: rgba(255,255,255,0.04);
-    border: 1px solid rgba(255,255,255,0.08);
+/* Remove background from wrapper containers — theme.css broad selectors add it */
+.dark-theme .spendings-page .spendings-summary,
+.dark-theme .spendings-page .spendings-filters,
+.dark-theme .spendings-page .filter-group {
+    background: transparent !important;
+    border: none !important;
+    box-shadow: none !important;
+    padding: 0 !important;
 }
-.dark-theme .summary-box span  { color: #94a3b8; }
-.dark-theme .summary-box strong { color: #f0f5fb; }
+
+/* Higher specificity (3 classes) to override theme.css broad !important rules */
+.dark-theme .spendings-page .summary-box {
+    background: #131f2e !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: none !important;
+}
+.dark-theme .spendings-page .summary-box span  { color: #94a3b8 !important; }
+.dark-theme .spendings-page .summary-box strong { color: #f0f5fb !important; }
 
 .dark-theme .filter-group label { color: #94a3b8; }
 .dark-theme .filter-group input,
 .dark-theme .filter-group select {
-    background: rgba(255,255,255,0.06);
-    border-color: rgba(255,255,255,0.12);
+    background: #131f2e;
+    border: 1px solid rgba(255,255,255,0.12);
     color: #f0f5fb;
 }
 
-.dark-theme .spendings-card {
-    background: rgba(255,255,255,0.04);
-    border-color: rgba(255,255,255,0.08);
+.dark-theme .spendings-page .spendings-card {
+    background: #131f2e !important;
+    border: 1px solid rgba(255,255,255,0.12) !important;
+    box-shadow: none !important;
 }
-.dark-theme .spendings-card h3 { color: #f1f5f9; }
+.dark-theme .spendings-page .spendings-card h3 { color: #f1f5f9 !important; }
 
-.dark-theme .spendings-category-item  { background: rgba(255,255,255,0.05); }
-.dark-theme .spendings-category-name  { color: #e2e8f0; }
+.dark-theme .spendings-page .spendings-category-item {
+    background: rgba(255,255,255,0.07) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+}
+.dark-theme .spendings-page .spendings-category-name  { color: #e2e8f0 !important; }
 
-.dark-theme .spendings-transaction-item  { background: rgba(255,255,255,0.05); }
-.dark-theme .spendings-transaction-title { color: #e2e8f0; }
-.dark-theme .spendings-transaction-sub   { color: #64748b; }
+.dark-theme .spendings-page .spendings-transaction-item {
+    background: rgba(255,255,255,0.07) !important;
+    border: 1px solid rgba(255,255,255,0.1) !important;
+}
+.dark-theme .spendings-page .spendings-transaction-title { color: #e2e8f0 !important; }
+.dark-theme .spendings-page .spendings-transaction-sub   { color: #64748b !important; }
 
-.dark-theme .spendings-empty {
-    background: rgba(255,255,255,0.04);
-    color: #475569;
+.dark-theme .spendings-page .spendings-empty {
+    background: rgba(255,255,255,0.04) !important;
+    color: #475569 !important;
 }
 
 /* ── Footer ────────────────────────────────────────────────────────────────── */

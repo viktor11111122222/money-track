@@ -262,6 +262,7 @@
     'js.spentPercent':        { en: 'You\'ve spent {0}% of {1} budget', sr: 'Potrošio si {0}% {1} budžeta', es: 'Has gastado {0}% del presupuesto de {1}' },
     'js.fillNameAmount':      { en: 'Please fill in name and amount!', sr: 'Popuni naziv i iznos!', es: '¡Completa el nombre y el monto!' },
     'js.deleteRecurring':     { en: 'Delete this recurring expense?', sr: 'Obrisati ovaj recurring trošak?', es: '¿Eliminar este gasto recurrente?' },
+    'js.noTags':              { en: 'No tags yet. Add #tags to your expenses.', sr: 'Nema tagova. Dodaj #tagove na troškove.', es: 'Sin etiquetas. Añade #etiquetas a tus gastos.' },
     'js.noRecurring':         { en: 'No recurring expenses', sr: 'Nema ponavljajućih troškova', es: 'Sin gastos recurrentes' },
     'js.recurringPercent':    { en: 'Recurring expenses make up {0}% of monthly spending', sr: 'Ponavljajući troškovi čine {0}% mesečne potrošnje', es: 'Los gastos recurrentes representan {0}% del gasto mensual' },
     'js.tagCosts':            { en: '{0} costs you {1} monthly {2}', sr: '{0} te košta {1} mesečno {2}', es: '{0} te cuesta {1} mensualmente {2}' },

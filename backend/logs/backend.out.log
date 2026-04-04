@@ -22,3 +22,5 @@ Emitted 'error' event on Server instance at:
 }
 
 Node.js v24.13.0
+Backend running on http://localhost:8080
+Backend running on http://localhost:8080

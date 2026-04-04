@@ -267,6 +267,28 @@ footer.dashboard-footer,
   grid-column: 1 / -1 !important;
 }
 
+.dark-theme .summary-cards {
+  border-radius: 16px !important;
+  padding: 14px !important;
+}
+
+.dark-theme .summary-cards .card:nth-child(1),
+.dark-theme .summary-cards .card:nth-child(2) {
+  background: #131f2e !important;
+  border: 1px solid rgba(var(--accent-rgb),0.25) !important;
+  border-radius: 12px !important;
+}
+
+.dark-theme .summary-cards .card:nth-child(1) h4,
+.dark-theme .summary-cards .card:nth-child(2) h4 {
+  color: rgba(230,238,248,0.6) !important;
+}
+
+.dark-theme .summary-cards .card:nth-child(1) .amount,
+.dark-theme .summary-cards .card:nth-child(2) .amount {
+  color: #f0f5fb !important;
+}
+
 .card {
   min-width: 0 !important;
   width: 100% !important;
@@ -295,22 +317,81 @@ footer.dashboard-footer,
   -webkit-backface-visibility: hidden;
 }
 
+/* ---- SPENDINGS page spacing ---- */
+.spendings-page {
+  padding-left: 14px !important;
+  padding-right: 14px !important;
+}
+
+/* Remove background from wrapper containers (theme.css adds it via broad selectors) */
+.dark-theme .spendings-page .spendings-summary,
+.dark-theme .spendings-page .spendings-filters,
+.dark-theme .spendings-page .filter-group {
+  background: transparent !important;
+  border: none !important;
+  box-shadow: none !important;
+  padding: 0 !important;
+}
+
+/* Dark mode card overrides — same colors as expenses page (#131f2e) */
+.dark-theme .spendings-page .summary-box {
+  background: #131f2e !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  box-shadow: none !important;
+}
+.dark-theme .spendings-page .spendings-card {
+  background: #131f2e !important;
+  border: 1px solid rgba(255,255,255,0.12) !important;
+  box-shadow: none !important;
+}
+.dark-theme .spendings-page .spendings-category-item,
+.dark-theme .spendings-page .spendings-transaction-item {
+  background: rgba(255,255,255,0.07) !important;
+  border: 1px solid rgba(255,255,255,0.1) !important;
+}
+
+.spendings-page-header h1 {
+  font-size: 1.5rem !important;
+  margin-bottom: 4px !important;
+}
+
+.summary-box {
+  padding: 16px 18px !important;
+  border-radius: 14px !important;
+}
+
+.spendings-card {
+  padding: 18px !important;
+  border-radius: 14px !important;
+}
+
+.spendings-category-item,
+.spendings-transaction-item {
+  padding: 12px 16px !important;
+}
+
+.filter-group input,
+.filter-group select {
+  padding: 13px 16px !important;
+  border-radius: 12px !important;
+}
+
 /* ---- DASHBOARD spendings grids ---- */
 .spendings-summary {
   grid-template-columns: 1fr 1fr !important;
-  gap: 8px !important;
+  gap: 10px !important;
 }
 
 .spendings-filters,
 .spendings-filters.simple {
   grid-template-columns: 1fr !important;
-  gap: 8px !important;
+  gap: 10px !important;
 }
 
 .spendings-content,
 .spendings-content.simple {
   grid-template-columns: 1fr !important;
-  gap: 10px !important;
+  gap: 12px !important;
 }
 
 /* ---- SHARED / Family Budget ---- */
@@ -400,16 +481,20 @@ canvas {
   transition: transform 0.2s !important;
 }
 
-/* Push all modals down so the header + X button clears the AdMob banner */
-.modal-overlay {
-  padding-top: calc(env(safe-area-inset-top, 20px) + 18px) !important;
+/* Push all modals down so the header + X button clears the AdMob banner (~50px) */
+.modal-overlay,
+.modal {
+  padding-top: calc(env(safe-area-inset-top, 20px) + 62px) !important;
   align-items: flex-start !important;
   overflow-y: auto !important;
+  overflow-x: hidden !important;
 }
 
 /* Charts modal close on tap outside */
 #chartsModal {
-  padding: 12px !important;
+  padding-left: 12px !important;
+  padding-right: 12px !important;
+  padding-bottom: 12px !important;
 }
 .charts-modal-content {
   width: 100% !important;

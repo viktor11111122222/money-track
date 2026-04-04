@@ -81,7 +81,7 @@
 
             <hr>
 
-            <div class="side-card" data-route="spendings" onclick="window.location.href='../spendings/index.html'">
+            <div class="side-card" data-route="spendings" onclick="window.location.href='/spendings/index.html'">
                 <i class="fa-solid fa-chart-line"></i>
                 <h3 data-i18n="sidebar.spendings">Spendings</h3>
             </div>
@@ -286,7 +286,7 @@
                     <p data-i18n="shared.heroDesc">Invite people, create shared wallets, and split expenses in one place.</p>
                 </div>
                 <div class="shared-hero-actions">
-                    <button class="primary" id="openInviteHero" data-i18n="shared.invite">Invite</button>
+                    <button class="primary" id="openInviteHero">Add Friend</button>
                     <button class="ghost" id="openWalletHero" data-i18n="shared.createWallet">Create Wallet</button>
                 </div>
             </div>
@@ -294,9 +294,9 @@
             <div class="shared-grid">
                 <article class="shared-card">
                     <div class="shared-card-icon"><i class="fa-solid fa-user-plus"></i></div>
-                    <h2 data-i18n="shared.invitePeople">Invite People</h2>
-                    <p data-i18n="shared.invitePeopleDesc">Add family members and set roles for visibility and access.</p>
-                    <button class="primary" id="openInviteCard" data-i18n="shared.sendInvite">Send Invite</button>
+                    <h2>Add Friends</h2>
+                    <p>Add friends by their unique Friend ID (MT-XXXXXX).</p>
+                    <button class="primary" id="openInviteCard">Add Friend</button>
                 </article>
                 <article class="shared-card">
                     <div class="shared-card-icon"><i class="fa-solid fa-wallet"></i></div>
@@ -312,12 +312,40 @@
                 </article>
             </div>
 
+            <!-- Your Friend ID + Add Friend by ID -->
+            <section class="shared-section" id="friendCodeSection">
+                <div class="shared-section-header-bar">
+                    <div class="section-header">
+                        <h2><span class="section-icon"><i class="fa-solid fa-id-card"></i></span> Friend ID</h2>
+                    </div>
+                </div>
+                <div class="shared-section-body">
+                    <div class="friend-code-my">
+                        <span class="friend-code-label">Your ID</span>
+                        <span class="friend-code-value" id="myUserCodeDisplay">—</span>
+                        <button class="ghost small" id="copyUserCodeBtn" title="Copy your ID"><i class="fa-solid fa-copy"></i> Copy</button>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Incoming friend requests from others -->
+            <section class="shared-section" id="receivedInvitesSection" style="display:none;">
+                <div class="shared-section-header-bar">
+                    <div class="section-header">
+                        <h2><span class="section-icon"><i class="fa-solid fa-bell"></i></span> Friend Requests <span id="receivedInvitesBadge" style="background:#6366f1;color:#fff;font-size:11px;font-weight:700;border-radius:999px;padding:2px 7px;margin-left:6px;vertical-align:middle;"></span></h2>
+                    </div>
+                </div>
+                <div class="shared-section-body">
+                    <div class="shared-list" id="receivedInvitesList"></div>
+                </div>
+            </section>
+
             <section class="shared-section" id="invitesSection">
                 <div class="shared-section-header-bar">
                     <div class="section-header">
-                        <h2><span class="section-icon"><i class="fa-solid fa-envelope"></i></span> Invites</h2>
+                        <h2><span class="section-icon"><i class="fa-solid fa-user-clock"></i></span> Sent Requests</h2>
                     </div>
-                    <button class="ghost" id="openInviteSection">+ New Invite</button>
+                    <button class="ghost" id="openInviteSection">+ Add Friend</button>
                 </div>
                 <div class="shared-section-body">
                     <div class="shared-list" id="invitesList"></div>
@@ -376,13 +404,20 @@
                 <button class="modal-close" id="closeSharedModal" aria-label="Close"><i class="fa-solid fa-xmark"></i></button>
             </div>
             <form id="sharedForm" class="modal-form">
-                <div class="form-row">
+                <div class="form-row" id="sharedNameRow">
                     <label for="sharedName">Name
                         <span class="label-info" data-tooltip="Name of the wallet you are creating.">i</span>
                     </label>
-                    <input type="text" id="sharedName" required>
+                    <input type="text" id="sharedName">
                 </div>
-                <div class="form-row" id="sharedEmailRow">
+                <div class="form-row" id="sharedCodeRow" style="display:none;">
+                    <label for="sharedCode">Friend ID
+                        <span class="label-info" data-tooltip="The unique MT-XXXXXX ID of the person you want to add.">i</span>
+                    </label>
+                    <input type="text" id="sharedCode" placeholder="MT-AB1234" maxlength="9" autocapitalize="characters" autocorrect="off" spellcheck="false" style="font-family:'SF Mono','Fira Code',monospace;letter-spacing:2px;text-transform:uppercase;">
+                    <div class="form-error" id="sharedCodeError" role="alert"></div>
+                </div>
+                <div class="form-row" id="sharedEmailRow" style="display:none;">
                     <label for="sharedEmail">Email
                         <span class="label-info" data-tooltip="Invite email for the person you want to add.">i</span>
                     </label>
@@ -390,19 +425,19 @@
                     <div class="form-error" id="sharedEmailError" role="alert"></div>
                 </div>
                 <div class="form-row" id="sharedAmountRow">
-                    <label for="sharedAmount">Amount (RSD)
+                    <label for="sharedAmount" id="sharedAmountLabel">Amount
                         <span class="label-info" data-tooltip="Starting balance or initial amount for the wallet.">i</span>
                     </label>
                     <input type="number" id="sharedAmount" min="0" step="0.01">
                 </div>
                 <div class="form-row" id="sharedGoalRow">
-                    <label for="sharedGoalAmount">Goal (RSD)
+                    <label for="sharedGoalAmount" id="sharedGoalLabel">Goal
                         <span class="label-info" data-tooltip="Target amount you want to reach for this wallet.">i</span>
                     </label>
                     <input type="number" id="sharedGoalAmount" min="0" step="0.01" placeholder="e.g. 60000">
                 </div>
                 <div class="form-row" id="sharedCapRow">
-                    <label for="sharedCapAmount">Monthly cap (RSD)
+                    <label for="sharedCapAmount" id="sharedCapLabel">Monthly cap
                         <span class="label-info" data-tooltip="Maximum allowed spending for this wallet per month.">i</span>
                     </label>
                     <input type="number" id="sharedCapAmount" min="0" step="0.01" placeholder="e.g. 45000">
@@ -428,10 +463,17 @@
                     <button type="button" class="ghost small" id="addSplitMember">+ Add Friend</button>
                 </div>
                 <div class="form-row" id="splitRecurringRow">
-                    <label>
-                        <input type="checkbox" id="splitIsRecurring"> Recurring (monthly)
-                        <span class="label-info" data-tooltip="Enable this for recurring bills like rent or Netflix.">i</span>
-                    </label>
+                    <div style="display:flex;align-items:center;justify-content:space-between;padding:10px 12px;background:rgba(99,102,241,0.06);border:1px solid rgba(99,102,241,0.15);border-radius:8px;">
+                        <label for="splitIsRecurring" style="display:flex;align-items:center;gap:8px;cursor:pointer;font-weight:600;font-size:14px;margin:0;">
+                            <i class="fa-solid fa-rotate" style="color:#6366f1;font-size:14px;"></i>
+                            Recurring (monthly)
+                            <span class="label-info" data-tooltip="Enable this for recurring bills like rent or Netflix.">i</span>
+                        </label>
+                        <label class="toggle" style="margin:0;">
+                            <input type="checkbox" id="splitIsRecurring">
+                            <span class="toggle-switch"></span>
+                        </label>
+                    </div>
                 </div>
                 <div class="form-row" id="sharedCategoriesRow">
                     <label for="sharedCategories">Categories (comma separated)

@@ -42,6 +42,31 @@ const mailer = smtpConfig.host && smtpConfig.auth
   ? nodemailer.createTransport(smtpConfig)
   : null;
 
+// ── User code generation ──
+function generateUserCode() {
+  const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+  let code = 'MT-';
+  for (let i = 0; i < 6; i++) {
+    code += chars[Math.floor(Math.random() * chars.length)];
+  }
+  return code;
+}
+
+async function ensureUserCode(userId) {
+  const user = await get('SELECT id, user_code FROM users WHERE id = ?', [userId]);
+  if (!user) return null;
+  if (user.user_code) return user.user_code;
+  // Assign a unique code to existing user
+  let code, attempts = 0;
+  do {
+    code = generateUserCode();
+    const existing = await get('SELECT id FROM users WHERE user_code = ?', [code]);
+    if (!existing) break;
+  } while (++attempts < 20);
+  await run('UPDATE users SET user_code = ? WHERE id = ?', [code, userId]);
+  return code;
+}
+
 function walletHasMember(walletRow, user) {
   if (!walletRow || !user) return false;
   if (walletRow.owner_id === user.id || walletRow.ownerId === user.id) return true;
@@ -153,9 +178,16 @@ app.post('/api/auth/register', authLimiter, async (req, res) => {
 
   const passwordHash = await bcrypt.hash(password, 10);
   const createdAt = Date.now();
+  // Generate unique user code
+  let userCode, attempts = 0;
+  do {
+    userCode = generateUserCode();
+    const existing = await get('SELECT id FROM users WHERE user_code = ?', [userCode]);
+    if (!existing) break;
+  } while (++attempts < 20);
   const result = await run(
-    'INSERT INTO users (name, email, password_hash, created_at) VALUES (?, ?, ?, ?)',
-    [name.trim(), email.trim().toLowerCase(), passwordHash, createdAt]
+    'INSERT INTO users (name, email, password_hash, created_at, user_code) VALUES (?, ?, ?, ?, ?)',
+    [name.trim(), email.trim().toLowerCase(), passwordHash, createdAt, userCode]
   );
   const user = { id: result.lastID, email: email.trim().toLowerCase() };
   const token = createToken(user);
@@ -177,8 +209,12 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
 });
 
 app.get('/api/me', authMiddleware, async (req, res) => {
-  const user = await get('SELECT id, name, email, avatar, monthly_income, current_balance, onboarding_completed FROM users WHERE id = ?', [req.userId]);
+  const user = await get('SELECT id, name, email, avatar, monthly_income, current_balance, onboarding_completed, user_code, currency FROM users WHERE id = ?', [req.userId]);
   if (!user) return res.status(404).json({ message: 'User not found.' });
+  // Auto-assign code to existing users who don't have one yet
+  if (!user.user_code) {
+    user.user_code = await ensureUserCode(req.userId);
+  }
   res.json(user);
 });
 
@@ -297,6 +333,7 @@ app.delete('/api/me', authMiddleware, async (req, res) => {
   await run('DELETE FROM wallets WHERE owner_id = ?', [userId]);
   await run('DELETE FROM friends WHERE owner_id = ?', [userId]);
   await run('DELETE FROM invites WHERE owner_id = ?', [userId]);
+  await run('DELETE FROM friend_requests WHERE from_user_id = ? OR to_user_id = ?', [userId, userId]);
   await run('DELETE FROM users WHERE id = ?', [userId]);
   res.json({ ok: true });
 });
@@ -396,6 +433,209 @@ app.delete('/api/friends/:id', authMiddleware, async (req, res) => {
   await run('DELETE FROM friends WHERE id = ?', [friend.id]);
   res.json({ ok: true });
 });
+
+// ── Friend Requests (ID-based) ──────────────────────────────────────────────
+
+// Send a friend request by the target user's user_code
+app.post('/api/friend-requests', authMiddleware, async (req, res) => {
+  const { userCode } = req.body || {};
+  if (!userCode || typeof userCode !== 'string') {
+    return res.status(400).json({ message: 'Missing userCode.' });
+  }
+  const code = userCode.trim().toUpperCase();
+  const target = await get('SELECT id, name, email, user_code FROM users WHERE user_code = ?', [code]);
+  if (!target) return res.status(404).json({ message: 'No user found with that ID.' });
+  if (target.id === req.userId) return res.status(400).json({ message: 'You cannot add yourself.' });
+
+  // Already friends?
+  const alreadyFriend = await get('SELECT id FROM friends WHERE owner_id = ? AND email = ?', [req.userId, target.email]);
+  if (alreadyFriend) return res.status(409).json({ message: 'You are already friends with this user.' });
+
+  // Already sent?
+  const existing = await get('SELECT id, status FROM friend_requests WHERE from_user_id = ? AND to_user_id = ?', [req.userId, target.id]);
+  if (existing) {
+    if (existing.status === 'pending') return res.status(409).json({ message: 'Friend request already sent.' });
+    if (existing.status === 'accepted') return res.status(409).json({ message: 'You are already friends.' });
+    // Rejected before — allow re-sending
+    await run('UPDATE friend_requests SET status = ?, created_at = ? WHERE id = ?', ['pending', Date.now(), existing.id]);
+    return res.status(201).json({ ok: true, message: 'Friend request sent.' });
+  }
+
+  // Also check if target already sent a request to us
+  const reverse = await get('SELECT id, status FROM friend_requests WHERE from_user_id = ? AND to_user_id = ?', [target.id, req.userId]);
+  if (reverse && reverse.status === 'pending') {
+    return res.status(409).json({ message: 'This user already sent you a request. Check your incoming requests.' });
+  }
+
+  await run(
+    'INSERT INTO friend_requests (from_user_id, to_user_id, status, created_at) VALUES (?, ?, ?, ?)',
+    [req.userId, target.id, 'pending', Date.now()]
+  );
+  res.status(201).json({ ok: true, message: 'Friend request sent.' });
+});
+
+// Get incoming pending friend requests (for the current user)
+app.get('/api/friend-requests', authMiddleware, async (req, res) => {
+  const rows = await all(
+    `SELECT fr.id, fr.from_user_id, fr.status, fr.created_at,
+            u.name as senderName, u.email as senderEmail, u.user_code as senderCode
+     FROM friend_requests fr
+     JOIN users u ON u.id = fr.from_user_id
+     WHERE fr.to_user_id = ? AND fr.status = 'pending'
+     ORDER BY fr.created_at DESC`,
+    [req.userId]
+  );
+  res.json(rows);
+});
+
+// Get sent friend requests (for the current user)
+app.get('/api/friend-requests/sent', authMiddleware, async (req, res) => {
+  const rows = await all(
+    `SELECT fr.id, fr.to_user_id, fr.status, fr.created_at,
+            u.name as receiverName, u.email as receiverEmail, u.user_code as receiverCode
+     FROM friend_requests fr
+     JOIN users u ON u.id = fr.to_user_id
+     WHERE fr.from_user_id = ? AND fr.status = 'pending'
+     ORDER BY fr.created_at DESC`,
+    [req.userId]
+  );
+  res.json(rows);
+});
+
+// Accept a friend request
+app.post('/api/friend-requests/:id/accept', authMiddleware, async (req, res) => {
+  const request = await get(
+    'SELECT fr.*, u.name as fromName, u.email as fromEmail FROM friend_requests fr JOIN users u ON u.id = fr.from_user_id WHERE fr.id = ? AND fr.to_user_id = ?',
+    [req.params.id, req.userId]
+  );
+  if (!request) return res.status(404).json({ message: 'Friend request not found.' });
+  if (request.status !== 'pending') return res.status(400).json({ message: 'Request already handled.' });
+
+  const toUser = await get('SELECT id, name, email FROM users WHERE id = ?', [req.userId]);
+  if (!toUser) return res.status(404).json({ message: 'User not found.' });
+
+  await run('UPDATE friend_requests SET status = ? WHERE id = ?', ['accepted', request.id]);
+
+  const now = Date.now();
+  // Add the sender as a friend of the acceptor
+  const exists1 = await get('SELECT id FROM friends WHERE owner_id = ? AND email = ?', [req.userId, request.fromEmail]);
+  if (!exists1) {
+    await run('INSERT INTO friends (owner_id, name, email, limit_amount, created_at) VALUES (?, ?, ?, ?, ?)',
+      [req.userId, request.fromName, request.fromEmail, 0, now]);
+  }
+  // Add the acceptor as a friend of the sender
+  const exists2 = await get('SELECT id FROM friends WHERE owner_id = ? AND email = ?', [request.from_user_id, toUser.email]);
+  if (!exists2) {
+    await run('INSERT INTO friends (owner_id, name, email, limit_amount, created_at) VALUES (?, ?, ?, ?, ?)',
+      [request.from_user_id, toUser.name, toUser.email, 0, now]);
+  }
+
+  res.json({ ok: true });
+});
+
+// Reject a friend request
+app.post('/api/friend-requests/:id/reject', authMiddleware, async (req, res) => {
+  const request = await get('SELECT id FROM friend_requests WHERE id = ? AND to_user_id = ?', [req.params.id, req.userId]);
+  if (!request) return res.status(404).json({ message: 'Friend request not found.' });
+  await run('UPDATE friend_requests SET status = ? WHERE id = ?', ['rejected', request.id]);
+  res.json({ ok: true });
+});
+
+// Cancel a sent friend request
+app.delete('/api/friend-requests/:id', authMiddleware, async (req, res) => {
+  const request = await get('SELECT id FROM friend_requests WHERE id = ? AND from_user_id = ?', [req.params.id, req.userId]);
+  if (!request) return res.status(404).json({ message: 'Friend request not found.' });
+  await run('DELETE FROM friend_requests WHERE id = ?', [request.id]);
+  res.json({ ok: true });
+});
+
+// ── End Friend Requests ──────────────────────────────────────────────────────
+
+// ── Currency conversion ───────────────────────────────────────────────────────
+app.post('/api/convert-currency', authMiddleware, async (req, res) => {
+  const { oldCurrency, newCurrency } = req.body || {};
+  if (!oldCurrency || !newCurrency || oldCurrency === newCurrency) {
+    return res.json({ ok: true });
+  }
+
+  const ratesFromRSD = {
+    RSD: 1, EUR: 0.00852, USD: 0.00926, GBP: 0.00735, CHF: 0.00819,
+    JPY: 1.393, AUD: 0.01446, CAD: 0.01282, CNY: 0.06707,
+    INR: 0.7787, BRL: 0.05319, SEK: 0.09926, NOK: 0.10204
+  };
+
+  function conv(amount) {
+    if (amount == null || !ratesFromRSD[oldCurrency] || !ratesFromRSD[newCurrency]) return amount;
+    const inRSD = Number(amount) / ratesFromRSD[oldCurrency];
+    return Math.round(inRSD * ratesFromRSD[newCurrency] * 100) / 100;
+  }
+
+  const userId = req.userId;
+
+  // Convert user's own monthly_income, current_balance, and store new currency
+  const userRow = await get('SELECT monthly_income, current_balance FROM users WHERE id = ?', [userId]);
+  if (userRow) {
+    await run(
+      'UPDATE users SET monthly_income = ?, current_balance = ?, currency = ? WHERE id = ?',
+      [
+        userRow.monthly_income != null ? conv(userRow.monthly_income) : null,
+        userRow.current_balance != null ? conv(userRow.current_balance) : null,
+        newCurrency,
+        userId
+      ]
+    );
+  }
+
+  // Wallets owned by this user: amount, goal, cap
+  const wallets = await all('SELECT id, amount, goal_amount, cap_amount FROM wallets WHERE owner_id = ?', [userId]);
+  for (const w of wallets) {
+    await run(
+      'UPDATE wallets SET amount = ?, goal_amount = ?, cap_amount = ? WHERE id = ?',
+      [
+        conv(w.amount),
+        w.goal_amount != null ? conv(w.goal_amount) : null,
+        w.cap_amount != null ? conv(w.cap_amount) : null,
+        w.id
+      ]
+    );
+    // Wallet transactions for owned wallets
+    const txns = await all('SELECT id, amount FROM wallet_transactions WHERE wallet_id = ?', [w.id]);
+    for (const t of txns) {
+      await run('UPDATE wallet_transactions SET amount = ? WHERE id = ?', [conv(t.amount), t.id]);
+    }
+  }
+
+  // Splits owned by this user: amount, monthly_amount, memberAmounts
+  const splits = await all('SELECT id, amount, monthly_amount, member_amounts FROM splits WHERE owner_id = ?', [userId]);
+  for (const s of splits) {
+    let memberAmounts = {};
+    try { memberAmounts = JSON.parse(s.member_amounts || '{}'); } catch {}
+    const convertedMA = {};
+    for (const [k, v] of Object.entries(memberAmounts)) {
+      convertedMA[k] = typeof v === 'number' ? conv(v) : v;
+    }
+    await run(
+      'UPDATE splits SET amount = ?, monthly_amount = ?, member_amounts = ? WHERE id = ?',
+      [
+        conv(s.amount),
+        s.monthly_amount != null ? conv(s.monthly_amount) : null,
+        JSON.stringify(convertedMA),
+        s.id
+      ]
+    );
+  }
+
+  // Friend limits owned by this user
+  const friendRows = await all('SELECT id, limit_amount FROM friends WHERE owner_id = ?', [userId]);
+  for (const f of friendRows) {
+    if (f.limit_amount) {
+      await run('UPDATE friends SET limit_amount = ? WHERE id = ?', [conv(f.limit_amount), f.id]);
+    }
+  }
+
+  res.json({ ok: true });
+});
+// ── End Currency conversion ───────────────────────────────────────────────────
 
 app.get('/api/wallets', authMiddleware, async (req, res) => {
   const user = await get('SELECT id, name, email FROM users WHERE id = ?', [req.userId]);

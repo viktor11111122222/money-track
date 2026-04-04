@@ -4,8 +4,17 @@ const TOKEN_KEY = 'sharedBudgetToken';
 const WALLET_PROGRESS_CACHE_KEY = 'walletProgressCache';
 const DEFAULT_MONTHLY_INCOME = 100000;
 const _currencySymbols = { RSD: ' RSD', USD: ' $', EUR: ' €', GBP: ' £', JPY: ' ¥', AUD: ' A$', CAD: ' C$', CNY: ' ¥', INR: ' ₹', BRL: ' R$', CHF: ' CHF', SEK: ' kr', NOK: ' kr' };
-function getCurrency() { try { const s = JSON.parse(localStorage.getItem('mt_settings_v1') || '{}'); return _currencySymbols[(s.preferences || {}).currency] || ' €'; } catch(e) { return ' €'; } }
-const CURRENCY = getCurrency();
+function getCurrencyCode() { try { const s = JSON.parse(localStorage.getItem('mt_settings_v1') || '{}'); return (s.preferences || {}).currency || 'EUR'; } catch(e) { return 'EUR'; } }
+function getCurrency() { return _currencySymbols[getCurrencyCode()] || ' €'; }
+let CURRENCY = getCurrency();
+let CURRENCY_CODE = getCurrencyCode();
+// Update form labels with real currency code
+document.addEventListener('DOMContentLoaded', () => {
+  const lbl = (id, text) => { const el = document.getElementById(id); if (el) el.childNodes[0].textContent = text + ' '; };
+  lbl('sharedAmountLabel', `Amount (${CURRENCY_CODE})`);
+  lbl('sharedGoalLabel', `Goal (${CURRENCY_CODE})`);
+  lbl('sharedCapLabel', `Monthly cap (${CURRENCY_CODE})`);
+});
 
 function getExpenseData() {
   try {
@@ -94,7 +103,11 @@ const ui = {
   modal: document.getElementById('sharedModal'),
   modalTitle: document.getElementById('modalTitle'),
   sharedForm: document.getElementById('sharedForm'),
+  sharedNameRow: document.getElementById('sharedNameRow'),
   sharedName: document.getElementById('sharedName'),
+  sharedCodeRow: document.getElementById('sharedCodeRow'),
+  sharedCode: document.getElementById('sharedCode'),
+  sharedCodeError: document.getElementById('sharedCodeError'),
   sharedEmailRow: document.getElementById('sharedEmailRow'),
   sharedEmail: document.getElementById('sharedEmail'),
   sharedEmailError: document.getElementById('sharedEmailError'),
@@ -157,6 +170,11 @@ let currentType = 'invite';
 let splitMembers = {}; // Track split members with their percentages (0-100)
 let splitMemberFriendIds = {}; // Track which members are friends with their IDs
 let sharedData = { invites: [], wallets: [], splits: [], friends: [], walletTransactions: {} };
+
+// ── Local splits storage (LOCAL_AUTH_MODE only) ──
+const LOCAL_SPLITS_KEY = 'mt_local_splits';
+function _getLocalSplits() { try { return JSON.parse(localStorage.getItem(LOCAL_SPLITS_KEY) || '[]'); } catch { return []; } }
+function _saveLocalSplits(splits) { localStorage.setItem(LOCAL_SPLITS_KEY, JSON.stringify(splits)); }
 let currentUser = null;
 let editingWalletId = null;
 let editingSplitId = null;
@@ -376,7 +394,14 @@ function setModalMode(type, wallet = null) {
   
   ui.sharedForm.reset();
   if (ui.sharedEmailError) ui.sharedEmailError.textContent = '';
-  ui.sharedEmailRow.style.display = type === 'invite' ? 'flex' : 'none';
+  if (ui.sharedCodeError) ui.sharedCodeError.textContent = '';
+  // Name row: hidden for invite (not needed — we look up by code)
+  if (ui.sharedNameRow) ui.sharedNameRow.style.display = type === 'invite' ? 'none' : 'flex';
+  if (ui.sharedName) ui.sharedName.required = type !== 'invite';
+  // Code row: only for invite (friend request by ID)
+  if (ui.sharedCodeRow) ui.sharedCodeRow.style.display = type === 'invite' ? 'flex' : 'none';
+  // Email row: hidden (kept for backward compat only)
+  if (ui.sharedEmailRow) ui.sharedEmailRow.style.display = 'none';
   ui.sharedAmountRow.style.display = type === 'wallet' || type === 'split' ? 'flex' : 'none';
   ui.sharedGoalRow.style.display = type === 'wallet' ? 'flex' : 'none';
   ui.sharedCapRow.style.display = type === 'wallet' ? 'flex' : 'none';
@@ -395,11 +420,8 @@ function setModalMode(type, wallet = null) {
   }
 
   if (type === 'invite') {
-    const hiddenWallets = getHiddenWallets();
-    ui.modalTitle.textContent = 'New Invite';
-    ui.sharedName.placeholder = 'Full name';
-    ui.sharedEmail.required = true;
-    if (ui.submitModal) ui.submitModal.textContent = 'Create Invite';
+    ui.modalTitle.textContent = 'Add Friend by ID';
+    if (ui.submitModal) ui.submitModal.textContent = 'Send Request';
   }
   if (type === 'wallet') {
     ui.modalTitle.textContent = wallet ? 'Edit Wallet' : 'New Wallet';
@@ -457,14 +479,18 @@ function setModalMode(type, wallet = null) {
         });
       }
       
-      // Build friend IDs map
+      // Build friend IDs map — supports both old array format and new map format
       splitMemberFriendIds = {};
-      if (split.friendIds && Array.isArray(split.friendIds)) {
-        split.members.forEach((member, idx) => {
-          if (split.friendIds[idx]) {
-            splitMemberFriendIds[member] = split.friendIds[idx];
-          }
-        });
+      if (split.friendIds) {
+        if (Array.isArray(split.friendIds)) {
+          // Legacy: array indexed by member order
+          split.members.forEach((member, idx) => {
+            if (split.friendIds[idx]) splitMemberFriendIds[member] = split.friendIds[idx];
+          });
+        } else if (typeof split.friendIds === 'object') {
+          // New: { memberName: friendId }
+          splitMemberFriendIds = { ...split.friendIds };
+        }
       }
       
       if (ui.splitIsRecurring) ui.splitIsRecurring.checked = split.is_recurring || false;
@@ -689,27 +715,86 @@ function preserveScrollPosition(callback) {
 
 function renderInvites() {
   if (!ui.invitesList) return;
-  if (sharedData.invites.length === 0) {
-    renderEmpty(ui.invitesList, 'No invites yet.');
+  const sent = sharedData.sentRequests || [];
+  const section = document.getElementById('invitesSection');
+  if (sent.length === 0) {
+    if (section) section.style.display = 'none';
     return;
   }
-  ui.invitesList.innerHTML = sharedData.invites.map(invite => {
-    const statusLabel = invite.status === 'accepted' ? 'Accepted' : 'Pending';
-    const showActions = invite.status !== 'accepted';
+  if (section) section.style.display = '';
+  ui.invitesList.innerHTML = sent.map(req => `
+    <div class="shared-item">
+      <div>
+        <h4>${req.receiverName || 'User'}</h4>
+        <p style="font-family:monospace;font-size:13px;">${req.receiverCode || ''}</p>
+      </div>
+      <div class="shared-actions">
+        <span class="shared-tag">Pending</span>
+        <button class="ghost small fr-cancel-sent" data-id="${req.id}" title="Cancel request"><i class="fa-solid fa-xmark"></i></button>
+      </div>
+    </div>
+  `).join('');
+
+  ui.invitesList.querySelectorAll('.fr-cancel-sent').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      btn.disabled = true;
+      apiFetch(`/friend-requests/${id}`, { method: 'DELETE' })
+        .then(() => { loadAll(); })
+        .catch(() => { btn.disabled = false; });
+    });
+  });
+}
+
+function renderReceivedInvites() {
+  const section = document.getElementById('receivedInvitesSection');
+  const list = document.getElementById('receivedInvitesList');
+  const badge = document.getElementById('receivedInvitesBadge');
+  if (!section || !list) return;
+  const received = sharedData.friendRequests || sharedData.receivedInvites || [];
+  if (received.length === 0) {
+    section.style.display = 'none';
+    return;
+  }
+  section.style.display = '';
+  if (badge) badge.textContent = received.length;
+  list.innerHTML = received.map(req => {
+    const name = req.senderName || req.sender_name || 'Someone';
+    const code = req.senderCode ? `<span style="font-family:monospace;font-size:12px;color:var(--muted,#64748b);margin-left:4px;">${req.senderCode}</span>` : '';
     return `
       <div class="shared-item">
         <div>
-          <h4>${invite.name}</h4>
-          <p>${invite.email}</p>
+          <h4>${name}${code}</h4>
+          <p>Wants to be friends</p>
         </div>
         <div class="shared-actions">
-          <span class="shared-tag">${statusLabel}</span>
-          ${showActions ? `<button class="ghost shared-accept" data-id="${invite.id}">Mark as accepted</button>
-          <button class="ghost shared-resend" data-id="${invite.id}">Send again</button>` : ''}
+          <button class="primary small fr-accept" data-id="${req.id}">Accept</button>
+          <button class="ghost small fr-reject" data-id="${req.id}">Reject</button>
         </div>
       </div>
     `;
   }).join('');
+
+  list.querySelectorAll('.fr-accept').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      btn.disabled = true;
+      btn.textContent = '...';
+      apiFetch(`/friend-requests/${id}/accept`, { method: 'POST' })
+        .then(() => { loadAll(); showNotification('Friend added!', 'success'); })
+        .catch(err => { showNotification('Failed: ' + (err.message || 'Unknown error'), 'error'); btn.disabled = false; btn.textContent = 'Accept'; });
+    });
+  });
+
+  list.querySelectorAll('.fr-reject').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const id = btn.dataset.id;
+      btn.disabled = true;
+      apiFetch(`/friend-requests/${id}/reject`, { method: 'POST' })
+        .then(() => { loadAll(); })
+        .catch(() => { btn.disabled = false; });
+    });
+  });
 }
 
 function renderFriends() {
@@ -723,20 +808,20 @@ function renderFriends() {
     const realName = friend.name || friend.email;
     return `
       <div class="shared-item friend-item" data-id="${friend.id}" data-name="${displayName}" data-email="${friend.email || ''}" draggable="true">
-        <div class="friend-header">
-          <div>
+        <div class="friend-top">
+          <div class="friend-info">
             <h4 class="friend-display-name">${displayName}</h4>
-            ${friend.displayName ? `<p class="friend-real-name">Real name: ${realName}</p>` : ''}
-            <p>${friend.email || ''}</p>
+            ${friend.displayName ? `<p class="friend-real-name">${realName}</p>` : ''}
+            <p class="friend-email">${friend.email || ''}</p>
           </div>
-          <div class="friend-actions">
-            <label class="friend-limit-label">
-              <span>Limit (RSD)</span>
-              <input type="number" class="friend-limit" data-id="${friend.id}" min="0" step="0.01" value="${friend.limitAmount ?? 0}">
-            </label>
-            <button type="button" class="friend-edit" data-id="${friend.id}" title="Edit nickname">✏️</button>
+          <div class="friend-btns">
+            <button type="button" class="friend-edit" data-id="${friend.id}" title="Edit nickname"><i class="fa-solid fa-pen"></i></button>
             <button type="button" class="friend-delete" data-id="${friend.id}" title="Delete friend"><i class="fa-solid fa-trash"></i></button>
           </div>
+        </div>
+        <div class="friend-bottom">
+          <span class="friend-limit-text">Limit (${CURRENCY_CODE})</span>
+          <input type="number" class="friend-limit" data-id="${friend.id}" min="0" step="0.01" value="${friend.limitAmount ?? 0}">
         </div>
       </div>
     `;
@@ -867,7 +952,7 @@ function buildWalletItem(wallet, progressModes, progressCache, hiddenWallets) {
     });
     const contributionEntries = Object.entries(contributions).sort((a, b) => b[1] - a[1]);
     const contributionHtml = contributionEntries.length
-      ? contributionEntries.map(([name, amount]) => `<div class="wallet-contrib-item"><span>${name}</span><span>${amount.toLocaleString()} RSD</span></div>`).join('')
+      ? contributionEntries.map(([name, amount]) => `<div class="wallet-contrib-item"><span>${name}</span><span>${amount.toLocaleString()}${CURRENCY}</span></div>`).join('')
       : '<div class="wallet-muted">No member spending yet.</div>';
     const currentIdentity = currentUser ? [currentUser.email, currentUser.name].filter(Boolean) : [];
     const isCurrentMember = m => currentIdentity.some(id => String(id).toLowerCase() === String(m).toLowerCase());
@@ -891,7 +976,7 @@ function buildWalletItem(wallet, progressModes, progressCache, hiddenWallets) {
     const transactionHtml = transactions.length
       ? transactions.slice(0, 2).map(txn => {
         const isSavings = String(txn.category || '').toLowerCase() === 'savings';
-        const amountLabel = `${isSavings ? '+' : '-'}${txn.amount.toLocaleString()} RSD`;
+        const amountLabel = `${isSavings ? '+' : '-'}${txn.amount.toLocaleString()}${CURRENCY}`;
         const amountClass = `wallet-txn-amount${isSavings ? ' wallet-txn-amount--savings' : ''}`;
         return `
         <div class="wallet-txn-item">
@@ -919,10 +1004,10 @@ function buildWalletItem(wallet, progressModes, progressCache, hiddenWallets) {
           </div>
           <div class="wallet-actions">
             <div class="wallet-inline-stats">
-              ${goalAmount ? `<span>Goal <span class="wallet-info" data-tooltip="Goal is the target amount you want to reach in this wallet.">i</span>: <strong>${goalAmount.toLocaleString()} RSD</strong></span>` : ''}
-              <span>Spent: <strong>${totalSpent.toLocaleString()} RSD</strong></span>
-              <span>Saved: <strong>${savedAmount.toLocaleString()} RSD</strong></span>
-              ${capAmount ? `<span class="${capExceeded ? 'wallet-cap-danger' : ''}">Cap: <strong>${capAmount.toLocaleString()} RSD</strong></span>` : ''}
+              ${goalAmount ? `<span>Goal <span class="wallet-info" data-tooltip="Goal is the target amount you want to reach in this wallet.">i</span>: <strong>${goalAmount.toLocaleString()}${CURRENCY}</strong></span>` : ''}
+              <span>Spent: <strong>${totalSpent.toLocaleString()}${CURRENCY}</strong></span>
+              <span>Saved: <strong>${savedAmount.toLocaleString()}${CURRENCY}</strong></span>
+              ${capAmount ? `<span class="${capExceeded ? 'wallet-cap-danger' : ''}">Cap: <strong>${capAmount.toLocaleString()}${CURRENCY}</strong></span>` : ''}
             </div>
             <button class="ghost wallet-progress-toggle" data-id="${wallet.id}">${progressMode === 'savings-only' ? 'Show all' : 'Show savings only'}</button>
             <button class="ghost wallet-toggle" data-id="${wallet.id}">${isHidden ? 'Show details' : 'Hide wallet'}</button>
@@ -1166,54 +1251,81 @@ async function removeMemberFromWallet(walletId, memberName) {
 }
 
 function showSplitMemberPicker() {
-  // Create a simple list of friends to add to split
+  // In local auth mode — prompt for a name
+  if (window.__LOCAL_AUTH__) {
+    const name = prompt('Enter member name:');
+    if (!name || !name.trim()) return;
+    addSplitMember(name.trim(), null);
+    renderSplitMembersBreakdown();
+    return;
+  }
+
+  // Real backend: show inline picker inside the modal
+  const container = document.getElementById('splitMembersBreakdown');
+  if (!container) return;
+
+  // Remove any existing picker
+  const existing = document.getElementById('splitInlinePicker');
+  if (existing) { existing.remove(); return; }
+
   const availableFriends = sharedData.friends.filter(friend => {
     const displayName = friend.displayName || friend.name || friend.email;
     return !splitMembers.hasOwnProperty(displayName);
   });
-  
-  if (availableFriends.length === 0) {
-    showNotification('No friends available. Please add friends first in the Friends section.', 'info');
-    return;
+
+  const pickerEl = document.createElement('div');
+  pickerEl.id = 'splitInlinePicker';
+  pickerEl.style.cssText = 'border:1px solid rgba(99,102,241,.25);border-radius:10px;overflow:hidden;margin-top:8px;';
+
+  // Manual name input
+  const manualRow = document.createElement('div');
+  manualRow.style.cssText = 'display:flex;gap:6px;padding:8px;border-bottom:1px solid rgba(99,102,241,.1);';
+  const nameInput = document.createElement('input');
+  nameInput.type = 'text';
+  nameInput.placeholder = 'Enter name manually...';
+  nameInput.style.cssText = 'flex:1;padding:7px 10px;border-radius:7px;border:1px solid rgba(99,102,241,.3);background:var(--bg-secondary,#1a1d2e);color:var(--text,#e2e8f0);font-size:14px;';
+  const addBtn = document.createElement('button');
+  addBtn.type = 'button';
+  addBtn.textContent = 'Add';
+  addBtn.style.cssText = 'padding:7px 14px;border-radius:7px;background:#6366f1;color:#fff;border:none;font-weight:600;font-size:13px;cursor:pointer;';
+  addBtn.onclick = () => {
+    const n = nameInput.value.trim();
+    if (!n) return;
+    addSplitMember(n, null);
+    pickerEl.remove();
+    renderSplitMembersBreakdown();
+  };
+  manualRow.appendChild(nameInput);
+  manualRow.appendChild(addBtn);
+  pickerEl.appendChild(manualRow);
+
+  if (availableFriends.length > 0) {
+    const friendsLabel = document.createElement('div');
+    friendsLabel.style.cssText = 'padding:6px 10px;font-size:11px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;color:#6366f1;opacity:.8;';
+    friendsLabel.textContent = 'Friends';
+    pickerEl.appendChild(friendsLabel);
+
+    availableFriends.forEach(friend => {
+      const displayName = friend.displayName || friend.name || friend.email;
+      const btn = document.createElement('button');
+      btn.type = 'button';
+      btn.className = 'split-picker-item';
+      btn.style.cssText = 'width:100%;text-align:left;padding:10px 12px;border:none;background:transparent;color:var(--text,#e2e8f0);font-size:14px;cursor:pointer;display:flex;align-items:center;gap:8px;border-top:1px solid rgba(99,102,241,.07);';
+      btn.innerHTML = `<i class="fa-solid fa-user-circle" style="color:#6366f1;font-size:16px;"></i>${displayName}`;
+      btn.onclick = () => {
+        addSplitMember(displayName, friend.id);
+        pickerEl.remove();
+        renderSplitMembersBreakdown();
+      };
+      pickerEl.appendChild(btn);
+    });
   }
-  
-  // Show a simple menu with available friends
-  const pickerContainer = document.createElement('div');
-  pickerContainer.className = 'split-member-picker-menu';
-  
-  const items = availableFriends.map(friend => {
-    const btn = document.createElement('button');
-    btn.type = 'button';
-    const displayName = friend.displayName || friend.name || friend.email;
-    btn.textContent = displayName;
-    btn.className = 'split-picker-item';
-    btn.onclick = () => {
-      addSplitMember(displayName, friend.id);
-      if (pickerContainer.parentNode) {
-        document.body.removeChild(pickerContainer);
-      }
-      renderSplitMembersBreakdown();
-    };
-    return btn;
-  });
-  
-  items.forEach(item => pickerContainer.appendChild(item));
-  
-  // Position near the button
-  const btn = document.getElementById('addSplitMember');
-  if (btn) {
-    const rect = btn.getBoundingClientRect();
-    pickerContainer.style.top = (rect.bottom + window.scrollY + 5) + 'px';
-    pickerContainer.style.left = rect.left + 'px';
-  }
-  
-  document.body.appendChild(pickerContainer);
-  
-  // Close when clicking outside
+
+  container.parentNode.insertBefore(pickerEl, container.nextSibling);
+
+  // Close picker when clicking outside
   const closeMenu = () => {
-    if (pickerContainer.parentNode) {
-      document.body.removeChild(pickerContainer);
-    }
+    if (pickerEl.parentNode) pickerEl.remove();
     document.removeEventListener('click', closeMenu);
   };
   setTimeout(() => document.addEventListener('click', closeMenu), 0);
@@ -1284,7 +1396,7 @@ function renderSplitMembersBreakdown() {
             <input type="number" class="split-member-percent" min="0" max="100" step="0.01" value="${percent}" data-member="${member}" ${percentDisabled ? 'disabled' : ''}>
             <span class="split-percent-symbol">%</span>
           </div>
-          <span class="split-calculated-amount">${formattedAmount} RSD</span>
+          <span class="split-calculated-amount">${formattedAmount}${CURRENCY}</span>
         </div>
         ${removeBtn}
       </div>
@@ -1348,52 +1460,63 @@ function addSplitMember(memberName, friendId = null) {
   }
 }
 
+function buildSplitCard(split) {
+  const memberAmounts = split.memberAmounts || {};
+  const memberPercentages = split.memberPercentages || {};
+  const isRecurring = split.is_recurring;
+  const monthlyAmount = split.monthly_amount;
+  const isOwner = currentUser && split.owner_id === currentUser.id;
+  const totalAmount = Number(monthlyAmount || split.amount) || 0;
+
+  const breakdown = split.members.map(member => {
+    const pct = Number(memberPercentages[member]) || 0;
+    const memberShare = isRecurring
+      ? (totalAmount * pct / 100)
+      : (Number(memberAmounts[member]) || 0);
+    const pctTag = pct > 0 ? `<span class="split-breakdown-pct">${pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1)}%</span>` : '';
+    return `
+      <div class="split-breakdown-row">
+        <span class="split-breakdown-name">${member}</span>
+        <span class="split-breakdown-val">${Number(memberShare).toLocaleString()}${CURRENCY}${isRecurring ? '/mo' : ''}</span>
+        ${pctTag}
+      </div>`;
+  }).join('');
+
+  const membersDisplay = split.members.length ? split.members.join(', ') : 'No members';
+  const totalDisplay = isRecurring
+    ? `${totalAmount.toLocaleString()}${CURRENCY}/month`
+    : `${totalAmount.toLocaleString()}${CURRENCY}`;
+  const recurringBadge = isRecurring ? '<span class="split-recurring-badge"><i class="fa-solid fa-rotate" style="font-size:10px;margin-right:3px;"></i>Monthly</span>' : '';
+  const editButton = isOwner ? `<button class="ghost split-edit" data-id="${split.id}" title="Edit"><i class="fa-solid fa-pen"></i></button>` : '';
+
+  return `
+    <div class="shared-item split-card">
+      <div class="split-card-header">
+        <div class="split-card-title-wrap">
+          <h4 class="split-card-name">${split.name}</h4>
+          ${recurringBadge}
+        </div>
+        <div class="split-card-btns">
+          ${editButton}
+          <button class="ghost split-delete" data-id="${split.id}" title="Delete"><i class="fa-solid fa-trash"></i></button>
+        </div>
+      </div>
+      <p class="split-card-members"><i class="fa-solid fa-users" style="font-size:10px;opacity:.5;margin-right:5px;"></i>${membersDisplay}</p>
+      ${breakdown ? `<div class="split-breakdown-grid">${breakdown}</div>` : ''}
+      <div class="split-card-footer">
+        <span class="split-total-label">Total</span>
+        <span class="shared-amount split-total-amount">${totalDisplay}</span>
+      </div>
+    </div>`;
+}
+
 function renderSplits() {
   if (!ui.splitsList) return;
   if (sharedData.splits.length === 0) {
     renderEmpty(ui.splitsList, 'No splits yet.');
     return;
   }
-  // Prikaži samo prvi 3 splitova
-  const visibleSplits = sharedData.splits.slice(0, 3);
-  ui.splitsList.innerHTML = visibleSplits.map(split => {
-    const memberAmounts = split.memberAmounts || {};
-    const memberPercentages = split.memberPercentages || {};
-    const isRecurring = split.is_recurring;
-    const monthlyAmount = split.monthly_amount;
-    const isOwner = currentUser && split.owner_id === currentUser.id;
-    
-    const breakdown = split.members.map(member => {
-      const amount = memberAmounts[member] || 0;
-      const percentage = memberPercentages[member] || 0;
-      const displayAmount = isRecurring ? monthlyAmount || split.amount : amount;
-      const monthlyText = isRecurring ? ' RSD/month' : ' RSD';
-      const percentText = percentage > 0 ? ` (${Number(percentage).toFixed(1)}%)` : '';
-      return `<div class="breakdown-item">${member}: ${Number(displayAmount).toLocaleString()}${monthlyText}${percentText}</div>`;
-    }).join('');
-    
-    const membersDisplay = split.members.length ? split.members.join(', ') : 'No members';
-    const totalDisplay = isRecurring ? `${Number(monthlyAmount || split.amount).toLocaleString()} RSD/month` : `${split.amount.toLocaleString()} RSD`;
-    const recurringBadge = isRecurring ? '<span class="split-recurring-badge">🔄 Monthly</span>' : '';
-    const editButton = isOwner ? `<button class="ghost split-edit" data-id="${split.id}" title="Edit split">✎</button>` : '';
-    
-    return `
-      <div class="shared-item">
-        <div>
-          <h4>${split.name} ${recurringBadge}</h4>
-          <p>${membersDisplay}</p>
-          ${breakdown ? `<div class="split-breakdown">${breakdown}</div>` : ''}
-        </div>
-        <div class="split-item-footer">
-          <span class="shared-amount">${totalDisplay}</span>
-          <div class="split-item-buttons">
-            ${editButton}
-            <button class="ghost split-delete" data-id="${split.id}" title="Delete split"><i class="fa-solid fa-trash"></i></button>
-          </div>
-        </div>
-      </div>
-    `;
-  }).join('');
+  ui.splitsList.innerHTML = sharedData.splits.slice(0, 3).map(buildSplitCard).join('');
 }
 
 function renderAllSplits() {
@@ -1403,47 +1526,113 @@ function renderAllSplits() {
     return;
   }
   ui.allSplitsList.innerHTML = sharedData.splits.map(split => {
+    // reuse same card but also needs edit/delete handlers from allSplitsList
     const memberAmounts = split.memberAmounts || {};
     const memberPercentages = split.memberPercentages || {};
     const isRecurring = split.is_recurring;
     const monthlyAmount = split.monthly_amount;
     const isOwner = currentUser && split.owner_id === currentUser.id;
-    
+    const totalAmount = Number(monthlyAmount || split.amount) || 0;
+
     const breakdown = split.members.map(member => {
-      const amount = memberAmounts[member] || 0;
-      const percentage = memberPercentages[member] || 0;
-      const displayAmount = isRecurring ? monthlyAmount || split.amount : amount;
-      const monthlyText = isRecurring ? ' RSD/month' : ' RSD';
-      const percentText = percentage > 0 ? ` (${Number(percentage).toFixed(1)}%)` : '';
-      return `<div class="breakdown-item">${member}: ${Number(displayAmount).toLocaleString()}${monthlyText}${percentText}</div>`;
+      const pct = Number(memberPercentages[member]) || 0;
+      const memberShare = isRecurring ? (totalAmount * pct / 100) : (Number(memberAmounts[member]) || 0);
+      const pctTag = pct > 0 ? `<span class="split-breakdown-pct">${pct % 1 === 0 ? pct.toFixed(0) : pct.toFixed(1)}%</span>` : '';
+      return `
+        <div class="split-breakdown-row">
+          <span class="split-breakdown-name">${member}</span>
+          <span class="split-breakdown-val">${Number(memberShare).toLocaleString()}${CURRENCY}${isRecurring ? '/mo' : ''}</span>
+          ${pctTag}
+        </div>`;
     }).join('');
-    
+
     const membersDisplay = split.members.length ? split.members.join(', ') : 'No members';
-    const totalDisplay = isRecurring ? `${Number(monthlyAmount || split.amount).toLocaleString()} RSD/month` : `${split.amount.toLocaleString()} RSD`;
-    const recurringBadge = isRecurring ? '<span class="split-recurring-badge">🔄 Monthly</span>' : '';
-    const editButton = isOwner ? `<button class="ghost split-edit" data-id="${split.id}" title="Edit split">✎</button>` : '';
-    
+    const totalDisplay = isRecurring
+      ? `${totalAmount.toLocaleString()}${CURRENCY}/month`
+      : `${totalAmount.toLocaleString()}${CURRENCY}`;
+    const recurringBadge = isRecurring ? '<span class="split-recurring-badge"><i class="fa-solid fa-rotate" style="font-size:10px;margin-right:3px;"></i>Monthly</span>' : '';
+    const editButton = isOwner ? `<button class="ghost split-edit" data-id="${split.id}" title="Edit"><i class="fa-solid fa-pen"></i></button>` : '';
+
     return `
-      <div class="shared-item">
-        <div>
-          <h4>${split.name} ${recurringBadge}</h4>
-          <p>${membersDisplay}</p>
-          ${breakdown ? `<div class="split-breakdown">${breakdown}</div>` : ''}
-        </div>
-        <div class="split-item-footer">
-          <span class="shared-amount">${totalDisplay}</span>
-          <div class="split-item-buttons">
+      <div class="shared-item split-card">
+        <div class="split-card-header">
+          <div class="split-card-title-wrap">
+            <h4 class="split-card-name">${split.name}</h4>
+            ${recurringBadge}
+          </div>
+          <div class="split-card-btns">
             ${editButton}
-            <button class="ghost split-delete" data-id="${split.id}" title="Delete split"><i class="fa-solid fa-trash"></i></button>
+            <button class="ghost split-delete" data-id="${split.id}" title="Delete"><i class="fa-solid fa-trash"></i></button>
           </div>
         </div>
-      </div>
-    `;
+        <p class="split-card-members"><i class="fa-solid fa-users" style="font-size:10px;opacity:.5;margin-right:5px;"></i>${membersDisplay}</p>
+        ${breakdown ? `<div class="split-breakdown-grid">${breakdown}</div>` : ''}
+        <div class="split-card-footer">
+          <span class="split-total-label">Total</span>
+          <span class="shared-amount split-total-amount">${totalDisplay}</span>
+        </div>
+      </div>`;
   }).join('');
+}
+
+function processRecurringSplits() {
+  if (!currentUser) return;
+  const splits = sharedData.splits.filter(s => s.is_recurring);
+  if (splits.length === 0) return;
+
+  const now = new Date();
+  const monthKey = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}`;
+  const processedKey = `mt_rec_splits_${monthKey}`;
+  const processed = JSON.parse(localStorage.getItem(processedKey) || '[]');
+
+  const currentUserName = (currentUser.name || '').toLowerCase();
+  const currentUserEmail = (currentUser.email || '').toLowerCase();
+
+  const toProcess = splits.filter(s => !processed.includes(String(s.id)));
+  if (toProcess.length === 0) return;
+
+  let data;
+  try { data = JSON.parse(localStorage.getItem('expenseTrackerData') || '{}'); } catch { data = {}; }
+  if (!Array.isArray(data.expenses)) data.expenses = [];
+
+  let added = 0;
+  const newProcessed = [...processed];
+
+  toProcess.forEach(split => {
+    const memberKey = split.members.find(m =>
+      m.toLowerCase() === currentUserName || m.toLowerCase() === currentUserEmail
+    );
+    if (!memberKey) return;
+
+    const pct = Number((split.memberPercentages || {})[memberKey]) || 0;
+    const totalAmt = Number(split.monthly_amount || split.amount) || 0;
+    const userAmt = pct > 0 ? (totalAmt * pct / 100) : totalAmt;
+    if (userAmt <= 0) return;
+
+    data.expenses.push({
+      id: `rs_${split.id}_${monthKey}_${Date.now()}`,
+      amount: userAmt,
+      category: 'Split',
+      description: `${split.name} (${monthKey})`,
+      date: now.toISOString().split('T')[0],
+      type: 'expense',
+      tags: ['#recurring', '#split']
+    });
+
+    newProcessed.push(String(split.id));
+    added++;
+  });
+
+  if (added > 0) {
+    localStorage.setItem('expenseTrackerData', JSON.stringify(data));
+    localStorage.setItem(processedKey, JSON.stringify(newProcessed));
+    showNotification(`${added} recurring split${added > 1 ? 's' : ''} added to your expenses for ${monthKey}.`, 'success', 5000);
+  }
 }
 
 function renderAll() {
   preserveScrollPosition(() => {
+    renderReceivedInvites();
     renderInvites();
     renderWallets();
     renderSplits();
@@ -1453,26 +1642,29 @@ function renderAll() {
 
 function handleSubmit(event) {
   event.preventDefault();
-  const name = ui.sharedName.value.trim();
-  if (!name) return;
 
   if (currentType === 'invite') {
-    const email = ui.sharedEmail.value.trim();
-    if (!email) return;
-    apiFetch('/invites', {
+    const code = (ui.sharedCode?.value || '').trim().toUpperCase();
+    if (!code) { if (ui.sharedCodeError) ui.sharedCodeError.textContent = 'Enter a Friend ID.'; return; }
+    if (!/^MT-[A-Z0-9]{6}$/.test(code)) { if (ui.sharedCodeError) ui.sharedCodeError.textContent = 'Invalid format — should be MT-XXXXXX.'; return; }
+    if (ui.submitModal) { ui.submitModal.disabled = true; ui.submitModal.textContent = 'Sending...'; }
+    apiFetch('/friend-requests', {
       method: 'POST',
-      body: JSON.stringify({ name, email })
-    }).then((invite) => {
-      sharedData.invites.unshift(invite);
-      renderInvites();
+      body: JSON.stringify({ userCode: code })
+    }).then(() => {
       closeModal();
+      showNotification('Friend request sent!', 'success');
+      loadAll();
     }).catch((error) => {
-      if (ui.sharedEmailError) {
-        ui.sharedEmailError.textContent = error.message || 'Invite failed.';
-      }
+      if (ui.sharedCodeError) ui.sharedCodeError.textContent = error.message || 'Failed to send request.';
+    }).finally(() => {
+      if (ui.submitModal) { ui.submitModal.disabled = false; ui.submitModal.textContent = 'Send Request'; }
     });
     return;
   }
+
+  const name = ui.sharedName.value.trim();
+  if (!name) return;
 
     if (currentType === 'wallet') {
     const amount = Number(ui.sharedAmount.value || 0);
@@ -1533,24 +1725,41 @@ function handleSubmit(event) {
     
     const monthlyAmount = isRecurring ? amount : null;
     
-    // Get friend IDs for members who are friends
-    const friendIds = Object.values(splitMemberFriendIds).filter(id => id != null);
-    
+    // friendIds as a map: { memberName: friendId } — survives member reordering
+    const friendIds = { ...splitMemberFriendIds };
+
     if (members.length === 0) {
-      alert('Please add at least one member to the split.');
+      showNotification('Please add at least one member to the split.', 'error');
       return;
     }
-    
+
     // Validate percentages
     const totalPercent = Object.values(memberPercentages).reduce((sum, p) => sum + Number(p), 0);
     if (Math.abs(totalPercent - 100) > 0.01) {
-      alert(`Percentages must total 100%. Current total: ${totalPercent.toFixed(2)}%`);
+      showNotification(`Percentages must total 100%. Current: ${totalPercent.toFixed(1)}%`, 'error');
       return;
     }
-    
+
     const isEditing = editingSplitId !== null;
     const payload = { name, amount, members, memberAmounts, memberPercentages, is_recurring: isRecurring, monthly_amount: monthlyAmount, friendIds };
-    
+
+    if (window.__LOCAL_AUTH__) {
+      if (isEditing) {
+        sharedData.splits = sharedData.splits.map(s => String(s.id) === String(editingSplitId) ? { ...s, ...payload, id: editingSplitId } : s);
+      } else {
+        const newSplit = { ...payload, id: Date.now().toString(), owner_id: currentUser?.id || 'local', created_at: new Date().toISOString() };
+        sharedData.splits.unshift(newSplit);
+      }
+      _saveLocalSplits(sharedData.splits);
+      renderSplits();
+      renderAllSplits();
+      closeModal();
+      editingSplitId = null;
+      splitMembers = {};
+      splitMemberFriendIds = {};
+      return;
+    }
+
     apiFetch(isEditing ? `/splits/${editingSplitId}` : '/splits', {
       method: isEditing ? 'PATCH' : 'POST',
       body: JSON.stringify(payload)
@@ -1635,8 +1844,8 @@ ui.splitsList?.addEventListener('click', async (event) => {
     const split = sharedData.splits.find(s => String(s.id) === String(splitId));
     if (!split) return;
     
-    // Only owner can edit
-    if (!currentUser || split.owner_id !== currentUser.id) {
+    // Only owner can edit (skip check in local auth mode)
+    if (!window.__LOCAL_AUTH__ && (!currentUser || split.owner_id !== currentUser.id)) {
       showNotification('Only the split owner can edit it!', 'error');
       return;
     }
@@ -1653,7 +1862,14 @@ ui.splitsList?.addEventListener('click', async (event) => {
       okText: 'Yes, delete'
     });
     if (!confirmed) return;
-    
+
+    if (window.__LOCAL_AUTH__) {
+      sharedData.splits = sharedData.splits.filter(s => String(s.id) !== String(splitId));
+      _saveLocalSplits(sharedData.splits);
+      preserveScrollPosition(() => { renderSplits(); renderAllSplits(); });
+      return;
+    }
+
     apiFetch(`/splits/${splitId}`, { method: 'DELETE' })
       .then(() => {
         sharedData.splits = sharedData.splits.filter(s => String(s.id) !== String(splitId));
@@ -1671,22 +1887,22 @@ ui.splitsList?.addEventListener('click', async (event) => {
 ui.allSplitsList?.addEventListener('click', async (event) => {
   const target = event.target;
   if (!(target instanceof HTMLElement)) return;
-  
+
   if (target.classList.contains('split-edit')) {
     const splitId = target.dataset.id;
     if (!splitId) return;
     const split = sharedData.splits.find(s => String(s.id) === String(splitId));
     if (!split) return;
-    
-    // Only owner can edit
-    if (!currentUser || split.owner_id !== currentUser.id) {
+
+    // Only owner can edit (skip check in local auth mode)
+    if (!window.__LOCAL_AUTH__ && (!currentUser || split.owner_id !== currentUser.id)) {
       showNotification('Only the split owner can edit it!', 'error');
       return;
     }
-    
+
     openModal('split', split);
   }
-  
+
   if (target.classList.contains('split-delete')) {
     const splitId = target.dataset.id;
     if (!splitId) return;
@@ -1696,7 +1912,14 @@ ui.allSplitsList?.addEventListener('click', async (event) => {
       okText: 'Yes, delete'
     });
     if (!confirmed) return;
-    
+
+    if (window.__LOCAL_AUTH__) {
+      sharedData.splits = sharedData.splits.filter(s => String(s.id) !== String(splitId));
+      _saveLocalSplits(sharedData.splits);
+      preserveScrollPosition(() => { renderSplits(); renderAllSplits(); });
+      return;
+    }
+
     apiFetch(`/splits/${splitId}`, { method: 'DELETE' })
       .then(() => {
         sharedData.splits = sharedData.splits.filter(s => String(s.id) !== String(splitId));
@@ -1781,7 +2004,10 @@ ui.walletsList?.addEventListener('submit', (event) => {
     categoryInput.value = '';
     if (noteInput) noteInput.value = '';
     renderWallets();
-  }).catch(() => {});
+    showNotification('Transaction added!', 'success');
+  }).catch((err) => {
+    showNotification('Failed to add transaction: ' + (err.message || 'Unknown error'), 'error');
+  });
 });
 ui.walletsList?.addEventListener('click', (event) => {
   const target = event.target;
@@ -1873,8 +2099,11 @@ ui.walletsList?.addEventListener('click', (event) => {
         const wallet = sharedData.wallets.find(w => String(w.id) === String(walletId));
         if (wallet) wallet.members = payload.members || [];
         renderWallets();
+        showNotification('You have left the wallet.', 'info');
       })
-      .catch(() => {});
+      .catch((err) => {
+        showNotification('Failed to leave wallet: ' + (err.message || 'Unknown error'), 'error');
+      });
   }
 });
 
@@ -1932,35 +2161,48 @@ ui.sharedCategories?.addEventListener('input', () => {
   }
 });
 ui.walletMemberPicker?.addEventListener('click', (event) => {
-  const target = event.target;
-  if (!(target instanceof HTMLElement)) return;
-  if (!target.classList.contains('member-chip')) return;
+  const target = event.target.closest('.member-chip');
+  if (!target || !ui.sharedMembers) return;
   const name = target.dataset.name;
-  if (!name || !ui.sharedMembers) return;
+  if (!name) return;
   const current = ui.sharedMembers.value
     .split(',')
-    .map(value => value.trim())
+    .map(v => v.trim())
     .filter(Boolean);
-  if (!current.includes(name)) {
+  if (current.includes(name)) {
+    // Toggle off — remove from list
+    ui.sharedMembers.value = current.filter(n => n !== name).join(', ');
+    target.classList.remove('member-chip-active');
+  } else {
     current.push(name);
     ui.sharedMembers.value = current.join(', ');
+    target.classList.add('member-chip-active');
   }
 });
 
 async function loadAll() {
-  // Local auth mode — no server, just render empty lists
+  // Local auth mode — use localStorage for splits, empty for server-only features
   if (window.__LOCAL_AUTH__) {
-    sharedData = sharedData || { invites: [], wallets: [], splits: [], friends: [], walletTransactions: {} };
+    sharedData = { invites: [], wallets: [], splits: _getLocalSplits(), friends: [], walletTransactions: {} };
     renderAll();
+    processRecurringSplits();
     return;
   }
   try {
-    const [invites, wallets, splits, friends] = await Promise.all([
-      apiFetch('/invites'),
+    const [invites, wallets, splits, friends, friendRequests, sentRequests, meData] = await Promise.all([
+      apiFetch('/invites').catch(() => []),
       apiFetch('/wallets'),
       apiFetch('/splits'),
-      apiFetch('/friends')
+      apiFetch('/friends'),
+      apiFetch('/friend-requests').catch(() => []),
+      apiFetch('/friend-requests/sent').catch(() => []),
+      apiFetch('/me').catch(() => null)
     ]);
+    // Display the user's own Friend ID
+    if (meData && meData.user_code) {
+      const display = document.getElementById('myUserCodeDisplay');
+      if (display) display.textContent = meData.user_code;
+    }
     const walletTransactions = {};
     const results = await Promise.allSettled(wallets.map(wallet =>
       apiFetch(`/wallets/${wallet.id}/transactions`).then(list => {
@@ -1973,8 +2215,9 @@ async function loadAll() {
         if (walletId) walletTransactions[walletId] = [];
       }
     });
-    sharedData = { invites, wallets, splits, friends, walletTransactions };
+    sharedData = { invites, wallets, splits, friends, walletTransactions, friendRequests: friendRequests || [], sentRequests: sentRequests || [] };
     renderAll();
+    processRecurringSplits();
   } catch (error) {
     if (error.status === 401) {
       // Only log out on explicit auth rejection from server
@@ -2296,6 +2539,47 @@ async function init() {
 
 init();
 
+// ── Friend code input: auto-uppercase + auto-insert dash ─────────────────
+(function () {
+  const inp = document.getElementById('sharedCode');
+  if (!inp) return;
+  inp.addEventListener('input', () => {
+    let v = inp.value.toUpperCase().replace(/[^A-Z0-9-]/g, '');
+    // Auto-insert "MT-" prefix if user starts typing letters/numbers
+    if (v.length >= 2 && !v.startsWith('MT')) v = 'MT-' + v.replace(/-/g, '');
+    if (v.startsWith('MT') && v.length > 2 && v[2] !== '-') v = 'MT-' + v.slice(2).replace(/-/g, '');
+    // Limit to 9 chars (MT-XXXXXX)
+    inp.value = v.slice(0, 9);
+  });
+})();
+
+// ── Friend ID: Copy button ────────────────────────────────────────────────
+document.getElementById('copyUserCodeBtn')?.addEventListener('click', () => {
+  const code = document.getElementById('myUserCodeDisplay')?.textContent;
+  if (!code || code === '—') return;
+  navigator.clipboard.writeText(code).then(() => {
+    const btn = document.getElementById('copyUserCodeBtn');
+    if (!btn) return;
+    const orig = btn.innerHTML;
+    btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!';
+    btn.style.color = '#10b981';
+    setTimeout(() => { btn.innerHTML = orig; btn.style.color = ''; }, 1800);
+  }).catch(() => {
+    // Fallback for older WebViews
+    try {
+      const ta = document.createElement('textarea');
+      ta.value = code;
+      ta.style.position = 'fixed'; ta.style.opacity = '0';
+      document.body.appendChild(ta); ta.select();
+      document.execCommand('copy');
+      document.body.removeChild(ta);
+      const btn = document.getElementById('copyUserCodeBtn');
+      if (btn) { const orig = btn.innerHTML; btn.innerHTML = '<i class="fa-solid fa-check"></i> Copied!'; setTimeout(() => { btn.innerHTML = orig; }, 1800); }
+    } catch (_) {}
+  });
+});
+
+
 // Re-render when language changes
 window.addEventListener('languageChanged', () => {
   if (typeof applyI18n === 'function') applyI18n();
@@ -2307,6 +2591,21 @@ window.addEventListener('storage', (event) => {
   }
   if (event.key === 'expenseTrackerData') {
     updateSidebarStats();
+  }
+  if (event.key === 'mt_settings_v1') {
+    const newCurrency = getCurrency();
+    const newCode = getCurrencyCode();
+    if (newCurrency !== CURRENCY || newCode !== CURRENCY_CODE) {
+      CURRENCY = newCurrency;
+      CURRENCY_CODE = newCode;
+      // Update form labels
+      const lbl = (id, text) => { const el = document.getElementById(id); if (el) el.childNodes[0].textContent = text + ' '; };
+      lbl('sharedAmountLabel', `Amount (${CURRENCY_CODE})`);
+      lbl('sharedGoalLabel', `Goal (${CURRENCY_CODE})`);
+      lbl('sharedCapLabel', `Monthly cap (${CURRENCY_CODE})`);
+      updateSidebarStats();
+      loadAll();
+    }
   }
 });
 
@@ -2327,5 +2626,21 @@ setInterval(() => {
     isWalletRefreshing = false;
   });
 }, 8000);
+
+// ===== MOBILE FOREGROUND SYNC =====
+// When app returns to foreground (Capacitor / mobile), reload wallets and splits immediately
+let _sharedLastSync = 0;
+function _sharedForegroundSync() {
+  const token = getToken();
+  if (!token || window.__LOCAL_AUTH__) return;
+  const now = Date.now();
+  if (now - _sharedLastSync < 5000) return; // debounce
+  _sharedLastSync = now;
+  loadAll().catch(() => {});
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') _sharedForegroundSync();
+});
+window.addEventListener('focus', _sharedForegroundSync);
 
 })(); // end IIFE

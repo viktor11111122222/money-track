@@ -1,0 +1,537 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <title>Privacy Policy — Money Tracker</title>
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#0f1724" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="/public/wallet-logo.jpg" />
+  <link rel="stylesheet" href="/dashboard/style.css" />
+  <link rel="stylesheet" href="/public/theme.css" />
+  <link rel="stylesheet" href="/public/mobile-nav.css" />
+  <link rel="stylesheet" href="/public/fontawesome/css/all.min.css" />
+  <script src="/public/app-config.js"></script>
+  <script src="/public/theme-init.js"></script>
+  <style>
+    .pp-content {
+      max-width: 760px;
+      padding: 32px 28px 60px;
+    }
+
+    .pp-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #8892a4;
+      text-decoration: none;
+      font-size: 0.875rem;
+      margin-bottom: 28px;
+      transition: color .2s;
+    }
+    .pp-back:hover { color: #6366f1; }
+
+    .pp-title-block {
+      margin-bottom: 32px;
+    }
+    .pp-title-block h1 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--text, #0f1724);
+      margin-bottom: 6px;
+    }
+    .pp-title-block .pp-meta {
+      font-size: 0.82rem;
+      color: #8892a4;
+    }
+    .pp-title-block .pp-meta span {
+      background: rgba(99,102,241,.12);
+      border: 1px solid rgba(99,102,241,.25);
+      border-radius: 20px;
+      padding: 3px 12px;
+      margin-right: 6px;
+      display: inline-block;
+    }
+
+    /* Scope pills */
+    .pill {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      border-radius: 4px;
+      padding: 1px 7px;
+      margin-left: 6px;
+      vertical-align: middle;
+    }
+    .pill-app  { background: rgba(99,102,241,.15); color: #818cf8; border: 1px solid rgba(99,102,241,.3); }
+    .pill-web  { background: rgba(6,182,212,.15);  color: #22d3ee; border: 1px solid rgba(6,182,212,.3);  }
+    .pill-both { background: rgba(16,185,129,.15); color: #34d399; border: 1px solid rgba(16,185,129,.3); }
+
+    /* Sections */
+    .pp-section {
+      margin-bottom: 40px;
+      scroll-margin-top: 80px;
+    }
+    .pp-section h2 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text, #0f1724);
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(99,102,241,.15);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .pp-section h2 .sec-num {
+      background: #6366f1;
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 700;
+      border-radius: 5px;
+      padding: 2px 7px;
+      flex-shrink: 0;
+    }
+    .pp-section h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text, #0f1724);
+      margin: 20px 0 8px;
+    }
+    .pp-section p {
+      color: #5a6478;
+      font-size: 0.9rem;
+      line-height: 1.7;
+      margin-bottom: 10px;
+    }
+    .pp-section ul {
+      padding-left: 18px;
+      color: #5a6478;
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+    }
+    .pp-section li { margin-bottom: 5px; line-height: 1.6; }
+    .pp-section strong { color: var(--text, #0f1724); }
+    .pp-section a { color: #6366f1; }
+
+    /* Info card */
+    .info-card {
+      background: rgba(99,102,241,.07);
+      border: 1px solid rgba(99,102,241,.2);
+      border-radius: 10px;
+      padding: 16px 18px;
+      margin: 14px 0;
+      font-size: 0.88rem;
+      color: #5a6478;
+      line-height: 1.6;
+    }
+    .info-card strong { color: var(--text, #0f1724); }
+    .info-card.warn {
+      border-left: 3px solid #6366f1;
+      border-radius: 0 10px 10px 0;
+      background: rgba(99,102,241,.05);
+    }
+
+    /* Table */
+    .pp-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin: 12px 0 16px;
+    }
+    .pp-table th {
+      text-align: left;
+      padding: 8px 12px;
+      background: rgba(99,102,241,.08);
+      color: var(--text, #0f1724);
+      font-weight: 600;
+      border-bottom: 1px solid rgba(99,102,241,.15);
+    }
+    .pp-table td {
+      padding: 8px 12px;
+      color: #5a6478;
+      border-bottom: 1px solid rgba(0,0,0,.04);
+      vertical-align: top;
+    }
+    .pp-table tr:last-child td { border-bottom: none; }
+
+    /* contact block */
+    .contact-block {
+      background: rgba(99,102,241,.07);
+      border: 1px solid rgba(99,102,241,.2);
+      border-radius: 10px;
+      padding: 18px 20px;
+      font-size: 0.9rem;
+      color: #5a6478;
+    }
+    .contact-block p { margin-bottom: 4px; }
+    .contact-block a { color: #6366f1; }
+
+    /* Dark theme overrides */
+    [data-theme="dark"] .pp-section p,
+    [data-theme="dark"] .pp-section ul,
+    [data-theme="dark"] .pp-section li { color: #8892a4; }
+    [data-theme="dark"] .pp-section h2,
+    [data-theme="dark"] .pp-section h3,
+    [data-theme="dark"] .pp-section strong,
+    [data-theme="dark"] .pp-title-block h1 { color: #e2e8f0; }
+    [data-theme="dark"] .pp-table th { color: #e2e8f0; }
+    [data-theme="dark"] .pp-table td { color: #8892a4; }
+    [data-theme="dark"] .info-card { color: #8892a4; }
+    [data-theme="dark"] .info-card strong { color: #e2e8f0; }
+    [data-theme="dark"] .contact-block { color: #8892a4; }
+
+    @media (max-width: 768px) {
+      .pp-content { padding: 20px 16px 80px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SIDEBAR (same as rest of app) -->
+  <header>
+    <nav class="sidebar">
+      <div class="top-title-wrap">
+        <img src="/public/wallet-logo.jpg" alt="logo" />
+        <h2>Expense Tracker</h2>
+      </div>
+      <hr />
+      <div class="side-card" onclick="window.location.href='/spendings/index.html'">
+        <i class="fa-solid fa-chart-line"></i>
+        <h3>Spendings</h3>
+      </div>
+      <div class="side-card" onclick="window.location.href='/expenses/index.html'">
+        <i class="fa-solid fa-money-check-dollar"></i>
+        <h3>Expenses</h3>
+      </div>
+      <div class="side-card" onclick="window.location.href='/dashboard/index.html'">
+        <i class="fa-solid fa-house"></i>
+        <h3>Dashboard</h3>
+      </div>
+      <div class="side-card" onclick="window.location.href='/shared/index.html'">
+        <i class="fa-solid fa-people-group"></i>
+        <h3>Family Budget</h3>
+      </div>
+      <div class="sidebar-spacer"></div>
+      <div class="side-card" onclick="window.location.href='/shared/settings.html'">
+        <i class="fa-solid fa-gear"></i>
+        <h3>Settings</h3>
+      </div>
+      <div class="account-chip" id="accountChip">
+        <img src="/public/avatar-default.svg" alt="Account" />
+      </div>
+    </nav>
+  </header>
+
+  <main>
+    <div class="main-container pp-content">
+
+      <a href="/shared/settings.html" class="pp-back">
+        <i class="fa-solid fa-arrow-left"></i> Back to Settings
+      </a>
+
+      <div class="pp-title-block">
+        <h1>Privacy Policy</h1>
+        <p class="pp-meta">
+          <span>Last updated: March 30, 2026</span>
+          <span>App &amp; Website</span>
+        </p>
+      </div>
+
+      <div class="info-card">
+        This Privacy Policy explains how <strong>Money Tracker</strong> (the "App") and
+        <strong>moneytracker.app</strong> (the "Website") collect, use, and protect your
+        information. Operated by <strong>Viktor Djordjevic</strong> ("we", "us", or "our").<br /><br />
+        Sections marked <span class="pill pill-app">App</span> apply to the mobile/PWA app,
+        <span class="pill pill-web">Website</span> to the marketing website,
+        and <span class="pill pill-both">Both</span> to both.
+        By using Money Tracker or visiting our website, you agree to the terms described here.
+      </div>
+
+      <!-- TABLE OF CONTENTS -->
+      <div class="info-card" style="margin-bottom:32px;">
+        <strong style="display:block;margin-bottom:10px;font-size:0.8rem;text-transform:uppercase;letter-spacing:.1em;color:#6366f1;">Table of Contents</strong>
+        <ol style="padding-left:18px;margin:0;color:#5a6478;font-size:0.9rem;display:grid;gap:4px;">
+          <li><a href="#s1" style="color:inherit;text-decoration:none;">Who We Are</a></li>
+          <li><a href="#s2" style="color:inherit;text-decoration:none;">What Data We Collect</a></li>
+          <li><a href="#s3" style="color:inherit;text-decoration:none;">How We Use Your Data</a></li>
+          <li><a href="#s4" style="color:inherit;text-decoration:none;">Third-Party Services</a></li>
+          <li><a href="#s5" style="color:inherit;text-decoration:none;">Cookies &amp; Local Storage</a></li>
+          <li><a href="#s6" style="color:inherit;text-decoration:none;">Data Security</a></li>
+          <li><a href="#s7" style="color:inherit;text-decoration:none;">Your Rights (GDPR)</a></li>
+          <li><a href="#s8" style="color:inherit;text-decoration:none;">Children's Privacy</a></li>
+          <li><a href="#s9" style="color:inherit;text-decoration:none;">Data Retention</a></li>
+          <li><a href="#s10" style="color:inherit;text-decoration:none;">Changes to This Policy</a></li>
+          <li><a href="#s11" style="color:inherit;text-decoration:none;">Contact Us</a></li>
+        </ol>
+      </div>
+
+      <!-- 1. WHO WE ARE -->
+      <div class="pp-section" id="s1">
+        <h2><span class="sec-num">1</span> Who We Are <span class="pill pill-both">Both</span></h2>
+        <p><strong>Money Tracker</strong> is a personal finance application available on Android, iOS, and as a Progressive Web App (PWA). The marketing website is hosted at <strong>moneytracker.app</strong>.</p>
+        <table class="pp-table">
+          <tr><th>Field</th><th>Detail</th></tr>
+          <tr><td><strong>Product name</strong></td><td>Money Tracker</td></tr>
+          <tr><td><strong>App ID</strong></td><td>com.moneytrack.app</td></tr>
+          <tr><td><strong>Operator</strong></td><td>Viktor Djordjevic</td></tr>
+          <tr><td><strong>Contact email</strong></td><td><a href="mailto:viktordjordjevic350@gmail.com">viktordjordjevic350@gmail.com</a></td></tr>
+          <tr><td><strong>Price</strong></td><td>€4.99 one-time purchase</td></tr>
+          <tr><td><strong>Platforms</strong></td><td>Android (Google Play), iOS (App Store), Web (PWA)</td></tr>
+        </table>
+      </div>
+
+      <!-- 2. WHAT DATA WE COLLECT -->
+      <div class="pp-section" id="s2">
+        <h2><span class="sec-num">2</span> What Data We Collect</h2>
+
+        <h3>2a. App — Without an Account <span class="pill pill-app">App</span></h3>
+        <p>
+          All core features of Money Tracker (expense logging, budgets, charts, categories, currencies)
+          work entirely <strong>offline and locally on your device</strong>. No account is required
+          and no personal data is sent to our servers for these features.
+        </p>
+        <p>Data stored locally on your device includes:</p>
+        <ul>
+          <li>Expense entries (amounts, categories, dates, notes, tags)</li>
+          <li>Income and budget settings</li>
+          <li>App preferences (language, currency, theme)</li>
+          <li>Recurring expense rules</li>
+          <li>Bill split calculations</li>
+        </ul>
+        <p>This data <strong>never leaves your device</strong> unless you use the CSV export feature or the optional Shared Budget feature described below.</p>
+
+        <h3>2b. App — Shared / Family Budget Feature (Account Required) <span class="pill pill-app">App</span></h3>
+        <p>When you choose to use the <strong>Shared Wallet</strong> or <strong>Family Budget</strong> feature, an account is required. Creating an account involves submitting:</p>
+        <ul>
+          <li><strong>Name</strong> — your display name</li>
+          <li><strong>Email address</strong> — used for login and invite emails</li>
+          <li><strong>Password</strong> — stored as a one-way bcrypt hash; we cannot read your password</li>
+        </ul>
+        <p>Once logged in, shared expense data (amounts, categories, dates, notes) added to a shared wallet is stored on our server so that all wallet members can view it.</p>
+        <p>We also collect standard server-side information for security purposes:</p>
+        <ul>
+          <li><strong>IP address</strong> — used for rate-limiting and abuse prevention</li>
+          <li><strong>Request timestamps and log entries</strong> — retained in server logs for operational purposes</li>
+          <li><strong>JWT authentication tokens</strong> — expire after 7 days</li>
+        </ul>
+        <div class="info-card warn">
+          If you invite someone to a shared wallet, you will provide their <strong>name and email address</strong>.
+          By doing so, you confirm that you have their permission to share this information with us for the
+          purpose of sending a single invitation email.
+        </div>
+
+        <h3>2c. Advertising Data (Google AdMob) <span class="pill pill-app">App</span></h3>
+        <p>Money Tracker may display ads served by <strong>Google AdMob</strong>. AdMob automatically collects certain data from your device to serve relevant ads. This may include:</p>
+        <ul>
+          <li>Advertising ID (GAID on Android / IDFA on iOS)</li>
+          <li>Device model, operating system version</li>
+          <li>General location (country / region level)</li>
+          <li>Ad interaction data (impressions, clicks)</li>
+          <li>App usage signals</li>
+        </ul>
+        <p>
+          This data is collected and processed by Google LLC under their own privacy policy.
+          You can opt out of personalized ads in your device settings
+          (Android: <em>Settings → Privacy → Ads</em>; iOS: <em>Settings → Privacy → Tracking</em>).
+        </p>
+
+        <h3>2d. Website <span class="pill pill-web">Website</span></h3>
+        <p>Our marketing website does not require registration or login. We may collect:</p>
+        <table class="pp-table">
+          <tr><th>Data</th><th>How</th><th>Purpose</th></tr>
+          <tr><td><strong>IP address</strong></td><td>Google Analytics (anonymized)</td><td>Analytics, geographic breakdown</td></tr>
+          <tr><td><strong>Browser &amp; device info</strong></td><td>Google Analytics</td><td>Understand which devices visitors use</td></tr>
+          <tr><td><strong>Page views &amp; events</strong></td><td>Google Analytics</td><td>Improve website content and UX</td></tr>
+          <tr><td><strong>Scroll depth, clicks</strong></td><td>Google Analytics events</td><td>Understand engagement with content</td></tr>
+          <tr><td><strong>Email &amp; message</strong></td><td>Contact form (voluntary)</td><td>Respond to your support request</td></tr>
+          <tr><td><strong>Cookie consent preference</strong></td><td>localStorage (your browser)</td><td>Remember your analytics choice</td></tr>
+        </table>
+        <p><strong>Google Analytics is loaded only if you click "Accept" on the cookie banner.</strong> IP addresses are anonymized. If you decline, no analytics data is collected or sent to Google.</p>
+      </div>
+
+      <!-- 3. HOW WE USE -->
+      <div class="pp-section" id="s3">
+        <h2><span class="sec-num">3</span> How We Use Your Data <span class="pill pill-both">Both</span></h2>
+        <p>We use the data we collect for the following purposes:</p>
+        <table class="pp-table">
+          <tr><th>Purpose</th><th>Legal Basis (GDPR)</th><th>Applies to</th></tr>
+          <tr><td>Providing core app functionality</td><td>Contract (Terms of Service)</td><td><span class="pill pill-app">App</span></td></tr>
+          <tr><td>Account creation and authentication</td><td>Contract</td><td><span class="pill pill-app">App</span></td></tr>
+          <tr><td>Sending shared wallet invite emails</td><td>Legitimate interest / Consent</td><td><span class="pill pill-app">App</span></td></tr>
+          <tr><td>Displaying advertisements (AdMob)</td><td>Legitimate interest / Consent</td><td><span class="pill pill-app">App</span></td></tr>
+          <tr><td>Website analytics and improvement</td><td>Consent (cookie banner)</td><td><span class="pill pill-web">Website</span></td></tr>
+          <tr><td>Responding to support requests</td><td>Legitimate interest</td><td><span class="pill pill-both">Both</span></td></tr>
+          <tr><td>Security, fraud prevention, rate limiting</td><td>Legitimate interest</td><td><span class="pill pill-both">Both</span></td></tr>
+          <tr><td>Compliance with legal obligations</td><td>Legal obligation</td><td><span class="pill pill-both">Both</span></td></tr>
+        </table>
+        <p>We do <strong>not</strong> sell your personal data to any third party. We do <strong>not</strong> use your financial data (expenses, amounts, categories) for any purpose other than delivering the service to you.</p>
+      </div>
+
+      <!-- 4. THIRD PARTIES -->
+      <div class="pp-section" id="s4">
+        <h2><span class="sec-num">4</span> Third-Party Services</h2>
+        <p>We integrate with the following third-party services. Each has its own privacy policy which governs how they handle data they independently collect.</p>
+
+        <h3>4a. Google AdMob <span class="pill pill-app">App</span></h3>
+        <p>Used to display advertisements within the app. AdMob may collect device identifiers, usage data, and location signals to serve personalized or contextual ads.</p>
+        <p>AdMob App ID: <code>ca-app-pub-4263612271170636~7236104838</code><br />
+        Google Privacy Policy: <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">policies.google.com/privacy</a></p>
+
+        <h3>4b. Google Analytics 4 <span class="pill pill-web">Website</span></h3>
+        <p>Used to collect anonymized website analytics (only after your consent). IP addresses are anonymized before storage.<br />
+        Google Privacy Policy: <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">policies.google.com/privacy</a><br />
+        Opt-out: <a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener">tools.google.com/dlpage/gaoptout</a></p>
+
+        <h3>4c. Google Fonts <span class="pill pill-web">Website</span></h3>
+        <p>Our website loads the Inter typeface from Google Fonts servers. When the font loads, your IP address is sent to Google's servers. This is standard browser behavior.</p>
+
+        <h3>4d. Google Play &amp; Apple App Store <span class="pill pill-app">App</span></h3>
+        <p>Handle payment processing and downloads under their own privacy policies. We do not receive your payment card details.</p>
+        <ul>
+          <li>Google Play: <a href="https://policies.google.com/privacy" target="_blank" rel="noopener">policies.google.com/privacy</a></li>
+          <li>Apple App Store: <a href="https://www.apple.com/legal/privacy/" target="_blank" rel="noopener">apple.com/legal/privacy</a></li>
+        </ul>
+
+        <h3>4e. Email / SMTP Provider <span class="pill pill-app">App</span></h3>
+        <p>Invite emails for Shared Budget are sent via an SMTP email provider. The recipient's name and email address are passed solely for delivering the invitation email.</p>
+      </div>
+
+      <!-- 5. COOKIES & STORAGE -->
+      <div class="pp-section" id="s5">
+        <h2><span class="sec-num">5</span> Cookies &amp; Local Storage</h2>
+
+        <h3>5a. Website Cookies <span class="pill pill-web">Website</span></h3>
+        <table class="pp-table">
+          <tr><th>Name</th><th>Type</th><th>Purpose</th><th>Expires</th></tr>
+          <tr><td><code>mt_cookie_consent</code></td><td>localStorage</td><td>Saves your accept/decline choice for analytics cookies</td><td>Until cleared by you</td></tr>
+          <tr><td>Google Analytics cookies (<code>_ga</code>, <code>_gid</code>, etc.)</td><td>Cookies</td><td>Website analytics (only if you accepted)</td><td>Up to 2 years</td></tr>
+        </table>
+
+        <h3>5b. App Local Storage <span class="pill pill-app">App</span></h3>
+        <p>
+          The app stores all your financial data locally using <code>localStorage</code> and the
+          <strong>Capacitor Filesystem</strong> API (for CSV files). This data is private to the app
+          on your device and is not accessible by other apps. It is removed when you uninstall the app
+          or clear the app's data. The JWT authentication token (if you have an account) is also stored
+          locally and expires after <strong>7 days</strong>.
+        </p>
+      </div>
+
+      <!-- 6. SECURITY -->
+      <div class="pp-section" id="s6">
+        <h2><span class="sec-num">6</span> Data Security <span class="pill pill-both">Both</span></h2>
+        <ul>
+          <li><strong>bcrypt password hashing</strong> — passwords are never stored in plain text; we cannot read them</li>
+          <li><strong>JWT authentication</strong> — short-lived signed tokens (7-day expiry) for API access</li>
+          <li><strong>HTTPS everywhere</strong> — all data in transit is encrypted using TLS</li>
+          <li><strong>Rate limiting</strong> — authentication endpoints are rate-limited to prevent brute-force attacks</li>
+          <li><strong>CORS restrictions</strong> — the API only accepts requests from known app origins</li>
+          <li><strong>Minimal data collection</strong> — we only collect data that is strictly necessary</li>
+        </ul>
+        <p>No method of transmission or storage is 100% secure. If you suspect your account has been compromised, please contact us immediately.</p>
+      </div>
+
+      <!-- 7. YOUR RIGHTS -->
+      <div class="pp-section" id="s7">
+        <h2><span class="sec-num">7</span> Your Rights (GDPR) <span class="pill pill-both">Both</span></h2>
+        <p>If you are located in the EEA, UK, or another jurisdiction with data protection laws, you have the following rights:</p>
+        <table class="pp-table">
+          <tr><th>Right</th><th>What it means</th></tr>
+          <tr><td><strong>Right of access</strong></td><td>Request a copy of the personal data we hold about you</td></tr>
+          <tr><td><strong>Right to rectification</strong></td><td>Ask us to correct inaccurate or incomplete data</td></tr>
+          <tr><td><strong>Right to erasure</strong></td><td>Request deletion of your personal data ("right to be forgotten")</td></tr>
+          <tr><td><strong>Right to data portability</strong></td><td>Export your expense data at any time via the CSV export feature</td></tr>
+          <tr><td><strong>Right to object</strong></td><td>Object to processing based on legitimate interest (e.g. analytics)</td></tr>
+          <tr><td><strong>Right to withdraw consent</strong></td><td>Withdraw cookie/analytics consent at any time</td></tr>
+          <tr><td><strong>Right to restrict processing</strong></td><td>Request that we limit processing of your data in certain circumstances</td></tr>
+        </table>
+        <p>
+          To exercise any of these rights, contact us at
+          <a href="mailto:viktordjordjevic350@gmail.com">viktordjordjevic350@gmail.com</a>.
+          We will respond within 30 days. You also have the right to lodge a complaint with your local data protection authority.
+        </p>
+
+        <h3>Deleting Your Account <span class="pill pill-app">App</span></h3>
+        <p>
+          You can permanently delete your account and all associated server-side data
+          (name, email, shared wallet data) directly from the app's Settings screen.
+          Local-only data stored on your device can be removed by clearing the app's data or uninstalling the app.
+        </p>
+      </div>
+
+      <!-- 8. CHILDREN -->
+      <div class="pp-section" id="s8">
+        <h2><span class="sec-num">8</span> Children's Privacy <span class="pill pill-both">Both</span></h2>
+        <div class="info-card">
+          <strong>Money Tracker and this website are not intended for children under the age of 13.</strong>
+          We do not knowingly collect personal data from children under 13. If you are a parent
+          or guardian and believe your child has provided us with personal information, please
+          contact us at <a href="mailto:viktordjordjevic350@gmail.com">viktordjordjevic350@gmail.com</a>
+          and we will promptly delete that information.
+        </div>
+        <p>Users between the ages of 13 and 16 should obtain parental permission before creating an account.</p>
+      </div>
+
+      <!-- 9. RETENTION -->
+      <div class="pp-section" id="s9">
+        <h2><span class="sec-num">9</span> Data Retention <span class="pill pill-both">Both</span></h2>
+
+        <h3>App — Local Data <span class="pill pill-app">App</span></h3>
+        <p>Local data (expenses, settings, preferences) is retained on your device indefinitely until you clear the app's data or uninstall it. We do not have access to this data.</p>
+
+        <h3>App — Account &amp; Shared Budget Data <span class="pill pill-app">App</span></h3>
+        <p>Your account data (name, email, password hash, shared wallet entries) is retained on our server for as long as your account is active. You can delete your account at any time from Settings, which permanently removes all your data from our servers.</p>
+
+        <h3>Server Logs <span class="pill pill-app">App</span></h3>
+        <p>Server access logs (including IP addresses) are retained for up to <strong>90 days</strong> for security and debugging purposes, then automatically deleted.</p>
+
+        <h3>Website Analytics <span class="pill pill-web">Website</span></h3>
+        <p>Google Analytics data is retained according to Google's standard retention period (up to 26 months by default). Cookie consent preferences stored in your browser remain until you clear them.</p>
+      </div>
+
+      <!-- 10. CHANGES -->
+      <div class="pp-section" id="s10">
+        <h2><span class="sec-num">10</span> Changes to This Policy <span class="pill pill-both">Both</span></h2>
+        <p>We may update this Privacy Policy from time to time to reflect changes in our practices, technology, or legal requirements. When we do:</p>
+        <ul>
+          <li>We will update the <strong>"Last updated"</strong> date at the top of this page</li>
+          <li>For significant changes, we will notify app users via an in-app notification or a prompt on the next app launch</li>
+          <li>For website users, a notice may be displayed on the website for a reasonable period</li>
+        </ul>
+        <p>Your continued use of Money Tracker or this website after changes become effective constitutes your acceptance of the updated policy.</p>
+      </div>
+
+      <!-- 11. CONTACT -->
+      <div class="pp-section" id="s11">
+        <h2><span class="sec-num">11</span> Contact Us <span class="pill pill-both">Both</span></h2>
+        <p>If you have any questions about this Privacy Policy, want to exercise your data rights, or need to report a privacy concern, please contact us:</p>
+        <div class="contact-block">
+          <p><strong>Email:</strong> <a href="mailto:viktordjordjevic350@gmail.com">viktordjordjevic350@gmail.com</a></p>
+          <p><strong>App:</strong> Money Tracker (com.moneytrack.app)</p>
+          <p><strong>Operated by:</strong> Viktor Djordjevic</p>
+          <br />
+          <p>We aim to respond to all privacy-related enquiries within <strong>30 days</strong>.</p>
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="dashboard-footer">
+    <p class="footer-copyright">&copy; 2026 Money Tracker &middot; Viktor Djordjevic</p>
+  </footer>
+
+  <script src="/public/account-avatar.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+  </script>
+  <script src="/public/pull-to-refresh.js" defer></script>
+</body>
+</html>

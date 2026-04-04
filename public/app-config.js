@@ -9,7 +9,7 @@
  *   Promijeni BACKEND_PROD_URL na URL tvog hostovanog servera
  */
 
-const BACKEND_LOCAL_IP = '10.0.2.2'; // Specijalni IP za Android emulator → pristupa MacBook localhost-u
+const BACKEND_LOCAL_IP = '172.20.10.2'; // Mac IP na lokalnoj mreži
 const BACKEND_LOCAL_PORT = '8080';
 const BACKEND_PROD_URL = ''; // npr. 'https://money-track-api.railway.app'
 
@@ -19,7 +19,7 @@ const BACKEND_PROD_URL = ''; // npr. 'https://money-track-api.railway.app'
 // LOCAL_AUTH_MODE = false → Koristi pravi backend (App Store / Play Store build)
 //                           Automatski se isključuje kada postaviš BACKEND_PROD_URL
 // ─────────────────────────────────────────────────────────────────────────────
-const LOCAL_AUTH_MODE = !BACKEND_PROD_URL; // promeni na false kada imaš pravi server
+const LOCAL_AUTH_MODE = false; // server mode — koristi backend na BACKEND_LOCAL_IP
 
 (function () {
   const isCapacitor = typeof window !== 'undefined' && window.Capacitor !== undefined;

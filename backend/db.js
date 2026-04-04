@@ -19,6 +19,19 @@ db.serialize(() => {
   db.run('ALTER TABLE users ADD COLUMN monthly_income REAL', () => {});
   db.run('ALTER TABLE users ADD COLUMN current_balance REAL', () => {});
   db.run('ALTER TABLE users ADD COLUMN onboarding_completed INTEGER DEFAULT 0', () => {});
+  db.run('ALTER TABLE users ADD COLUMN user_code TEXT', () => {});
+  db.run("ALTER TABLE users ADD COLUMN currency TEXT DEFAULT 'EUR'", () => {});
+
+  db.run(`
+    CREATE TABLE IF NOT EXISTS friend_requests (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      from_user_id INTEGER NOT NULL,
+      to_user_id INTEGER NOT NULL,
+      status TEXT NOT NULL DEFAULT 'pending',
+      created_at INTEGER NOT NULL,
+      UNIQUE(from_user_id, to_user_id)
+    )
+  `);
 
   db.run(`
     CREATE TABLE IF NOT EXISTS invites (
