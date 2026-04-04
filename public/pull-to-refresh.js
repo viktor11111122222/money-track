@@ -82,7 +82,7 @@
   const overlay = document.createElement('div');
   overlay.id = '_ptr_overlay';
   overlay.innerHTML = `
-    <img class="ptr-logo" src="/public/app-icon.svg" alt="">
+    <img class="ptr-logo" src="/public/logo_2.svg" alt="">
     <div class="ptr-dots">
       <div class="ptr-dot"></div><div class="ptr-dot"></div><div class="ptr-dot"></div>
     </div>

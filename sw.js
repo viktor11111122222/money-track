@@ -15,7 +15,7 @@ const STATIC_ASSETS = [
   '/public/auth-guard.js',
   '/public/account-avatar.js',
   '/public/avatar-default.svg',
-  '/public/wallet-logo.jpg',
+  '/public/logo_2.svg',
   '/manifest.json'
 ];
 
