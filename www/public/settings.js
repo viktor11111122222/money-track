@@ -301,25 +301,24 @@
       .then(function(res) { return res.ok ? res.json() : null; })
       .then(function(user) {
         if (!user) return;
-        var state = readStorage();
-        if (user.name) {
-          state.profile.fullName = user.name;
-          var inp = qs('#fullNameInput');
-          if (inp) inp.value = user.name;
-        }
-        if (user.email) {
-          state.profile.email = user.email;
-          var inp2 = qs('#emailInput');
-          if (inp2) inp2.value = user.email;
-        }
+        // Only fill in form fields that are currently empty — never overwrite
+        // data the user has already explicitly saved (localStorage is source of truth)
+        var nameInp = qs('#fullNameInput');
+        var emailInp = qs('#emailInput');
+        var userInp = qs('#usernameInput');
+        if (nameInp && !nameInp.value && user.name) nameInp.value = user.name;
+        if (emailInp && !emailInp.value && user.email) emailInp.value = user.email;
+        if (userInp && !userInp.value && user.username) userInp.value = user.username;
+        // Avatar is server-managed — always update
         if (user.avatar) {
-          state.profile.avatar = user.avatar;
           var img = qs('#profileAvatarImg');
           if (img) img.src = user.avatar;
           var chipImg = document.querySelector('.account-chip img');
           if (chipImg) chipImg.src = user.avatar;
+          var state = readStorage();
+          state.profile.avatar = user.avatar;
+          writeStorage(state);
         }
-        writeStorage(state);
       })
       .catch(function() { /* backend may be down */ });
   }

@@ -209,7 +209,7 @@ app.post('/api/auth/login', authLimiter, async (req, res) => {
 });
 
 app.get('/api/me', authMiddleware, async (req, res) => {
-  const user = await get('SELECT id, name, email, avatar, monthly_income, current_balance, onboarding_completed, user_code, currency FROM users WHERE id = ?', [req.userId]);
+  const user = await get('SELECT id, name, email, username, avatar, monthly_income, current_balance, onboarding_completed, user_code, currency FROM users WHERE id = ?', [req.userId]);
   if (!user) return res.status(404).json({ message: 'User not found.' });
   // Auto-assign code to existing users who don't have one yet
   if (!user.user_code) {
@@ -284,8 +284,8 @@ app.patch('/api/me/avatar', authMiddleware, async (req, res) => {
 
 // ── Update profile (name, email, username) ──
 app.patch('/api/me/profile', authMiddleware, async (req, res) => {
-  const { name, email } = req.body || {};
-  if (!name && !email) return res.status(400).json({ message: 'Nothing to update.' });
+  const { name, email, username } = req.body || {};
+  if (!name && !email && !username) return res.status(400).json({ message: 'Nothing to update.' });
   const fields = [];
   const params = [];
   if (name) { fields.push('name = ?'); params.push(name.trim()); }
@@ -294,6 +294,7 @@ app.patch('/api/me/profile', authMiddleware, async (req, res) => {
     if (existing) return res.status(409).json({ message: 'Email already taken.' });
     fields.push('email = ?'); params.push(email.trim().toLowerCase());
   }
+  if (username !== undefined) { fields.push('username = ?'); params.push(username.trim()); }
   params.push(req.userId);
   await run(`UPDATE users SET ${fields.join(', ')} WHERE id = ?`, params);
   res.json({ ok: true });

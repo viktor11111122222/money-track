@@ -380,6 +380,16 @@ function setLoggedIn(isLoggedIn) {
   if (header) header.classList.toggle('is-hidden', !isLoggedIn);
 }
 
+function setLoading(on) {
+  const overlay = document.getElementById('sharedLoadingOverlay');
+  const hero = document.querySelector('.shared-hero');
+  const sections = document.querySelectorAll('.shared-section, #friendCodeSection');
+  if (!overlay) return;
+  overlay.style.display = on ? 'flex' : 'none';
+  if (hero) hero.style.visibility = on ? 'hidden' : '';
+  sections.forEach(s => { s.style.visibility = on ? 'hidden' : ''; });
+}
+
 function setModalMode(type, wallet = null) {
   currentType = type;
   editingWalletId = wallet ? wallet.id : null;
@@ -2185,51 +2195,119 @@ async function loadAll() {
   if (window.__LOCAL_AUTH__) {
     sharedData = { invites: [], wallets: [], splits: _getLocalSplits(), friends: [], walletTransactions: {} };
     renderAll();
+    setLoading(false);
     processRecurringSplits();
     return;
   }
   try {
     const [invites, wallets, splits, friends, friendRequests, sentRequests, meData] = await Promise.all([
       apiFetch('/invites').catch(() => []),
-      apiFetch('/wallets'),
-      apiFetch('/splits'),
-      apiFetch('/friends'),
+      apiFetch('/wallets').catch(() => null),
+      apiFetch('/splits').catch(() => null),
+      apiFetch('/friends').catch(() => null),
       apiFetch('/friend-requests').catch(() => []),
       apiFetch('/friend-requests/sent').catch(() => []),
       apiFetch('/me').catch(() => null)
     ]);
-    // Display the user's own Friend ID
-    if (meData && meData.user_code) {
-      const display = document.getElementById('myUserCodeDisplay');
-      if (display) display.textContent = meData.user_code;
+
+    // If all main endpoints returned null (server unreachable), use cache
+    if (wallets === null && splits === null && friends === null) {
+      const cached = _loadSharedCache();
+      if (cached) {
+        sharedData = cached;
+        renderAll();
+        setLoading(false);
+        _showFriendId(currentUser);
+        return;
+      }
     }
+
+    // Display the user's own Friend ID (from fresh fetch or currentUser fallback)
+    _showFriendId(meData || currentUser);
+
+    const resolvedWallets = wallets || [];
     const walletTransactions = {};
-    const results = await Promise.allSettled(wallets.map(wallet =>
+    const results = await Promise.allSettled(resolvedWallets.map(wallet =>
       apiFetch(`/wallets/${wallet.id}/transactions`).then(list => {
         walletTransactions[wallet.id] = list;
       })
     ));
     results.forEach((result, index) => {
       if (result.status === 'rejected') {
-        const walletId = wallets[index]?.id;
+        const walletId = resolvedWallets[index]?.id;
         if (walletId) walletTransactions[walletId] = [];
       }
     });
-    sharedData = { invites, wallets, splits, friends, walletTransactions, friendRequests: friendRequests || [], sentRequests: sentRequests || [] };
+    sharedData = {
+      invites: invites || [],
+      wallets: resolvedWallets,
+      splits: splits || [],
+      friends: friends || [],
+      walletTransactions,
+      friendRequests: friendRequests || [],
+      sentRequests: sentRequests || []
+    };
+    _saveSharedCache(sharedData);
     renderAll();
+    setLoading(false);
     processRecurringSplits();
   } catch (error) {
     if (error.status === 401) {
       // Only log out on explicit auth rejection from server
       setToken(null);
       setLoggedIn(false);
+      setLoading(false);
     } else {
-      // Network error or other — keep user logged in, show empty state
-      sharedData = sharedData || { invites: [], wallets: [], splits: [], friends: [], walletTransactions: {} };
+      // Network error — try to show cached data
+      const cached = _loadSharedCache();
+      sharedData = cached || sharedData || { invites: [], wallets: [], splits: [], friends: [], walletTransactions: {} };
       renderAll();
+      setLoading(false);
+      _showFriendId(currentUser);
       setLoggedIn(true);
     }
   }
+}
+
+function _showFriendId(user) {
+  const code = user && user.user_code;
+  if (code) {
+    localStorage.setItem('mt_my_user_code', code);
+    const display = document.getElementById('myUserCodeDisplay');
+    if (display) display.textContent = code;
+  } else {
+    // Try cache
+    const cached = localStorage.getItem('mt_my_user_code');
+    if (cached) {
+      const display = document.getElementById('myUserCodeDisplay');
+      if (display) display.textContent = cached;
+    }
+  }
+}
+
+function _saveSharedCache(data) {
+  try {
+    localStorage.setItem('mt_shared_cache', JSON.stringify({
+      ts: Date.now(),
+      invites: data.invites || [],
+      wallets: data.wallets || [],
+      splits: data.splits || [],
+      friends: data.friends || [],
+      friendRequests: data.friendRequests || [],
+      sentRequests: data.sentRequests || []
+    }));
+  } catch (e) { /* storage full */ }
+}
+
+function _loadSharedCache() {
+  try {
+    const raw = localStorage.getItem('mt_shared_cache');
+    if (!raw) return null;
+    const c = JSON.parse(raw);
+    // Cache valid for 24 hours
+    if (Date.now() - c.ts > 86400000) return null;
+    return { ...c, walletTransactions: {} };
+  } catch (e) { return null; }
 }
 
 // ── Register Wizard ───────────────────────────────────────────────────────────
@@ -2503,8 +2581,12 @@ async function init() {
     return;
   }
 
-  // Token postoji — obnovi session flag da navigacija unutar app-a ne briše token
+  // Token postoji — odmah sakrij login formu, ne čekaj server
   sessionStorage.setItem('mt_session_active', '1');
+  setLoggedIn(true);
+  setLoading(true);
+  // Show cached Friend ID immediately while server loads
+  _showFriendId(null);
 
   // ── Local auth mode (no backend) ───────────────────────────────────────
   if (window.__LOCAL_AUTH__) {
@@ -2515,14 +2597,12 @@ async function init() {
       return;
     }
     currentUser = localUser;
-    setLoggedIn(true);
     await loadAll(); // renders empty states for invites/wallets/splits/friends
     return;
   }
   // ── Real backend mode ──────────────────────────────────────────────────
   try {
     currentUser = await apiFetch('/me');
-    setLoggedIn(true);
     await loadAll();
   } catch (error) {
     if (error.status === 401) {
@@ -2532,7 +2612,6 @@ async function init() {
       return;
     }
     // Network error — keep user logged in silently
-    setLoggedIn(true);
     await loadAll();
   }
 }

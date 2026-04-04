@@ -9,7 +9,7 @@
  *   Promijeni BACKEND_PROD_URL na URL tvog hostovanog servera
  */
 
-const BACKEND_LOCAL_IP = '172.20.10.2'; // Mac IP na lokalnoj mreži
+const BACKEND_LOCAL_IP = '172.20.10.3'; // Mac IP na lokalnoj mreži
 const BACKEND_LOCAL_PORT = '8080';
 const BACKEND_PROD_URL = ''; // npr. 'https://money-track-api.railway.app'
 

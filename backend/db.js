@@ -21,6 +21,7 @@ db.serialize(() => {
   db.run('ALTER TABLE users ADD COLUMN onboarding_completed INTEGER DEFAULT 0', () => {});
   db.run('ALTER TABLE users ADD COLUMN user_code TEXT', () => {});
   db.run("ALTER TABLE users ADD COLUMN currency TEXT DEFAULT 'EUR'", () => {});
+  db.run('ALTER TABLE users ADD COLUMN username TEXT', () => {});
 
   db.run(`
     CREATE TABLE IF NOT EXISTS friend_requests (

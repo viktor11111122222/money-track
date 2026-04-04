@@ -279,6 +279,12 @@
         </section>
 
         <div class="shared-container" id="sharedApp">
+            <!-- Loading overlay — shown while data is fetching -->
+            <div id="sharedLoadingOverlay" style="display:none;flex-direction:column;align-items:center;justify-content:center;padding:60px 20px;gap:14px;">
+              <div style="width:36px;height:36px;border:3px solid rgba(99,102,241,.2);border-top-color:#6366f1;border-radius:50%;animation:spin .7s linear infinite;"></div>
+              <p style="color:#8892a4;font-size:0.875rem;margin:0;">Loading...</p>
+            </div>
+            <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
             <div class="shared-hero">
                 <div>
                     <span class="shared-kicker" data-i18n="shared.kicker">Shared / Family Budgets</span>
@@ -551,5 +557,111 @@
       }
     </script>
     <script src="/public/pull-to-refresh.js" defer></script>
+
+    <!-- Global info tooltip popup -->
+    <div id="infoTooltipPopup"></div>
+    <script>
+    (function () {
+      var tip = document.getElementById('infoTooltipPopup');
+      var hideTimer;
+
+      function hide() {
+        tip.classList.remove('visible');
+      }
+
+      function show(text, anchorEl) {
+        clearTimeout(hideTimer);
+        tip.textContent = text;
+        tip.classList.add('visible');
+
+        // Remove any arrow classes first
+        tip.style.removeProperty('--arrow-left');
+        tip.style.removeProperty('--arrow-top');
+        tip.style.removeProperty('--arrow-bottom');
+
+        var rect = anchorEl.getBoundingClientRect();
+        var TIP_W = Math.min(280, window.innerWidth - 24);
+        var GAP = 10;
+        var ARROW = 8;
+
+        // Measure after content set
+        tip.style.left = '-9999px';
+        tip.style.top = '-9999px';
+        var tipH = tip.offsetHeight;
+        var tipW = tip.offsetWidth || TIP_W;
+
+        // Preferred: above the button
+        var preferAbove = rect.top - tipH - GAP - ARROW > 0;
+        var top, arrowStyle;
+
+        if (preferAbove) {
+          top = rect.top - tipH - GAP - ARROW;
+          arrowStyle = 'bottom:-5px;top:auto;';
+        } else {
+          top = rect.bottom + GAP + ARROW;
+          arrowStyle = 'top:-5px;bottom:auto;';
+        }
+
+        // Horizontal: centre on anchor, clamp to viewport
+        var anchorCX = rect.left + rect.width / 2;
+        var left = anchorCX - tipW / 2;
+        var MARGIN = 12;
+        left = Math.max(MARGIN, Math.min(left, window.innerWidth - tipW - MARGIN));
+
+        tip.style.left = left + 'px';
+        tip.style.top = top + 'px';
+        tip.style.width = tipW + 'px';
+
+        // Position the arrow pseudo-element
+        var arrowLeft = anchorCX - left - 5;
+        arrowLeft = Math.max(8, Math.min(arrowLeft, tipW - 18));
+        tip.style.setProperty('--arrow-left', arrowLeft + 'px');
+        tip.setAttribute('style',
+          'left:' + left + 'px;top:' + top + 'px;width:' + tipW + 'px;' +
+          '--arrow-left:' + arrowLeft + 'px;'
+        );
+        // Arrow via ::after positioning trick using box-shadow instead
+        tip.style.setProperty('--arrow-left', arrowLeft + 'px');
+
+        // Re-apply arrow using a real child element approach
+        var arrow = tip.querySelector('.tip-arrow');
+        if (!arrow) {
+          arrow = document.createElement('span');
+          arrow.className = 'tip-arrow';
+          arrow.style.cssText = 'position:absolute;width:10px;height:10px;background:#0f1724;transform:rotate(45deg);border-radius:2px;';
+          tip.appendChild(arrow);
+        }
+        arrow.style.left = arrowLeft + 'px';
+        if (preferAbove) {
+          arrow.style.bottom = '-5px';
+          arrow.style.top = 'auto';
+        } else {
+          arrow.style.top = '-5px';
+          arrow.style.bottom = 'auto';
+        }
+      }
+
+      document.addEventListener('click', function (e) {
+        var btn = e.target.closest('.wallet-info, .label-info');
+        if (btn) {
+          e.stopPropagation();
+          var text = btn.dataset.tooltip;
+          if (!text) return;
+          if (tip.classList.contains('visible') && tip._anchor === btn) {
+            hide();
+            tip._anchor = null;
+          } else {
+            show(text, btn);
+            tip._anchor = btn;
+          }
+          return;
+        }
+        hide();
+        tip._anchor = null;
+      }, true);
+
+      document.addEventListener('scroll', hide, true);
+    })();
+    </script>
 </body>
 </html>

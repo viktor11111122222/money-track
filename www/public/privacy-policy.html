@@ -18,7 +18,7 @@
   <style>
     .pp-content {
       max-width: 760px;
-      padding: 32px 28px 60px;
+      padding: 0 28px 60px;
     }
 
     .pp-back {
@@ -28,7 +28,8 @@
       color: #8892a4;
       text-decoration: none;
       font-size: 0.875rem;
-      margin-bottom: 28px;
+      margin-bottom: 32px;
+      margin-top: 4px;
       transition: color .2s;
     }
     .pp-back:hover { color: #6366f1; }
@@ -63,9 +64,10 @@
       text-transform: uppercase;
       letter-spacing: .06em;
       border-radius: 4px;
-      padding: 1px 7px;
-      margin-left: 6px;
+      padding: 2px 8px;
+      margin-left: 4px;
       vertical-align: middle;
+      white-space: nowrap;
     }
     .pill-app  { background: rgba(99,102,241,.15); color: #818cf8; border: 1px solid rgba(99,102,241,.3); }
     .pill-web  { background: rgba(6,182,212,.15);  color: #22d3ee; border: 1px solid rgba(6,182,212,.3);  }
@@ -136,28 +138,64 @@
       background: rgba(99,102,241,.05);
     }
 
-    /* Table */
+    /* Table — desktop */
+    .pp-table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin: 12px 0 16px;
+    }
     .pp-table {
       width: 100%;
       border-collapse: collapse;
       font-size: 0.85rem;
-      margin: 12px 0 16px;
+      margin: 0;
     }
     .pp-table th {
       text-align: left;
-      padding: 8px 12px;
+      padding: 8px 14px;
       background: rgba(99,102,241,.08);
       color: var(--text, #0f1724);
       font-weight: 600;
       border-bottom: 1px solid rgba(99,102,241,.15);
+      white-space: nowrap;
     }
     .pp-table td {
-      padding: 8px 12px;
+      padding: 8px 14px;
       color: #5a6478;
       border-bottom: 1px solid rgba(0,0,0,.04);
       vertical-align: top;
     }
     .pp-table tr:last-child td { border-bottom: none; }
+
+    /* ── Mobile: stack cells vertically, no column squishing ── */
+    @media (max-width: 640px) {
+      .pp-table-wrap { overflow-x: visible; }
+      .pp-table,
+      .pp-table tbody,
+      .pp-table tr,
+      .pp-table td { display: block; width: 100%; }
+      .pp-table thead { display: none; }
+      .pp-table tr:first-child { display: none !important; }
+      .pp-table tr {
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(99,102,241,.12);
+      }
+      .pp-table tr:last-child { border-bottom: none; }
+      .pp-table td {
+        padding: 2px 0;
+        border: none;
+        white-space: normal !important;
+      }
+      /* First cell = field label */
+      .pp-table td:first-child {
+        font-weight: 700;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #6366f1;
+        margin-bottom: 3px;
+      }
+    }
 
     /* contact block */
     .contact-block {
@@ -185,6 +223,38 @@
     [data-theme="dark"] .info-card strong { color: #e2e8f0; }
     [data-theme="dark"] .contact-block { color: #8892a4; }
 
+    /* Prevent horizontal overflow */
+    html, body, main {
+      overflow-x: hidden !important;
+      max-width: 100vw !important;
+    }
+    main {
+      display: block !important;
+      width: 100% !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+    .pp-content {
+      width: 100%;
+      max-width: 760px;
+      box-sizing: border-box;
+      overflow-wrap: break-word;
+      word-break: break-word;
+    }
+    .pp-content * {
+      box-sizing: border-box;
+    }
+    /* Only constrain media, not inline elements like pills */
+    .pp-content img, .pp-content video, .pp-content iframe {
+      max-width: 100%;
+    }
+    /* Pills must never wrap */
+    .pill {
+      max-width: none !important;
+      white-space: nowrap !important;
+      display: inline-block !important;
+    }
+
     @media (max-width: 768px) {
       .pp-content { padding: 20px 16px 80px; }
     }
@@ -200,7 +270,7 @@
         <h2>Expense Tracker</h2>
       </div>
       <hr />
-      <div class="side-card" onclick="window.location.href='/expenses/index.html'">
+      <div class="side-card" onclick="window.location.href='/spendings/index.html'">
         <i class="fa-solid fa-chart-line"></i>
         <h3>Spendings</h3>
       </div>
@@ -227,12 +297,8 @@
     </nav>
   </header>
 
-  <main>
-    <div class="main-container pp-content">
-
-      <a href="/shared/settings.html" class="pp-back">
-        <i class="fa-solid fa-arrow-left"></i> Back to Settings
-      </a>
+  <main style="padding-top: 50px !important;">
+    <div class="pp-content">
 
       <div class="pp-title-block">
         <h1>Privacy Policy</h1>
@@ -241,6 +307,10 @@
           <span>App &amp; Website</span>
         </p>
       </div>
+
+      <a href="/shared/settings.html" class="pp-back">
+        <i class="fa-solid fa-arrow-left"></i> Back to Settings
+      </a>
 
       <div class="info-card">
         This Privacy Policy explains how <strong>Money Tracker</strong> (the "App") and
@@ -274,7 +344,7 @@
       <div class="pp-section" id="s1">
         <h2><span class="sec-num">1</span> Who We Are <span class="pill pill-both">Both</span></h2>
         <p><strong>Money Tracker</strong> is a personal finance application available on Android, iOS, and as a Progressive Web App (PWA). The marketing website is hosted at <strong>moneytracker.app</strong>.</p>
-        <table class="pp-table">
+        <div class="pp-table-wrap"><table class="pp-table">
           <tr><th>Field</th><th>Detail</th></tr>
           <tr><td><strong>Product name</strong></td><td>Money Tracker</td></tr>
           <tr><td><strong>App ID</strong></td><td>com.moneytrack.app</td></tr>
@@ -282,7 +352,7 @@
           <tr><td><strong>Contact email</strong></td><td><a href="mailto:viktordjordjevic350@gmail.com">viktordjordjevic350@gmail.com</a></td></tr>
           <tr><td><strong>Price</strong></td><td>€4.99 one-time purchase</td></tr>
           <tr><td><strong>Platforms</strong></td><td>Android (Google Play), iOS (App Store), Web (PWA)</td></tr>
-        </table>
+        </table></div>
       </div>
 
       <!-- 2. WHAT DATA WE COLLECT -->
@@ -342,7 +412,7 @@
 
         <h3>2d. Website <span class="pill pill-web">Website</span></h3>
         <p>Our marketing website does not require registration or login. We may collect:</p>
-        <table class="pp-table">
+        <div class="pp-table-wrap"><table class="pp-table">
           <tr><th>Data</th><th>How</th><th>Purpose</th></tr>
           <tr><td><strong>IP address</strong></td><td>Google Analytics (anonymized)</td><td>Analytics, geographic breakdown</td></tr>
           <tr><td><strong>Browser &amp; device info</strong></td><td>Google Analytics</td><td>Understand which devices visitors use</td></tr>
@@ -350,7 +420,7 @@
           <tr><td><strong>Scroll depth, clicks</strong></td><td>Google Analytics events</td><td>Understand engagement with content</td></tr>
           <tr><td><strong>Email &amp; message</strong></td><td>Contact form (voluntary)</td><td>Respond to your support request</td></tr>
           <tr><td><strong>Cookie consent preference</strong></td><td>localStorage (your browser)</td><td>Remember your analytics choice</td></tr>
-        </table>
+        </table></div>
         <p><strong>Google Analytics is loaded only if you click "Accept" on the cookie banner.</strong> IP addresses are anonymized. If you decline, no analytics data is collected or sent to Google.</p>
       </div>
 
@@ -358,7 +428,7 @@
       <div class="pp-section" id="s3">
         <h2><span class="sec-num">3</span> How We Use Your Data <span class="pill pill-both">Both</span></h2>
         <p>We use the data we collect for the following purposes:</p>
-        <table class="pp-table">
+        <div class="pp-table-wrap"><table class="pp-table">
           <tr><th>Purpose</th><th>Legal Basis (GDPR)</th><th>Applies to</th></tr>
           <tr><td>Providing core app functionality</td><td>Contract (Terms of Service)</td><td><span class="pill pill-app">App</span></td></tr>
           <tr><td>Account creation and authentication</td><td>Contract</td><td><span class="pill pill-app">App</span></td></tr>
@@ -368,7 +438,7 @@
           <tr><td>Responding to support requests</td><td>Legitimate interest</td><td><span class="pill pill-both">Both</span></td></tr>
           <tr><td>Security, fraud prevention, rate limiting</td><td>Legitimate interest</td><td><span class="pill pill-both">Both</span></td></tr>
           <tr><td>Compliance with legal obligations</td><td>Legal obligation</td><td><span class="pill pill-both">Both</span></td></tr>
-        </table>
+        </table></div>
         <p>We do <strong>not</strong> sell your personal data to any third party. We do <strong>not</strong> use your financial data (expenses, amounts, categories) for any purpose other than delivering the service to you.</p>
       </div>
 
@@ -406,11 +476,11 @@
         <h2><span class="sec-num">5</span> Cookies &amp; Local Storage</h2>
 
         <h3>5a. Website Cookies <span class="pill pill-web">Website</span></h3>
-        <table class="pp-table">
+        <div class="pp-table-wrap"><table class="pp-table">
           <tr><th>Name</th><th>Type</th><th>Purpose</th><th>Expires</th></tr>
           <tr><td><code>mt_cookie_consent</code></td><td>localStorage</td><td>Saves your accept/decline choice for analytics cookies</td><td>Until cleared by you</td></tr>
           <tr><td>Google Analytics cookies (<code>_ga</code>, <code>_gid</code>, etc.)</td><td>Cookies</td><td>Website analytics (only if you accepted)</td><td>Up to 2 years</td></tr>
-        </table>
+        </table></div>
 
         <h3>5b. App Local Storage <span class="pill pill-app">App</span></h3>
         <p>
@@ -440,7 +510,7 @@
       <div class="pp-section" id="s7">
         <h2><span class="sec-num">7</span> Your Rights (GDPR) <span class="pill pill-both">Both</span></h2>
         <p>If you are located in the EEA, UK, or another jurisdiction with data protection laws, you have the following rights:</p>
-        <table class="pp-table">
+        <div class="pp-table-wrap"><table class="pp-table">
           <tr><th>Right</th><th>What it means</th></tr>
           <tr><td><strong>Right of access</strong></td><td>Request a copy of the personal data we hold about you</td></tr>
           <tr><td><strong>Right to rectification</strong></td><td>Ask us to correct inaccurate or incomplete data</td></tr>
@@ -449,7 +519,7 @@
           <tr><td><strong>Right to object</strong></td><td>Object to processing based on legitimate interest (e.g. analytics)</td></tr>
           <tr><td><strong>Right to withdraw consent</strong></td><td>Withdraw cookie/analytics consent at any time</td></tr>
           <tr><td><strong>Right to restrict processing</strong></td><td>Request that we limit processing of your data in certain circumstances</td></tr>
-        </table>
+        </table></div>
         <p>
           To exercise any of these rights, contact us at
           <a href="mailto:viktordjordjevic350@gmail.com">viktordjordjevic350@gmail.com</a>.
