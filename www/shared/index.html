@@ -285,37 +285,27 @@
               <p style="color:#8892a4;font-size:0.875rem;margin:0;">Loading...</p>
             </div>
             <style>@keyframes spin{to{transform:rotate(360deg)}}</style>
-            <div class="shared-hero">
-                <div>
+            <div class="shared-hero shared-hero--compact">
+                <div class="shared-hero-text">
                     <span class="shared-kicker" data-i18n="shared.kicker">Shared / Family Budgets</span>
                     <h1 data-i18n="shared.heroTitle">Family Budget</h1>
-                    <p data-i18n="shared.heroDesc">Invite people, create shared wallets, and split expenses in one place.</p>
-                </div>
-                <div class="shared-hero-actions">
-                    <button class="primary" id="openInviteHero">Add Friend</button>
-                    <button class="ghost" id="openWalletHero" data-i18n="shared.createWallet">Create Wallet</button>
+                    <p data-i18n="shared.heroDesc">Invite friends, create shared wallets, and split expenses together.</p>
                 </div>
             </div>
 
-            <div class="shared-grid">
-                <article class="shared-card">
-                    <div class="shared-card-icon"><i class="fa-solid fa-user-plus"></i></div>
-                    <h2>Add Friends</h2>
-                    <p>Add friends by their unique Friend ID (MT-XXXXXX).</p>
-                    <button class="primary" id="openInviteCard">Add Friend</button>
-                </article>
-                <article class="shared-card">
-                    <div class="shared-card-icon"><i class="fa-solid fa-wallet"></i></div>
-                    <h2 data-i18n="shared.wallets">Wallets</h2>
-                    <p data-i18n="shared.walletsDesc">Track multiple shared wallets with clear monthly goals.</p>
-                    <button class="primary" id="openWalletCard" data-i18n="shared.newWallet">New Wallet</button>
-                </article>
-                <article class="shared-card">
-                    <div class="shared-card-icon"><i class="fa-solid fa-scale-balanced"></i></div>
-                    <h2 data-i18n="shared.splitExpenses">Split Expenses</h2>
-                    <p data-i18n="shared.splitDesc">Split bills evenly or by custom ratios per person.</p>
-                    <button class="primary" id="openSplitCard" data-i18n="shared.splitBill">Split Bill</button>
-                </article>
+            <div class="shared-quick-actions">
+                <button class="quick-action-chip" id="openInviteCard">
+                    <i class="fa-solid fa-user-plus"></i>
+                    <span>Add Friend</span>
+                </button>
+                <button class="quick-action-chip" id="openWalletCard">
+                    <i class="fa-solid fa-wallet"></i>
+                    <span data-i18n="shared.newWallet">New Wallet</span>
+                </button>
+                <button class="quick-action-chip" id="openSplitCard">
+                    <i class="fa-solid fa-scale-balanced"></i>
+                    <span data-i18n="shared.splitBill">Split Bill</span>
+                </button>
             </div>
 
             <!-- Your Friend ID + Add Friend by ID -->
@@ -324,6 +314,7 @@
                     <div class="section-header">
                         <h2><span class="section-icon"><i class="fa-solid fa-id-card"></i></span> Friend ID</h2>
                     </div>
+                    <button class="info-btn" onclick="showSectionInfo('Friend ID', 'Every account gets a unique code like <strong>MT-XXXXXX</strong>. Share your ID with anyone you want to connect with — they paste it into the Add Friend field to send you a request. Your ID never changes and is safe to share.')"><i class="fa-solid fa-circle-question"></i></button>
                 </div>
                 <div class="shared-section-body">
                     <div class="friend-code-my">
@@ -340,6 +331,7 @@
                     <div class="section-header">
                         <h2><span class="section-icon"><i class="fa-solid fa-bell"></i></span> Friend Requests <span id="receivedInvitesBadge" style="background:#6366f1;color:#fff;font-size:11px;font-weight:700;border-radius:999px;padding:2px 7px;margin-left:6px;vertical-align:middle;"></span></h2>
                     </div>
+                    <button class="info-btn" onclick="showSectionInfo('Friend Requests', 'When someone adds you using your Friend ID, their request appears here. You can <strong>Accept</strong> to become friends or <strong>Reject</strong> to decline. Accepted friends can be added to shared wallets and splits.')"><i class="fa-solid fa-circle-question"></i></button>
                 </div>
                 <div class="shared-section-body">
                     <div class="shared-list" id="receivedInvitesList"></div>
@@ -351,7 +343,10 @@
                     <div class="section-header">
                         <h2><span class="section-icon"><i class="fa-solid fa-user-clock"></i></span> Sent Requests</h2>
                     </div>
-                    <button class="ghost" id="openInviteSection">+ Add Friend</button>
+                    <div style="display:flex;align-items:center;gap:6px;">
+                        <button class="info-btn" onclick="showSectionInfo('Sent Requests', 'Friend requests you\'ve sent appear here while they\'re still pending. Once the other person accepts, they move to your <strong>Friends</strong> list. You can cancel a pending request at any time.')"><i class="fa-solid fa-circle-question"></i></button>
+                        <button class="ghost" id="openInviteSection">+ Add Friend</button>
+                    </div>
                 </div>
                 <div class="shared-section-body">
                     <div class="shared-list" id="invitesList"></div>
@@ -363,6 +358,7 @@
                     <div class="section-header">
                         <h2><span class="section-icon"><i class="fa-solid fa-users"></i></span> Friends</h2>
                     </div>
+                    <button class="info-btn" onclick="showSectionInfo('Friends', 'Your accepted connections. You can set a <strong>spending limit</strong> per friend to track how much you share with each person. Friends can be added as members to shared wallets and included in bill splits.')"><i class="fa-solid fa-circle-question"></i></button>
                 </div>
                 <div class="shared-section-body">
                     <div class="shared-list" id="friendsList"></div>
@@ -374,7 +370,10 @@
                     <div class="section-header">
                         <h2><span class="section-icon"><i class="fa-solid fa-wallet"></i></span> Wallets</h2>
                     </div>
-                    <button class="ghost" id="openWalletSection">+ New Wallet</button>
+                    <div style="display:flex;align-items:center;gap:6px;">
+                        <button class="info-btn" onclick="showSectionInfo('Wallets', 'Shared wallets let you manage a budget with friends or family. Each wallet has its own <strong>balance, monthly cap, and spending goal</strong>. Add members so everyone can log and view transactions. Perfect for household budgets, trips, or group savings.')"><i class="fa-solid fa-circle-question"></i></button>
+                        <button class="ghost" id="openWalletSection">+ New Wallet</button>
+                    </div>
                 </div>
                 <div class="shared-section-body">
                     <div class="shared-list" id="walletsList"></div>
@@ -387,8 +386,9 @@
                         <h2><span class="section-icon"><i class="fa-solid fa-scale-balanced"></i></span> Split Expenses</h2>
                     </div>
                     <div class="section-header-buttons">
-                        <button class="ghost" id="openSplitsAllButton">View All</button>
-                        <button class="ghost" id="openSplitSection">+ New Split</button>
+                        <button class="info-btn" onclick="showSectionInfo('Split Expenses', 'Divide a bill between multiple people — <strong>equally or by custom amounts</strong>. Add anyone by name (no account needed) or pick from your friends. You can also set a split as <strong>recurring</strong> for monthly shared costs like rent or subscriptions.')"><i class="fa-solid fa-circle-question"></i></button>
+                        <button class="ghost" id="openSplitsAllButton">All</button>
+                        <button class="ghost" id="openSplitSection">+ New</button>
                     </div>
                 </div>
                 <div class="shared-section-body">
@@ -557,6 +557,33 @@
       }
     </script>
     <script src="/public/pull-to-refresh.js" defer></script>
+
+    <!-- Section info modal -->
+    <script>
+    function showSectionInfo(title, html) {
+      var isDark = document.documentElement.classList.contains('dark-theme');
+      var bg = isDark ? '#141828' : '#fff';
+      var textColor = isDark ? '#e6eefc' : '#0f1724';
+      var mutedColor = isDark ? '#8892a4' : '#64748b';
+      var overlay = document.createElement('div');
+      overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.55);display:flex;align-items:flex-end;justify-content:center;z-index:10002;backdrop-filter:blur(4px);-webkit-backdrop-filter:blur(4px);padding-bottom:env(safe-area-inset-bottom,0px);';
+      overlay.innerHTML =
+        '<div style="background:' + bg + ';border-radius:22px 22px 0 0;padding:22px 22px 32px;width:100%;max-width:520px;box-shadow:0 -8px 40px rgba(0,0,0,0.25);">' +
+          '<div style="width:36px;height:4px;border-radius:4px;background:rgba(128,128,128,0.3);margin:0 auto 20px;"></div>' +
+          '<div style="display:flex;align-items:center;gap:10px;margin-bottom:12px;">' +
+            '<div style="width:34px;height:34px;border-radius:10px;background:rgba(99,102,241,0.14);display:flex;align-items:center;justify-content:center;flex-shrink:0;">' +
+              '<i class="fa-solid fa-circle-question" style="color:#6366f1;font-size:14px;"></i>' +
+            '</div>' +
+            '<h3 style="margin:0;font-size:16px;font-weight:700;color:' + textColor + ';">' + title + '</h3>' +
+          '</div>' +
+          '<p style="margin:0 0 20px;font-size:14px;color:' + mutedColor + ';line-height:1.65;">' + html + '</p>' +
+          '<button style="width:100%;padding:13px;border:none;border-radius:13px;background:#6366f1;color:#fff;font-size:14px;font-weight:700;cursor:pointer;">Got it</button>' +
+        '</div>';
+      document.body.appendChild(overlay);
+      overlay.querySelector('button').onclick = function() { overlay.remove(); };
+      overlay.addEventListener('click', function(e) { if (e.target === overlay) overlay.remove(); });
+    }
+    </script>
 
     <!-- Global info tooltip popup -->
     <div id="infoTooltipPopup"></div>

@@ -133,12 +133,42 @@
                         </label>
                     </div>
                     <div class="form-row">
-                        <a class="link" href="#" data-i18n="settings.activeSessions">Active Sessions</a>
+                        <a id="activeSessionsLink" href="#" style="display:flex;align-items:center;gap:12px;padding:13px 14px;background:rgba(99,102,241,0.07);border:1px solid rgba(99,102,241,0.18);border-radius:13px;text-decoration:none;color:var(--text,#0f1724);-webkit-tap-highlight-color:transparent;">
+                            <span style="width:38px;height:38px;border-radius:11px;background:rgba(99,102,241,0.14);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <i class="fa-solid fa-display" style="color:#6366f1;font-size:14px;"></i>
+                            </span>
+                            <span style="flex:1;text-align:left;">
+                                <span style="display:block;font-weight:600;font-size:14px;">Active Sessions</span>
+                                <span style="display:block;font-size:11.5px;color:#8892a4;margin-top:1px;">See where you're signed in</span>
+                            </span>
+                            <i class="fa-solid fa-chevron-right" style="color:#6366f1;font-size:11px;flex-shrink:0;"></i>
+                        </a>
+                    </div>
+                    <div class="form-row" style="margin-top:6px;padding-top:14px;border-top:1px solid rgba(99,102,241,0.1);">
+                        <span style="font-size:10.5px;font-weight:700;text-transform:uppercase;letter-spacing:.07em;color:#8892a4;">Legal</span>
                     </div>
                     <div class="form-row">
-                        <a href="/public/privacy-policy.html" style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;background:rgba(99,102,241,0.08);border:1px solid rgba(99,102,241,0.2);border-radius:10px;color:var(--text,#e2e8f0);text-decoration:none;font-weight:600;font-size:14px;">
-                            <span><i class="fa-solid fa-shield-halved" style="margin-right:8px;color:#6366f1;"></i>Privacy Policy</span>
-                            <i class="fa-solid fa-chevron-right" style="color:#6366f1;font-size:12px;"></i>
+                        <a href="/public/privacy-policy.html" style="display:flex;align-items:center;gap:12px;padding:13px 14px;background:rgba(6,182,212,0.07);border:1px solid rgba(6,182,212,0.18);border-radius:13px;text-decoration:none;color:var(--text,#0f1724);-webkit-tap-highlight-color:transparent;">
+                            <span style="width:38px;height:38px;border-radius:11px;background:rgba(6,182,212,0.14);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <i class="fa-solid fa-shield-halved" style="color:#06b6d4;font-size:14px;"></i>
+                            </span>
+                            <span style="flex:1;text-align:left;">
+                                <span style="display:block;font-weight:600;font-size:14px;">Privacy Policy</span>
+                                <span style="display:block;font-size:11.5px;color:#8892a4;margin-top:1px;">How we handle your data</span>
+                            </span>
+                            <i class="fa-solid fa-chevron-right" style="color:#06b6d4;font-size:11px;flex-shrink:0;"></i>
+                        </a>
+                    </div>
+                    <div class="form-row">
+                        <a href="/public/terms-of-service.html" style="display:flex;align-items:center;gap:12px;padding:13px 14px;background:rgba(16,185,129,0.07);border:1px solid rgba(16,185,129,0.18);border-radius:13px;text-decoration:none;color:var(--text,#0f1724);-webkit-tap-highlight-color:transparent;">
+                            <span style="width:38px;height:38px;border-radius:11px;background:rgba(16,185,129,0.14);display:flex;align-items:center;justify-content:center;flex-shrink:0;">
+                                <i class="fa-solid fa-file-contract" style="color:#10b981;font-size:14px;"></i>
+                            </span>
+                            <span style="flex:1;text-align:left;">
+                                <span style="display:block;font-weight:600;font-size:14px;">Terms of Service</span>
+                                <span style="display:block;font-size:11.5px;color:#8892a4;margin-top:1px;">Rules and usage agreement</span>
+                            </span>
+                            <i class="fa-solid fa-chevron-right" style="color:#10b981;font-size:11px;flex-shrink:0;"></i>
                         </a>
                     </div>
                 </section>
@@ -256,11 +286,79 @@
 
                 <section class="setting-card danger-card">
                     <h3 data-i18n="settings.dangerZone">Danger Zone</h3>
+
+                    <!-- Sign Out -->
                     <div class="form-row">
-                        <button id="leaveFamilyBtn" class="btn ghost danger" data-i18n="settings.leaveFamily">Leave Family Budget</button>
+                        <button id="signOutBtn" class="dz-row">
+                            <span class="dz-icon" style="background:rgba(245,158,11,0.13);">
+                                <i class="fa-solid fa-right-from-bracket" style="color:#d97706;"></i>
+                            </span>
+                            <span class="dz-text">
+                                <span class="dz-title" style="color:#d97706;">Sign Out</span>
+                                <span class="dz-sub">Log out of your account</span>
+                            </span>
+                            <i class="fa-solid fa-chevron-right dz-chevron" style="color:#d97706;opacity:0.5;"></i>
+                        </button>
                     </div>
+
+                    <div class="danger-divider"></div>
+
+                    <!-- Clear Expense History -->
                     <div class="form-row">
-                        <button id="deleteAccountBtn" class="btn ghost danger" data-i18n="settings.deleteAccount">Delete Account</button>
+                        <button id="clearExpensesBtn" class="dz-row">
+                            <span class="dz-icon" style="background:rgba(239,68,68,0.1);">
+                                <i class="fa-solid fa-trash-can" style="color:#ef4444;"></i>
+                            </span>
+                            <span class="dz-text">
+                                <span class="dz-title">Clear Expense History</span>
+                                <span class="dz-sub">Deletes all local expenses &amp; balance</span>
+                            </span>
+                            <i class="fa-solid fa-chevron-right dz-chevron"></i>
+                        </button>
+                    </div>
+
+                    <!-- Reset Settings -->
+                    <div class="form-row">
+                        <button id="resetSettingsBtn" class="dz-row">
+                            <span class="dz-icon" style="background:rgba(239,68,68,0.1);">
+                                <i class="fa-solid fa-rotate-left" style="color:#ef4444;"></i>
+                            </span>
+                            <span class="dz-text">
+                                <span class="dz-title">Reset Settings to Default</span>
+                                <span class="dz-sub">Restores theme, currency &amp; preferences</span>
+                            </span>
+                            <i class="fa-solid fa-chevron-right dz-chevron"></i>
+                        </button>
+                    </div>
+
+                    <div class="danger-divider"></div>
+
+                    <!-- Leave Family Budget -->
+                    <div class="form-row">
+                        <button id="leaveFamilyBtn" class="dz-row">
+                            <span class="dz-icon" style="background:rgba(239,68,68,0.1);">
+                                <i class="fa-solid fa-person-walking-arrow-right" style="color:#ef4444;"></i>
+                            </span>
+                            <span class="dz-text">
+                                <span class="dz-title">Leave Family Budget</span>
+                                <span class="dz-sub">Removes wallets, friends &amp; splits</span>
+                            </span>
+                            <i class="fa-solid fa-chevron-right dz-chevron"></i>
+                        </button>
+                    </div>
+
+                    <!-- Delete Account -->
+                    <div class="form-row">
+                        <button id="deleteAccountBtn" class="dz-row">
+                            <span class="dz-icon" style="background:rgba(239,68,68,0.1);">
+                                <i class="fa-solid fa-user-xmark" style="color:#ef4444;"></i>
+                            </span>
+                            <span class="dz-text">
+                                <span class="dz-title">Delete Account</span>
+                                <span class="dz-sub">Permanently deletes all your data</span>
+                            </span>
+                            <i class="fa-solid fa-chevron-right dz-chevron"></i>
+                        </button>
                     </div>
                 </section>
             </div>

@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, viewport-fit=cover" />
+  <title>Terms of Service — Money Tracker</title>
+  <link rel="manifest" href="/manifest.json" />
+  <meta name="theme-color" content="#0f1724" />
+  <meta name="apple-mobile-web-app-capable" content="yes" />
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+  <link rel="apple-touch-icon" href="/public/logo_2.svg" />
+  <link rel="stylesheet" href="/dashboard/style.css" />
+  <link rel="stylesheet" href="/public/theme.css" />
+  <link rel="stylesheet" href="/public/mobile-nav.css" />
+  <link rel="stylesheet" href="/public/fontawesome/css/all.min.css" />
+  <script src="/public/app-config.js"></script>
+  <script src="/public/theme-init.js"></script>
+  <style>
+    .pp-content {
+      max-width: 760px;
+      padding: 0 28px 60px;
+    }
+
+    .pp-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      color: #8892a4;
+      text-decoration: none;
+      font-size: 0.875rem;
+      margin-bottom: 32px;
+      margin-top: 4px;
+      transition: color .2s;
+    }
+    .pp-back:hover { color: #6366f1; }
+
+    .pp-title-block {
+      margin-bottom: 32px;
+    }
+    .pp-title-block h1 {
+      font-size: 1.75rem;
+      font-weight: 800;
+      color: var(--text, #0f1724);
+      margin-bottom: 6px;
+    }
+    .pp-title-block .pp-meta {
+      font-size: 0.82rem;
+      color: #8892a4;
+    }
+    .pp-title-block .pp-meta span {
+      background: rgba(99,102,241,.12);
+      border: 1px solid rgba(99,102,241,.25);
+      border-radius: 20px;
+      padding: 3px 12px;
+      margin-right: 6px;
+      display: inline-block;
+    }
+
+    /* Scope pills */
+    .pill {
+      display: inline-block;
+      font-size: 0.68rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .06em;
+      border-radius: 4px;
+      padding: 2px 8px;
+      margin-left: 4px;
+      vertical-align: middle;
+      white-space: nowrap;
+    }
+    .pill-app  { background: rgba(99,102,241,.15); color: #818cf8; border: 1px solid rgba(99,102,241,.3); }
+    .pill-web  { background: rgba(6,182,212,.15);  color: #22d3ee; border: 1px solid rgba(6,182,212,.3);  }
+    .pill-both { background: rgba(16,185,129,.15); color: #34d399; border: 1px solid rgba(16,185,129,.3); }
+    .pill-warn { background: rgba(245,158,11,.15); color: #fbbf24; border: 1px solid rgba(245,158,11,.3); }
+
+    /* Sections */
+    .pp-section {
+      margin-bottom: 40px;
+      scroll-margin-top: 80px;
+    }
+    .pp-section h2 {
+      font-size: 1.1rem;
+      font-weight: 700;
+      color: var(--text, #0f1724);
+      margin-bottom: 14px;
+      padding-bottom: 10px;
+      border-bottom: 1px solid rgba(99,102,241,.15);
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .pp-section h2 .sec-num {
+      background: #6366f1;
+      color: #fff;
+      font-size: 0.7rem;
+      font-weight: 700;
+      border-radius: 5px;
+      padding: 2px 7px;
+      flex-shrink: 0;
+    }
+    .pp-section h3 {
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text, #0f1724);
+      margin: 20px 0 8px;
+    }
+    .pp-section p {
+      color: #5a6478;
+      font-size: 0.9rem;
+      line-height: 1.7;
+      margin-bottom: 10px;
+    }
+    .pp-section ul {
+      padding-left: 18px;
+      color: #5a6478;
+      font-size: 0.9rem;
+      margin-bottom: 10px;
+    }
+    .pp-section li { margin-bottom: 5px; line-height: 1.6; }
+    .pp-section strong { color: var(--text, #0f1724); }
+    .pp-section a { color: #6366f1; }
+
+    /* Info card */
+    .info-card {
+      background: rgba(99,102,241,.07);
+      border: 1px solid rgba(99,102,241,.2);
+      border-radius: 10px;
+      padding: 16px 18px;
+      margin: 14px 0;
+      font-size: 0.88rem;
+      color: #5a6478;
+      line-height: 1.6;
+    }
+    .info-card strong { color: var(--text, #0f1724); }
+    .info-card.warn {
+      border-left: 3px solid #6366f1;
+      border-radius: 0 10px 10px 0;
+      background: rgba(99,102,241,.05);
+    }
+    .info-card.yellow {
+      background: rgba(245,158,11,.07);
+      border: 1px solid rgba(245,158,11,.25);
+      border-left: 3px solid #f59e0b;
+      border-radius: 0 10px 10px 0;
+    }
+    .info-card.yellow strong { color: #d97706; }
+
+    /* Table */
+    .pp-table-wrap {
+      overflow-x: auto;
+      -webkit-overflow-scrolling: touch;
+      margin: 12px 0 16px;
+    }
+    .pp-table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 0.85rem;
+      margin: 0;
+    }
+    .pp-table th {
+      text-align: left;
+      padding: 8px 14px;
+      background: rgba(99,102,241,.08);
+      color: var(--text, #0f1724);
+      font-weight: 600;
+      border-bottom: 1px solid rgba(99,102,241,.15);
+      white-space: nowrap;
+    }
+    .pp-table td {
+      padding: 8px 14px;
+      color: #5a6478;
+      border-bottom: 1px solid rgba(0,0,0,.04);
+      vertical-align: top;
+    }
+    .pp-table tr:last-child td { border-bottom: none; }
+
+    @media (max-width: 640px) {
+      .pp-table-wrap { overflow-x: visible; }
+      .pp-table,
+      .pp-table tbody,
+      .pp-table tr,
+      .pp-table td { display: block; width: 100%; }
+      .pp-table thead { display: none; }
+      .pp-table tr:first-child { display: none !important; }
+      .pp-table tr {
+        padding: 12px 0;
+        border-bottom: 1px solid rgba(99,102,241,.12);
+      }
+      .pp-table tr:last-child { border-bottom: none; }
+      .pp-table td {
+        padding: 2px 0;
+        border: none;
+        white-space: normal !important;
+      }
+      .pp-table td:first-child {
+        font-weight: 700;
+        font-size: 0.75rem;
+        text-transform: uppercase;
+        letter-spacing: 0.05em;
+        color: #6366f1;
+        margin-bottom: 3px;
+      }
+    }
+
+    /* contact block */
+    .contact-block {
+      background: rgba(99,102,241,.07);
+      border: 1px solid rgba(99,102,241,.2);
+      border-radius: 10px;
+      padding: 18px 20px;
+      font-size: 0.9rem;
+      color: #5a6478;
+    }
+    .contact-block p { margin-bottom: 4px; }
+    .contact-block a { color: #6366f1; }
+
+    /* Dark theme overrides */
+    [data-theme="dark"] .pp-section p,
+    [data-theme="dark"] .pp-section ul,
+    [data-theme="dark"] .pp-section li { color: #8892a4; }
+    [data-theme="dark"] .pp-section h2,
+    [data-theme="dark"] .pp-section h3,
+    [data-theme="dark"] .pp-section strong,
+    [data-theme="dark"] .pp-title-block h1 { color: #e2e8f0; }
+    [data-theme="dark"] .pp-table th { color: #e2e8f0; }
+    [data-theme="dark"] .pp-table td { color: #8892a4; }
+    [data-theme="dark"] .info-card { color: #8892a4; }
+    [data-theme="dark"] .info-card strong { color: #e2e8f0; }
+    [data-theme="dark"] .info-card.yellow strong { color: #fbbf24; }
+    [data-theme="dark"] .contact-block { color: #8892a4; }
+
+    /* Prevent horizontal overflow */
+    html, body, main {
+      overflow-x: hidden !important;
+      max-width: 100vw !important;
+    }
+    main {
+      display: block !important;
+      width: 100% !important;
+      padding: 0 !important;
+      margin: 0 !important;
+    }
+    .pp-content {
+      width: 100%;
+      max-width: 760px;
+      box-sizing: border-box;
+      overflow-wrap: break-word;
+      word-break: break-word;
+    }
+    .pp-content * {
+      box-sizing: border-box;
+    }
+    .pp-content img, .pp-content video, .pp-content iframe {
+      max-width: 100%;
+    }
+    .pill {
+      max-width: none !important;
+      white-space: nowrap !important;
+      display: inline-block !important;
+    }
+
+    @media (max-width: 768px) {
+      .pp-content { padding: 20px 16px 80px; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- SIDEBAR -->
+  <header>
+    <nav class="sidebar">
+      <div class="top-title-wrap">
+        <img src="/public/logo_2.svg" alt="logo" />
+        <h2>Expense Tracker</h2>
+      </div>
+      <hr />
+      <div class="side-card" onclick="window.location.href='/spendings/index.html'">
+        <i class="fa-solid fa-chart-line"></i>
+        <h3>Spendings</h3>
+      </div>
+      <div class="side-card" onclick="window.location.href='/expenses/index.html'">
+        <i class="fa-solid fa-money-check-dollar"></i>
+        <h3>Expenses</h3>
+      </div>
+      <div class="side-card" onclick="window.location.href='/dashboard/index.html'">
+        <i class="fa-solid fa-house"></i>
+        <h3>Dashboard</h3>
+      </div>
+      <div class="side-card" onclick="window.location.href='/shared/index.html'">
+        <i class="fa-solid fa-people-group"></i>
+        <h3>Family Budget</h3>
+      </div>
+      <div class="sidebar-spacer"></div>
+      <div class="side-card" onclick="window.location.href='/shared/settings.html'">
+        <i class="fa-solid fa-gear"></i>
+        <h3>Settings</h3>
+      </div>
+      <div class="account-chip" id="accountChip">
+        <img src="/public/avatar-default.svg" alt="Account" />
+      </div>
+    </nav>
+  </header>
+
+  <main style="padding-top: 50px !important;">
+    <div class="pp-content">
+
+      <div class="pp-title-block">
+        <h1>Terms of Service</h1>
+        <p class="pp-meta">
+          <span>Last updated: April 7, 2026</span>
+          <span>App &amp; Website</span>
+        </p>
+      </div>
+
+      <a href="#" onclick="history.back();return false;" class="pp-back">
+        <i class="fa-solid fa-arrow-left"></i> Back to Settings
+      </a>
+
+      <div class="info-card">
+        These Terms of Service ("Terms") govern your use of <strong>Money Tracker</strong> (the "App"),
+        available on Android and iOS, and the associated website <strong>moneytracker.app</strong>
+        (the "Website"), operated by <strong>Viktor Djordjevic</strong> ("we", "us", or "our").<br /><br />
+        <strong>By downloading, installing, or using Money Tracker, you agree to be bound by these Terms.</strong>
+        If you do not agree, do not use the App or Website.<br /><br />
+        Sections marked <span class="pill pill-app">App</span> apply to the mobile app,
+        <span class="pill pill-web">Website</span> to the marketing website, and
+        <span class="pill pill-both">Both</span> to both.
+      </div>
+
+      <!-- TABLE OF CONTENTS -->
+      <div class="info-card" style="margin-bottom:32px;">
+        <strong style="display:block;margin-bottom:10px;font-size:0.8rem;text-transform:uppercase;letter-spacing:.1em;color:#6366f1;">Table of Contents</strong>
+        <ol style="padding-left:18px;margin:0;color:#5a6478;font-size:0.9rem;display:grid;gap:4px;">
+          <li><a href="#s1" style="color:inherit;text-decoration:none;">Who We Are</a></li>
+          <li><a href="#s2" style="color:inherit;text-decoration:none;">Eligibility</a></li>
+          <li><a href="#s3" style="color:inherit;text-decoration:none;">License to Use the App</a></li>
+          <li><a href="#s4" style="color:inherit;text-decoration:none;">User Accounts</a></li>
+          <li><a href="#s5" style="color:inherit;text-decoration:none;">Acceptable Use</a></li>
+          <li><a href="#s6" style="color:inherit;text-decoration:none;">Financial Data Disclaimer</a></li>
+          <li><a href="#s7" style="color:inherit;text-decoration:none;">Shared Wallets &amp; Bill Splitting</a></li>
+          <li><a href="#s8" style="color:inherit;text-decoration:none;">Advertising</a></li>
+          <li><a href="#s9" style="color:inherit;text-decoration:none;">Intellectual Property</a></li>
+          <li><a href="#s10" style="color:inherit;text-decoration:none;">Purchases &amp; Pricing</a></li>
+          <li><a href="#s11" style="color:inherit;text-decoration:none;">Disclaimer of Warranties</a></li>
+          <li><a href="#s12" style="color:inherit;text-decoration:none;">Limitation of Liability</a></li>
+          <li><a href="#s13" style="color:inherit;text-decoration:none;">Termination</a></li>
+          <li><a href="#s14" style="color:inherit;text-decoration:none;">Governing Law</a></li>
+          <li><a href="#s15" style="color:inherit;text-decoration:none;">Changes to These Terms</a></li>
+          <li><a href="#s16" style="color:inherit;text-decoration:none;">Platform-Specific Terms</a></li>
+          <li><a href="#s17" style="color:inherit;text-decoration:none;">Contact Us</a></li>
+        </ol>
+      </div>
+
+      <!-- 1. WHO WE ARE -->
+      <div class="pp-section" id="s1">
+        <h2><span class="sec-num">1</span> Who We Are <span class="pill pill-both">Both</span></h2>
+        <p><strong>Money Tracker</strong> is a personal finance application designed to help you track expenses, manage budgets, collaborate on shared family wallets, and split bills with others.</p>
+        <div class="pp-table-wrap"><table class="pp-table">
+          <tr><th>Field</th><th>Detail</th></tr>
+          <tr><td><strong>Product name</strong></td><td>Money Tracker</td></tr>
+          <tr><td><strong>App ID</strong></td><td>com.moneytrack.app</td></tr>
+          <tr><td><strong>Operator</strong></td><td>Viktor Djordjevic</td></tr>
+          <tr><td><strong>Contact email</strong></td><td><a href="mailto:viktordjordjevic350@gmail.com">viktordjordjevic350@gmail.com</a></td></tr>
+          <tr><td><strong>Platforms</strong></td><td>Android (Google Play), iOS (App Store), Web (PWA)</td></tr>
+          <tr><td><strong>Backend</strong></td><td>Hosted on Fly.io (EU region)</td></tr>
+        </table></div>
+      </div>
+
+      <!-- 2. ELIGIBILITY -->
+      <div class="pp-section" id="s2">
+        <h2><span class="sec-num">2</span> Eligibility <span class="pill pill-both">Both</span></h2>
+        <p>You may use Money Tracker only if:</p>
+        <ul>
+          <li>You are at least <strong>13 years of age</strong>. If you are between 13 and 16, you must have obtained parental or guardian consent.</li>
+          <li>You are not prohibited from using the App under the laws of your country or jurisdiction.</li>
+          <li>You agree to and comply with these Terms in full.</li>
+        </ul>
+        <div class="info-card warn">
+          <strong>We do not knowingly allow children under 13 to use Money Tracker.</strong> If we learn that an account belongs to a child under 13, we will delete that account and all associated data without notice.
+        </div>
+      </div>
+
+      <!-- 3. LICENSE -->
+      <div class="pp-section" id="s3">
+        <h2><span class="sec-num">3</span> License to Use the App <span class="pill pill-app">App</span></h2>
+        <p>Subject to your compliance with these Terms, we grant you a <strong>limited, non-exclusive, non-transferable, revocable license</strong> to download, install, and use Money Tracker on devices you own or control, solely for your personal, non-commercial purposes.</p>
+
+        <h3>What you may NOT do</h3>
+        <ul>
+          <li>Copy, modify, distribute, sell, or sublicense the App or any part of it</li>
+          <li>Reverse-engineer, decompile, or disassemble the App (except as permitted by applicable law)</li>
+          <li>Use the App to build a competing product or service</li>
+          <li>Remove or alter any copyright, trademark, or other proprietary notices</li>
+          <li>Use the App for any commercial purpose without our prior written consent</li>
+          <li>Share, transfer, or resell your account or login credentials</li>
+        </ul>
+
+        <h3>Open Source Components</h3>
+        <p>Money Tracker includes open-source libraries (Chart.js, Font Awesome, Capacitor, etc.) licensed under their respective terms. These licenses do not extend to Money Tracker itself.</p>
+      </div>
+
+      <!-- 4. USER ACCOUNTS -->
+      <div class="pp-section" id="s4">
+        <h2><span class="sec-num">4</span> User Accounts <span class="pill pill-app">App</span></h2>
+        <p>Most features of Money Tracker work fully <strong>offline without an account</strong>. Creating an account is only required to use the Shared Wallet and Family Budget features.</p>
+
+        <h3>Account Registration</h3>
+        <p>When you create an account, you agree to:</p>
+        <ul>
+          <li>Provide accurate, current, and complete information (name, email address, password)</li>
+          <li>Keep your account information up to date</li>
+          <li>Choose a secure password of at least 6 characters and keep it confidential</li>
+          <li>Not share your account with or transfer it to another person</li>
+          <li>Notify us immediately at <a href="mailto:viktordjordjevic350@gmail.com">viktordjordjevic350@gmail.com</a> if you suspect unauthorized access</li>
+        </ul>
+
+        <h3>Account Security</h3>
+        <p>You are responsible for all activity that occurs under your account. We use industry-standard security measures (bcrypt password hashing, JWT tokens with 7-day expiry, HTTPS encryption, rate-limiting on login), but you are responsible for maintaining your own device security.</p>
+
+        <h3>Account Deletion</h3>
+        <p>You can permanently delete your account at any time from <strong>Settings → Delete Account</strong>. Deletion immediately and irreversibly removes your name, email address, shared wallet data, and all server-side information associated with your account. Local data stored on your device is unaffected and can be cleared manually.</p>
+
+        <div class="info-card warn">
+          <strong>Once deleted, your account cannot be recovered.</strong> Make sure to export any data you want to keep before deleting your account.
+        </div>
+      </div>
+
+      <!-- 5. ACCEPTABLE USE -->
+      <div class="pp-section" id="s5">
+        <h2><span class="sec-num">5</span> Acceptable Use <span class="pill pill-both">Both</span></h2>
+        <p>You agree to use Money Tracker only for lawful purposes and in a manner that does not infringe the rights of others. You must <strong>NOT</strong>:</p>
+        <ul>
+          <li>Upload or submit any data that is unlawful, fraudulent, defamatory, or harmful</li>
+          <li>Attempt to gain unauthorized access to our servers, databases, or other users' accounts</li>
+          <li>Use automated scripts, bots, or crawlers to interact with the App or its API</li>
+          <li>Deliberately overwhelm or disrupt our servers or services (denial-of-service attacks)</li>
+          <li>Attempt to circumvent our rate limiting, authentication, or other security measures</li>
+          <li>Submit false or misleading information about yourself or others</li>
+          <li>Use the invite or friend features to spam or harass other users</li>
+          <li>Attempt to extract or scrape other users' financial data</li>
+          <li>Use the App in any way that violates applicable local, national, or international law</li>
+        </ul>
+        <p>We reserve the right to suspend or terminate your account if you violate these rules, with or without prior notice.</p>
+      </div>
+
+      <!-- 6. FINANCIAL DISCLAIMER -->
+      <div class="pp-section" id="s6">
+        <h2><span class="sec-num">6</span> Financial Data Disclaimer <span class="pill pill-app">App</span></h2>
+
+        <div class="info-card yellow">
+          <strong>Money Tracker is a personal budgeting and expense-tracking tool — it is NOT a bank, financial institution, investment adviser, or accounting service.</strong>
+        </div>
+
+        <p>The App helps you <strong>record and visualize</strong> your income, expenses, and budget goals based on data you manually enter. You are solely responsible for the accuracy and completeness of the data you input.</p>
+
+        <ul>
+          <li><strong>No bank connections:</strong> Money Tracker does not connect to your bank accounts, credit cards, or any financial institution. All financial figures are entered manually by you.</li>
+          <li><strong>No financial advice:</strong> Spending tips, recommendations, and budget alerts are informational only and do not constitute financial, tax, legal, or investment advice.</li>
+          <li><strong>No guarantees of accuracy:</strong> The calculations (totals, savings, category breakdowns) are derived from the data you enter. We are not responsible for errors resulting from incorrect user input.</li>
+          <li><strong>Currency conversion:</strong> Any currency conversion displayed is for informational purposes only, is not guaranteed to be up to date, and should not be used as the basis for financial decisions.</li>
+          <li><strong>Subscription detection:</strong> The automatic subscription detection feature is a convenience tool; always verify with your actual bank or card statements.</li>
+        </ul>
+
+        <p>We strongly recommend consulting a qualified financial professional for any significant financial decisions.</p>
+      </div>
+
+      <!-- 7. SHARED WALLETS & BILL SPLITTING -->
+      <div class="pp-section" id="s7">
+        <h2><span class="sec-num">7</span> Shared Wallets &amp; Bill Splitting <span class="pill pill-app">App</span></h2>
+        <p>Money Tracker includes collaborative features that allow you to share budget wallets with family members or friends, and to split bills between multiple people.</p>
+
+        <h3>Shared Wallets</h3>
+        <ul>
+          <li>As the wallet owner, you can invite other registered users by email to join a shared wallet.</li>
+          <li>All members of a shared wallet can view transactions, categories, and wallet goals.</li>
+          <li>You are responsible for only inviting people who have consented to participate and to have their data shared within that wallet.</li>
+          <li>By inviting someone, you confirm you have their permission to submit their name and email address to us for the purpose of sending a single invitation email.</li>
+        </ul>
+
+        <h3>Bill Splitting</h3>
+        <ul>
+          <li>The bill-splitting feature calculates how to divide an expense between named participants.</li>
+          <li>Split calculations are for convenience only. Money Tracker does not process any actual payments or money transfers between users.</li>
+          <li>Any real-world financial settlements between split participants are entirely between those individuals. We have no role in, and no liability for, any resulting financial transactions.</li>
+        </ul>
+
+        <h3>Friend Management</h3>
+        <ul>
+          <li>You may add other users as friends using their unique user code (MT-XXXXXX) to facilitate shared budgeting and split tracking.</li>
+          <li>Friend requests must be accepted by the recipient before a friendship connection is established.</li>
+          <li>You must not use the friend or invite features to harass, spam, or solicit other users.</li>
+        </ul>
+      </div>
+
+      <!-- 8. ADVERTISING -->
+      <div class="pp-section" id="s8">
+        <h2><span class="sec-num">8</span> Advertising <span class="pill pill-app">App</span></h2>
+        <p>Money Tracker is free to use and is supported by advertisements served by <strong>Google AdMob</strong>.</p>
+        <ul>
+          <li>Ads may be displayed within the App interface.</li>
+          <li>AdMob may collect your device's advertising identifier and other usage signals to serve relevant ads. See our <a href="/public/privacy-policy.html">Privacy Policy</a> for details.</li>
+          <li>We do not endorse the products or services advertised by third parties in the App.</li>
+          <li>You may opt out of personalized ads at any time in your device settings (Android: <em>Settings → Privacy → Ads</em>; iOS: <em>Settings → Privacy &amp; Security → Tracking</em>).</li>
+          <li>We reserve the right to change our monetization model at any time with reasonable notice.</li>
+        </ul>
+      </div>
+
+      <!-- 9. INTELLECTUAL PROPERTY -->
+      <div class="pp-section" id="s9">
+        <h2><span class="sec-num">9</span> Intellectual Property <span class="pill pill-both">Both</span></h2>
+        <p>All content, design, code, graphics, logos, icons, and other materials in Money Tracker and on the Website are the exclusive property of <strong>Viktor Djordjevic</strong> or our licensors and are protected by applicable intellectual property laws.</p>
+
+        <h3>Your Content</h3>
+        <p>You retain full ownership of all financial data and notes you enter into Money Tracker. By using the Shared Wallet feature, you grant other members of that wallet a limited right to view the shared content you post within that wallet. You grant us a limited, non-exclusive license to store and process your content solely for the purpose of providing the Service to you.</p>
+
+        <h3>Feedback</h3>
+        <p>If you submit feedback, bug reports, or suggestions to us, you grant us the right to use that feedback for any purpose without compensation to you.</p>
+      </div>
+
+      <!-- 10. PURCHASES & PRICING -->
+      <div class="pp-section" id="s10">
+        <h2><span class="sec-num">10</span> Purchases &amp; Pricing <span class="pill pill-app">App</span></h2>
+        <p>Money Tracker is available as a <strong>one-time purchase</strong> through the Apple App Store and Google Play Store. All payments are processed by the respective platform (Apple or Google) under their own terms and privacy policies.</p>
+        <ul>
+          <li>We do not receive your payment card details. All billing is handled by the App Store or Google Play.</li>
+          <li>Pricing may vary by region. The price displayed in your local App Store or Google Play is the applicable price.</li>
+        </ul>
+
+        <h3>In-App Purchases</h3>
+        <div class="info-card warn">
+          <strong>Money Tracker currently offers a one-time purchase model. In-app purchases (premium features, upgrades, or unlockable content) may be introduced in future versions of the App.</strong>
+        </div>
+        <p>When in-app purchases become available:</p>
+        <ul>
+          <li>All in-app purchases will be processed securely by Apple (App Store) or Google (Google Play) — we will never handle your payment card details directly.</li>
+          <li>Prices for in-app purchases will be clearly displayed before you confirm any purchase.</li>
+          <li>Some features may become available only through in-app purchase or an optional subscription.</li>
+          <li>Any active purchases or entitlements are tied to your App Store or Google Play account, not your Money Tracker account.</li>
+          <li>We will update these Terms and notify users in-app before any in-app purchase model is activated.</li>
+        </ul>
+
+        <h3>Subscriptions (Future)</h3>
+        <p>If we introduce optional subscription plans in the future:</p>
+        <ul>
+          <li>Subscriptions will renew automatically unless cancelled at least 24 hours before the end of the current billing period.</li>
+          <li>You can manage and cancel subscriptions at any time through your App Store or Google Play account settings.</li>
+          <li>No refunds are provided for unused portions of a subscription period, except where required by applicable law.</li>
+        </ul>
+
+        <h3>Refund Policy</h3>
+        <p>Refunds are handled entirely by the platform through which you purchased the App or any in-app purchase:</p>
+        <ul>
+          <li><strong>Apple App Store:</strong> Submit refund requests at <a href="https://reportaproblem.apple.com" target="_blank" rel="noopener">reportaproblem.apple.com</a></li>
+          <li><strong>Google Play Store:</strong> Submit refund requests through the Google Play Store support or <a href="https://support.google.com/googleplay/answer/2479637" target="_blank" rel="noopener">Google Play refund policy</a></li>
+        </ul>
+        <p>We do not directly process refunds. Contact us at <a href="mailto:viktordjordjevic350@gmail.com">viktordjordjevic350@gmail.com</a> if you need assistance navigating the refund process.</p>
+      </div>
+
+      <!-- 11. DISCLAIMER OF WARRANTIES -->
+      <div class="pp-section" id="s11">
+        <h2><span class="sec-num">11</span> Disclaimer of Warranties <span class="pill pill-both">Both</span></h2>
+        <div class="info-card yellow">
+          <strong>Money Tracker is provided "as is" and "as available" without warranties of any kind, either express or implied.</strong>
+        </div>
+        <p>To the fullest extent permitted by applicable law, we disclaim all warranties including, but not limited to:</p>
+        <ul>
+          <li>Implied warranties of merchantability, fitness for a particular purpose, and non-infringement</li>
+          <li>That the App will be uninterrupted, error-free, or secure at all times</li>
+          <li>That bugs or defects will be corrected</li>
+          <li>That the App or the server that makes it available are free of viruses or other harmful components</li>
+          <li>That any data you store in the App will not be lost (we strongly recommend keeping backups)</li>
+          <li>The accuracy, completeness, or usefulness of any content generated by the App (including spending tips, analytics, and currency conversions)</li>
+        </ul>
+        <p>Some jurisdictions do not allow the exclusion of certain warranties. In such jurisdictions, these exclusions apply to the maximum extent permitted by law.</p>
+      </div>
+
+      <!-- 12. LIMITATION OF LIABILITY -->
+      <div class="pp-section" id="s12">
+        <h2><span class="sec-num">12</span> Limitation of Liability <span class="pill pill-both">Both</span></h2>
+        <p>To the fullest extent permitted by applicable law, <strong>Viktor Djordjevic</strong> shall not be liable for:</p>
+        <ul>
+          <li>Any indirect, incidental, special, consequential, or punitive damages</li>
+          <li>Loss of profits, revenue, data, goodwill, or other intangible losses</li>
+          <li>Financial decisions made based on data or analysis displayed in the App</li>
+          <li>Any damages arising from unauthorized access to or alteration of your data</li>
+          <li>Loss of data due to device failure, app crashes, or uninstallation</li>
+          <li>Disputes between users arising from shared wallets or bill splitting</li>
+          <li>Any damages arising from your use of, or inability to use, the App or Website</li>
+        </ul>
+        <p>In any case, our total liability to you for any claims arising from these Terms or your use of the App shall not exceed the amount you paid us in the 12 months preceding the claim (or €4.99 if no purchases were made).</p>
+        <p>Some jurisdictions do not allow the limitation of liability for personal injury or certain damages. In such jurisdictions, our liability is limited to the maximum extent permitted by law.</p>
+      </div>
+
+      <!-- 13. TERMINATION -->
+      <div class="pp-section" id="s13">
+        <h2><span class="sec-num">13</span> Termination <span class="pill pill-both">Both</span></h2>
+
+        <h3>Termination by You</h3>
+        <p>You may stop using the App at any time. If you have an account, you can delete it from <strong>Settings → Delete Account</strong>, which will permanently remove all your server-side data.</p>
+
+        <h3>Termination by Us</h3>
+        <p>We reserve the right to suspend or permanently terminate your account and access to the App at any time, with or without notice, if:</p>
+        <ul>
+          <li>You violate any provision of these Terms</li>
+          <li>We reasonably believe your use poses a security or legal risk</li>
+          <li>We are required to do so by law</li>
+          <li>We decide to discontinue the App or the account-based features</li>
+        </ul>
+
+        <h3>Effect of Termination</h3>
+        <p>Upon termination, your license to use the App ceases immediately. Sections 6, 9, 11, 12, and 14 of these Terms survive termination.</p>
+        <p>If we terminate the Service, we will give reasonable advance notice where possible so you can export your data before shutdown.</p>
+      </div>
+
+      <!-- 14. GOVERNING LAW -->
+      <div class="pp-section" id="s14">
+        <h2><span class="sec-num">14</span> Governing Law <span class="pill pill-both">Both</span></h2>
+        <p>These Terms are governed by and construed in accordance with the laws of <strong>the Republic of Serbia</strong>, without regard to its conflict-of-law provisions.</p>
+        <p>Any disputes arising from or relating to these Terms or your use of Money Tracker shall be subject to the exclusive jurisdiction of the competent courts in Serbia, unless mandatory consumer protection laws in your country of residence provide otherwise.</p>
+        <p>If you are an EU consumer, you may also have the right to use the EU Online Dispute Resolution platform: <a href="https://ec.europa.eu/consumers/odr" target="_blank" rel="noopener">ec.europa.eu/consumers/odr</a>.</p>
+      </div>
+
+      <!-- 15. CHANGES TO TERMS -->
+      <div class="pp-section" id="s15">
+        <h2><span class="sec-num">15</span> Changes to These Terms <span class="pill pill-both">Both</span></h2>
+        <p>We may update these Terms from time to time. When we do:</p>
+        <ul>
+          <li>We will update the <strong>"Last updated"</strong> date at the top of this page.</li>
+          <li>For material changes, we will notify app users via an in-app notice on the next launch.</li>
+          <li>We will post the updated Terms at this URL at least <strong>14 days</strong> before they take effect.</li>
+        </ul>
+        <p>Your continued use of Money Tracker after the effective date of the updated Terms constitutes your acceptance of the changes. If you do not agree to the updated Terms, you must stop using the App and may delete your account.</p>
+      </div>
+
+      <!-- 16. PLATFORM-SPECIFIC TERMS -->
+      <div class="pp-section" id="s16">
+        <h2><span class="sec-num">16</span> Platform-Specific Terms <span class="pill pill-app">App</span></h2>
+
+        <h3>16a. Apple App Store (iOS)</h3>
+        <p>If you downloaded Money Tracker from the Apple App Store, the following additional terms apply:</p>
+        <ul>
+          <li><strong>Parties:</strong> These Terms are between you and Viktor Djordjevic only — not with Apple Inc. Apple is not responsible for the App or its content.</li>
+          <li><strong>License scope:</strong> Your license to use the App is limited to a non-transferable license to use the App on any Apple-branded products that you own or control, as permitted by the App Store Terms of Service.</li>
+          <li><strong>Maintenance and support:</strong> We are solely responsible for providing maintenance and support for the App. Apple has no obligation to provide any maintenance or support services.</li>
+          <li><strong>Warranty:</strong> In the event of any failure of the App to conform to any applicable warranty, you may notify Apple, and Apple will refund the purchase price for the App to you. To the maximum extent permitted by applicable law, Apple will have no other warranty obligation with respect to the App.</li>
+          <li><strong>Product claims:</strong> We, not Apple, are responsible for addressing any claims relating to the App, including product liability claims, consumer protection claims, intellectual property infringement claims, and any third-party claims.</li>
+          <li><strong>Third-party beneficiary:</strong> Apple and Apple's subsidiaries are third-party beneficiaries of these Terms. Upon your acceptance of these Terms, Apple will have the right to enforce these Terms against you as a third-party beneficiary.</li>
+          <li><strong>Compliance:</strong> You represent that you are not located in a country subject to a U.S. Government embargo or designated as a "terrorist supporting" country, and that you are not listed on any U.S. Government list of prohibited or restricted parties.</li>
+        </ul>
+
+        <h3>16b. Google Play (Android)</h3>
+        <p>If you downloaded Money Tracker from the Google Play Store, the following additional terms apply:</p>
+        <ul>
+          <li><strong>Parties:</strong> These Terms are between you and Viktor Djordjevic only — not with Google LLC. Google is not responsible for the App or its content.</li>
+          <li><strong>Permissions:</strong> The App requests the following Android permissions:
+            <ul>
+              <li><code>POST_NOTIFICATIONS</code> — to send you daily budget reminders and spending alerts</li>
+              <li><code>INTERNET</code> — to sync shared wallet data and load advertisements</li>
+              <li><code>RECEIVE_BOOT_COMPLETED</code> — to reschedule notifications after device restart</li>
+            </ul>
+          </li>
+          <li><strong>AdMob:</strong> The App uses Google AdMob to serve advertisements. By using the App, you acknowledge that AdMob may collect data as described in our <a href="/public/privacy-policy.html">Privacy Policy</a> and Google's Privacy Policy.</li>
+          <li><strong>Refunds:</strong> Refund requests are subject to Google Play's refund policies. We do not process refunds directly.</li>
+        </ul>
+
+        <h3>16c. Progressive Web App (PWA)</h3>
+        <p>If you use Money Tracker as an installed PWA (via a web browser), the App operates in offline mode only. Account-based features require an active internet connection to communicate with our backend. All these Terms apply equally to PWA users.</p>
+      </div>
+
+      <!-- 17. CONTACT -->
+      <div class="pp-section" id="s17">
+        <h2><span class="sec-num">17</span> Contact Us <span class="pill pill-both">Both</span></h2>
+        <p>If you have any questions about these Terms, need support, or want to report a violation, please contact us:</p>
+        <div class="contact-block">
+          <p><strong>Email:</strong> <a href="mailto:viktordjordjevic350@gmail.com">viktordjordjevic350@gmail.com</a></p>
+          <p><strong>App:</strong> Money Tracker (com.moneytrack.app)</p>
+          <p><strong>Operated by:</strong> Viktor Djordjevic</p>
+          <br />
+          <p>We aim to respond to all enquiries within <strong>5 business days</strong>.</p>
+        </div>
+
+        <div class="info-card" style="margin-top:24px;">
+          <strong>Related Documents</strong><br /><br />
+          <a href="/public/privacy-policy.html" style="color:#6366f1;">Privacy Policy</a> — How we collect, use, and protect your personal data.
+        </div>
+      </div>
+
+    </div>
+  </main>
+
+  <footer class="dashboard-footer">
+    <p class="footer-copyright">&copy; 2026 Money Tracker &middot; Viktor Djordjevic</p>
+  </footer>
+
+  <script src="/public/account-avatar.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('/sw.js').catch(() => {});
+    }
+  </script>
+  <script src="/public/pull-to-refresh.js" defer></script>
+</body>
+</html>

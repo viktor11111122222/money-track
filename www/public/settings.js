@@ -3,6 +3,7 @@
   const STORAGE_KEY = 'mt_settings_v1';
   const API_BASE = (window.location.port === '5500' || window.location.port === '5501') ? 'http://localhost:8080/api' : '/api';
   const TOKEN_KEY = 'sharedBudgetToken';
+  const PIN_KEY = 'mt_app_pin';
 
   const defaults = {
     profile: { fullName: '', email: '', username: '', avatar: '/public/avatar-default.svg' },
@@ -249,6 +250,106 @@
       overlay.querySelector('#_confirmClose').onclick = function() { overlay.remove(); resolve(false); };
       overlay.addEventListener('click', function(e) { if (e.target === overlay) { overlay.remove(); resolve(false); } });
     });
+  }
+
+  /* ── PIN lock helpers ── */
+  function hashPin(pin) {
+    var s = 'mt2fa9x';
+    var r = '';
+    for (var i = 0; i < pin.length; i++) r += String.fromCharCode(pin.charCodeAt(i) ^ s.charCodeAt(i % s.length));
+    return btoa(r);
+  }
+  function getStoredPin() { return localStorage.getItem(PIN_KEY); }
+
+  function showPinModal(mode, onSuccess, onCancel) {
+    var isDark = document.documentElement.classList.contains('dark-theme');
+    var bg = isDark ? '#141828' : '#fff';
+    var textColor = isDark ? '#e6eefc' : '#0f1724';
+    var mutedColor = isDark ? '#9aa6b2' : '#64748b';
+    var keyBg = isDark ? 'rgba(99,102,241,0.15)' : 'rgba(99,102,241,0.09)';
+
+    var overlay = document.createElement('div');
+    overlay.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.75);display:flex;align-items:center;justify-content:center;z-index:10001;backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);';
+
+    var titleText = mode === 'set' ? 'Set App PIN' : mode === 'confirm-disable' ? 'Confirm PIN to Disable' : 'Enter Your PIN';
+    var subtitleText = mode === 'set' ? 'Choose a 4-digit PIN to protect your settings' : 'Enter your 4-digit PIN to continue';
+
+    overlay.innerHTML =
+      '<div style="background:' + bg + ';border-radius:22px;padding:32px 24px 24px;max-width:320px;width:88%;box-shadow:0 24px 64px rgba(0,0,0,0.45);text-align:center;">' +
+        '<div style="width:58px;height:58px;background:rgba(99,102,241,0.14);border-radius:16px;margin:0 auto 14px;display:flex;align-items:center;justify-content:center;">' +
+          '<i class="fa-solid fa-' + (mode === 'set' ? 'lock-open' : 'lock') + '" style="font-size:22px;color:#6366f1;"></i>' +
+        '</div>' +
+        '<h3 style="margin:0 0 5px;font-size:17px;font-weight:700;color:' + textColor + ';">' + titleText + '</h3>' +
+        '<p style="margin:0 0 22px;font-size:13px;color:' + mutedColor + ';">' + subtitleText + '</p>' +
+        '<div id="_pinDots" style="display:flex;justify-content:center;gap:14px;margin-bottom:22px;">' +
+          '<div style="width:14px;height:14px;border-radius:50%;border:2px solid #6366f1;transition:background .12s;"></div>' +
+          '<div style="width:14px;height:14px;border-radius:50%;border:2px solid #6366f1;transition:background .12s;"></div>' +
+          '<div style="width:14px;height:14px;border-radius:50%;border:2px solid #6366f1;transition:background .12s;"></div>' +
+          '<div style="width:14px;height:14px;border-radius:50%;border:2px solid #6366f1;transition:background .12s;"></div>' +
+        '</div>' +
+        '<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px;max-width:220px;margin:0 auto;">' +
+          [1,2,3,4,5,6,7,8,9,'','0','⌫'].map(function(k) {
+            if (k === '') return '<div></div>';
+            return '<button class="_pinKey" data-key="' + k + '" style="padding:15px 0;border:none;border-radius:12px;background:' + keyBg + ';color:' + textColor + ';font-size:17px;font-weight:700;cursor:pointer;transition:background .12s;-webkit-tap-highlight-color:transparent;">' + k + '</button>';
+          }).join('') +
+        '</div>' +
+        (mode !== 'set' ? '<button id="_pinCancel" style="margin-top:14px;background:none;border:none;color:' + mutedColor + ';font-size:13px;cursor:pointer;padding:8px 16px;">Cancel</button>' : '') +
+      '</div>';
+
+    document.body.appendChild(overlay);
+
+    var enteredPin = '';
+    var dots = overlay.querySelectorAll('#_pinDots div');
+
+    function updateDots(errorColor) {
+      dots.forEach(function(d, i) {
+        d.style.background = errorColor ? errorColor : (i < enteredPin.length ? '#6366f1' : 'transparent');
+      });
+    }
+
+    overlay.querySelectorAll('._pinKey').forEach(function(btn) {
+      btn.addEventListener('click', function() {
+        var key = this.dataset.key;
+        if (key === '⌫') { enteredPin = enteredPin.slice(0, -1); updateDots(); return; }
+        if (enteredPin.length >= 4) return;
+        enteredPin += key;
+        updateDots();
+        if (enteredPin.length < 4) return;
+        setTimeout(function() {
+          if (mode === 'set') {
+            localStorage.setItem(PIN_KEY, hashPin(enteredPin));
+            sessionStorage.setItem('mt_pin_ok', '1');
+            overlay.remove();
+            if (onSuccess) onSuccess();
+          } else {
+            if (getStoredPin() === hashPin(enteredPin)) {
+              sessionStorage.setItem('mt_pin_ok', '1');
+              overlay.remove();
+              if (onSuccess) onSuccess();
+            } else {
+              updateDots('#ef4444');
+              setTimeout(function() { enteredPin = ''; updateDots(); }, 500);
+              showToast('Wrong PIN', 'error');
+            }
+          }
+        }, 80);
+      });
+      btn.addEventListener('mouseenter', function() { this.style.background = 'rgba(99,102,241,0.22)'; });
+      btn.addEventListener('mouseleave', function() { this.style.background = keyBg; });
+    });
+
+    var cancelBtn = overlay.querySelector('#_pinCancel');
+    if (cancelBtn) cancelBtn.addEventListener('click', function() { overlay.remove(); if (onCancel) onCancel(); });
+  }
+
+  function checkPinLock() {
+    var state = readStorage();
+    if (state.account.twoFactor && getStoredPin() && !sessionStorage.getItem('mt_pin_ok')) {
+      showPinModal('verify', null, function() {
+        // User cancelled on page load — redirect away (can't bypass settings)
+        window.location.href = '/dashboard/index.html';
+      });
+    }
   }
 
   /* ── Apply theme ── */
@@ -555,12 +656,46 @@
       });
     });
 
-    // ═══ Two-factor toggle ═══
+    // ═══ Two-factor toggle — PIN lock ═══
     qs('#twoFactorToggle').addEventListener('change', function () {
       var state = readStorage();
-      state.account.twoFactor = this.checked;
-      writeStorage(state);
-      showToast(this.checked ? '2FA enabled' : '2FA disabled', 'info');
+      var toggle = this;
+      if (toggle.checked) {
+        // Enabling 2FA: prompt to set a PIN
+        showPinModal('set',
+          function() {
+            state.account.twoFactor = true;
+            writeStorage(state);
+            showToast('2FA enabled — settings are PIN protected ✓');
+          },
+          function() {
+            // Cancelled: revert toggle
+            toggle.checked = false;
+          }
+        );
+      } else {
+        // Disabling 2FA: require existing PIN first
+        var stored = getStoredPin();
+        if (stored) {
+          showPinModal('verify',
+            function() {
+              state.account.twoFactor = false;
+              writeStorage(state);
+              localStorage.removeItem(PIN_KEY);
+              sessionStorage.removeItem('mt_pin_ok');
+              showToast('2FA disabled', 'info');
+            },
+            function() {
+              // Cancelled: keep 2FA on
+              toggle.checked = true;
+            }
+          );
+        } else {
+          state.account.twoFactor = false;
+          writeStorage(state);
+          showToast('2FA disabled', 'info');
+        }
+      }
     });
 
     // ═══ Notification toggles – auto-save + request permission ═══
@@ -741,6 +876,58 @@
       });
     }
 
+    // ═══ Sign Out ═══
+    var signOutBtn = qs('#signOutBtn');
+    if (signOutBtn) {
+      signOutBtn.addEventListener('click', function () {
+        showConfirm(
+          'Sign Out?',
+          'You will be signed out of your account. Your local expense data will remain on this device.'
+        ).then(function(confirmed) {
+          if (!confirmed) return;
+          localStorage.removeItem(TOKEN_KEY);
+          sessionStorage.removeItem('mt_pin_ok');
+          showToast('Signed out ✓');
+          setTimeout(function() { window.location.href = '/shared/index.html'; }, 1200);
+        });
+      });
+    }
+
+    // ═══ Clear Expense History ═══
+    var clearExpensesBtn = qs('#clearExpensesBtn');
+    if (clearExpensesBtn) {
+      clearExpensesBtn.addEventListener('click', function () {
+        showConfirm(
+          'Clear Expense History?',
+          'This will permanently delete all your recorded expenses, income entries, and balance data stored on this device. Your account and settings will not be affected.'
+        ).then(function(confirmed) {
+          if (!confirmed) return;
+          try {
+            var blank = { expenses: [], income: 0, currentBalance: 0, savings: 0 };
+            localStorage.setItem('expenseTrackerData', JSON.stringify(blank));
+          } catch(e) { /* */ }
+          showToast('Expense history cleared ✓');
+          updateSidebarStats();
+        });
+      });
+    }
+
+    // ═══ Reset Settings to Default ═══
+    var resetSettingsBtn = qs('#resetSettingsBtn');
+    if (resetSettingsBtn) {
+      resetSettingsBtn.addEventListener('click', function () {
+        showConfirm(
+          'Reset Settings?',
+          'This will reset all your preferences (currency, theme, language, notifications, income) to their default values. Your account and expense data will not be affected.'
+        ).then(function(confirmed) {
+          if (!confirmed) return;
+          localStorage.removeItem(STORAGE_KEY);
+          showToast('Settings reset to defaults ✓');
+          setTimeout(function() { window.location.reload(); }, 1200);
+        });
+      });
+    }
+
     // ═══ Sidebar stats ═══
     updateSidebarStats();
   }
@@ -777,5 +964,6 @@
     applyToUI(state);
     wire();
     loadProfile();
+    checkPinLock();
   });
 })();
